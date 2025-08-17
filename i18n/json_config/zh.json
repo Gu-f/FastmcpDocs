@@ -1,0 +1,311 @@
+{
+  "language": "${LANGUAGE_CODE}",
+  "tabs": [
+    {
+      "tab": "文档",
+      "anchors": [
+        {
+          "anchor": "文档",
+          "groups": [
+            {
+              "group": "开始",
+              "pages": [
+                "${LANGUAGE_CODE}/getting-started/welcome",
+                "${LANGUAGE_CODE}/getting-started/installation",
+                "${LANGUAGE_CODE}/getting-started/quickstart"
+              ]
+            },
+            {
+              "group": "服务端",
+              "pages": [
+                "${LANGUAGE_CODE}/servers/server",
+                {
+                  "group": "核心组件",
+                  "icon": "toolbox",
+                  "pages": [
+                    "${LANGUAGE_CODE}/servers/tools",
+                    "${LANGUAGE_CODE}/servers/resources",
+                    "${LANGUAGE_CODE}/servers/prompts"
+                  ]
+                },
+                {
+                  "group": "高级功能",
+                  "icon": "stars",
+                  "pages": [
+                    "${LANGUAGE_CODE}/servers/context",
+                    "${LANGUAGE_CODE}/servers/proxy",
+                    "${LANGUAGE_CODE}/servers/composition",
+                    "${LANGUAGE_CODE}/servers/elicitation",
+                    "${LANGUAGE_CODE}/servers/logging",
+                    "${LANGUAGE_CODE}/servers/progress",
+                    "${LANGUAGE_CODE}/servers/sampling",
+                    "${LANGUAGE_CODE}/servers/middleware"
+                  ]
+                },
+                {
+                  "group": "身份认证",
+                  "icon": "shield-check",
+                  "pages": [
+                    "${LANGUAGE_CODE}/servers/auth/authentication",
+                    "${LANGUAGE_CODE}/servers/auth/remote-oauth",
+                    "${LANGUAGE_CODE}/servers/auth/token-verification",
+                    "${LANGUAGE_CODE}/servers/auth/full-oauth-server"
+                  ]
+                },
+                {
+                  "group": "部署",
+                  "icon": "rocket",
+                  "pages": [
+                    "${LANGUAGE_CODE}/deployment/running-server",
+                    "${LANGUAGE_CODE}/deployment/testing",
+                    "${LANGUAGE_CODE}/deployment/self-hosted",
+                    "${LANGUAGE_CODE}/deployment/fastmcp-cloud"
+                  ]
+                }
+              ]
+            },
+            {
+              "group": "客户端",
+              "pages": [
+                {
+                  "group": "概要",
+                  "icon": "cube",
+                  "pages": [
+                    "${LANGUAGE_CODE}/clients/client",
+                    "${LANGUAGE_CODE}/clients/transports"
+                  ]
+                },
+                {
+                  "group": "核心组件",
+                  "icon": "handshake",
+                  "pages": [
+                    "${LANGUAGE_CODE}/clients/tools",
+                    "${LANGUAGE_CODE}/clients/resources",
+                    "${LANGUAGE_CODE}/clients/prompts"
+                  ]
+                },
+                {
+                  "group": "高级功能",
+                  "icon": "stars",
+                  "pages": [
+                    "${LANGUAGE_CODE}/clients/elicitation",
+                    "${LANGUAGE_CODE}/clients/logging",
+                    "${LANGUAGE_CODE}/clients/progress",
+                    "${LANGUAGE_CODE}/clients/sampling",
+                    "${LANGUAGE_CODE}/clients/messages",
+                    "${LANGUAGE_CODE}/clients/roots"
+                  ]
+                },
+                {
+                  "group": "身份认证",
+                  "icon": "user-shield",
+                  "pages": [
+                    "${LANGUAGE_CODE}/clients/auth/oauth",
+                    "${LANGUAGE_CODE}/clients/auth/bearer"
+                  ]
+                }
+              ]
+            },
+            {
+              "group": "第三方集成",
+              "pages": [
+                "${LANGUAGE_CODE}/integrations/anthropic",
+                "${LANGUAGE_CODE}/integrations/authkit",
+                "${LANGUAGE_CODE}/integrations/chatgpt",
+                "${LANGUAGE_CODE}/integrations/claude-code",
+                "${LANGUAGE_CODE}/integrations/claude-desktop",
+                "${LANGUAGE_CODE}/integrations/cursor",
+                "${LANGUAGE_CODE}/integrations/eunomia-authorization",
+                "${LANGUAGE_CODE}/integrations/fastapi",
+                "${LANGUAGE_CODE}/deployment/fastmcp-cloud",
+                "${LANGUAGE_CODE}/integrations/gemini",
+                "${LANGUAGE_CODE}/integrations/mcp-json-configuration",
+                "${LANGUAGE_CODE}/integrations/openai",
+                "${LANGUAGE_CODE}/integrations/openapi",
+                "${LANGUAGE_CODE}/integrations/permit",
+                "${LANGUAGE_CODE}/integrations/starlette"
+              ]
+            },
+            {
+              "group": "模式",
+              "pages": [
+                "${LANGUAGE_CODE}/patterns/tool-transformation",
+                "${LANGUAGE_CODE}/patterns/decorating-methods",
+                "${LANGUAGE_CODE}/patterns/cli",
+                "${LANGUAGE_CODE}/patterns/contrib"
+              ]
+            },
+            {
+              "group": "教程",
+              "pages": [
+                "${LANGUAGE_CODE}/tutorials/mcp",
+                "${LANGUAGE_CODE}/tutorials/create-mcp-server",
+                "${LANGUAGE_CODE}/tutorials/rest-api"
+              ]
+            }
+          ],
+          "icon": "book"
+        },
+        {
+          "anchor": "最新动态",
+          "pages": [
+            "${LANGUAGE_CODE}/updates",
+            "${LANGUAGE_CODE}/changelog"
+          ]
+        },
+        {
+          "anchor": "社区",
+          "icon": "users",
+          "pages": [
+            "${LANGUAGE_CODE}/community/showcase"
+          ]
+        }
+      ]
+    },
+    {
+      "tab": "SDK 参考文档",
+      "anchors": [
+        {
+          "anchor": "Python SDK",
+          "icon": "python",
+          "pages": [
+            "${LANGUAGE_CODE}/python-sdk/fastmcp-exceptions",
+            "${LANGUAGE_CODE}/python-sdk/fastmcp-mcp_config",
+            "${LANGUAGE_CODE}/python-sdk/fastmcp-settings",
+            {
+              "group": "fastmcp.cli",
+              "pages": [
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-__init__",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-claude",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-cli",
+                {
+                  "group": "install",
+                  "pages": [
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-__init__",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-claude_code",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-claude_desktop",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-cursor",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-mcp_json",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-shared"
+                  ]
+                },
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-run"
+              ]
+            },
+            {
+              "group": "fastmcp.client",
+              "pages": [
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-client-__init__",
+                {
+                  "group": "auth",
+                  "pages": [
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-client-auth-__init__",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-client-auth-bearer",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-client-auth-oauth"
+                  ]
+                },
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-client-client",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-client-elicitation",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-client-logging",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-client-messages",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-client-oauth_callback",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-client-progress",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-client-roots",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-client-sampling",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-client-transports"
+              ]
+            },
+            {
+              "group": "fastmcp.prompts",
+              "pages": [
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-prompts-__init__",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-prompts-prompt",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-prompts-prompt_manager"
+              ]
+            },
+            {
+              "group": "fastmcp.resources",
+              "pages": [
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-resources-__init__",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-resources-resource",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-resources-resource_manager",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-resources-template",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-resources-types"
+              ]
+            },
+            {
+              "group": "fastmcp.server",
+              "pages": [
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-server-__init__",
+                {
+                  "group": "auth",
+                  "pages": [
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-__init__",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-auth",
+                    {
+                      "group": "providers",
+                      "pages": [
+                        "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-__init__",
+                        "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-bearer",
+                        "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-in_memory",
+                        "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-jwt",
+                        "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-workos"
+                      ]
+                    },
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-registry"
+                  ]
+                },
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-server-context",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-server-dependencies",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-server-elicitation",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-server-http",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-server-low_level",
+                {
+                  "group": "middleware",
+                  "pages": [
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-__init__",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-error_handling",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-logging",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-middleware",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-rate_limiting",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-timing"
+                  ]
+                },
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-server-openapi",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-server-proxy",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-server-server"
+              ]
+            },
+            {
+              "group": "fastmcp.tools",
+              "pages": [
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-tools-__init__",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-tools-tool",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-tools-tool_manager",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-tools-tool_transform"
+              ]
+            },
+            {
+              "group": "fastmcp.utilities",
+              "pages": [
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-__init__",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-cli",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-components",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-exceptions",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-http",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-inspect",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-json_schema",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-json_schema_type",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-logging",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-mcp_config",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-openapi",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-tests",
+                "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-types"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
