@@ -36,7 +36,8 @@
     "socials": {
       "bluesky": "https://bsky.app/profile/jlowin.dev",
       "github": "https://github.com/jlowin/fastmcp",
-      "x": "https://x.com/jlowin"
+      "x": "https://x.com/jlowin",
+      "website": "https://github.com/Gu-f/FastmcpDocs"
     }
   },
   "integrations": {
@@ -49,7 +50,13 @@
     "primary": {
       "href": "https://github.com/jlowin/fastmcp",
       "type": "github"
-    }
+    },
+    "links": [
+      {
+        "label": "Docs i18n Repo",
+        "href": "https://github.com/Gu-f/FastmcpDocs"
+      }
+    ]
   },
   "navigation": {
     "languages": [
