@@ -13,60 +13,60 @@ FastMCP `Client` 通过处理底层连接机制的传输对象与 MCP 服务器�
 
 将传输视为您的客户端代码和 MCP 服务器之间的可配置适配器。每种传输类型处理不同的通信模式：带管道的子进程、HTTP 连接或直接内存调用。
 
-## Choosing the Right Transport
+## 选择合适的传输方式
 
-- **Use [STDIO Transport](#stdio-transport)** when you need to run local MCP servers with full control over their environment and lifecycle
-- **Use [Remote Transports](#remote-transports)** when connecting to production services or shared MCP servers running independently  
-- **Use [In-Memory Transport](#in-memory-transport)** for testing FastMCP servers without subprocess or network overhead
-- **Use [MCP JSON Configuration](#mcp-json-configuration-transport)** when you need to connect to multiple servers defined in configuration files
+- **使用 [STDIO 传输](#stdio-transport)** 当您需要运行本地 MCP 服务器并完全控制其环境和生命周期时
+- **使用 [远程传输](#remote-transports)** 当连接到独立运行的生产服务或共享 MCP 服务器时
+- **使用 [内存传输](#in-memory-transport)** 当测试 FastMCP 服务器而不需要子进程或网络开销时
+- **使用 [MCP JSON 配置](#mcp-json-configuration-transport)** 当您需要连接到配置文件中定义的多个服务器时
 
-## STDIO Transport
+## STDIO 传输
 
-STDIO (Standard Input/Output) transport communicates with MCP servers through subprocess pipes. This is the standard mechanism used by desktop clients like Claude Desktop and is the primary way to run local MCP servers.
+STDIO（标准输入/输出）传输通过子进程管道与 MCP 服务器通信。这是桌面客户端（如 Claude Desktop）使用的标准机制，也是运行本地 MCP 服务器的主要方式。
 
-### The Client Runs the Server
+### 客户端运行服务器
 
 <Warning>
-**Critical Concept**: When using STDIO transport, your client actually launches and manages the server process. This is fundamentally different from network transports where you connect to an already-running server. Understanding this relationship is key to using STDIO effectively.
+**关键概念**：使用 STDIO 传输时，您的客户端实际上会启动并管理服务器进程。这与网络传输根本不同，网络传输是连接到已经运行的服务器。理解这种关系是有效使用 STDIO 的关键。
 </Warning>
 
-With STDIO transport, your client:
-- Starts the server as a subprocess when you connect
-- Manages the server's lifecycle (start, stop, restart)
-- Controls the server's environment and configuration
-- Communicates through stdin/stdout pipes
+使用 STDIO 传输，您的客户端会：
+- 在连接时将服务器作为子进程启动
+- 管理服务器的生命周期（启动、停止、重启）
+- 控制服务器的环境和配置
+- 通过 stdin/stdout 管道进行通信
 
-This architecture enables powerful local integrations but requires understanding environment isolation and process management.
+这种架构支持强大的本地集成，但需要理解环境隔离和进程管理。
 
-### Environment Isolation
+### 环境隔离
 
-STDIO servers run in isolated environments by default. This is a security feature enforced by the MCP protocol to prevent accidental exposure of sensitive data.
+STDIO 服务器默认在隔离环境中运行。这是 MCP 协议强制执行的安全功能，用于防止敏感数据的意外暴露。
 
-When your client launches an MCP server:
-- The server does NOT inherit your shell's environment variables
-- API keys, paths, and other configuration must be explicitly passed
-- The working directory and system paths may differ from your shell
+当您的客户端启动 MCP 服务器时：
+- 服务器不会继承您 shell 的环境变量
+- API 密钥、路径和其他配置必须显式传递
+- 工作目录和系统路径可能与您的 shell 不同
 
-To pass environment variables to your server, use the `env` parameter:
+要向服务器传递环境变量，请使用 `env` 参数：
 
 ```python
 from fastmcp import Client
 
-# If your server needs environment variables (like API keys),
-# you must explicitly pass them:
+# 如果您的服务器需要环境变量（如 API 密钥），
+# 您必须显式传递它们：
 client = Client(
     "my_server.py",
     env={"API_KEY": "secret", "DEBUG": "true"}
 )
 
-# This won't work - the server runs in isolation:
-# export API_KEY="secret"  # in your shell
-# client = Client("my_server.py")  # server can't see API_KEY
+# 这样不会起作用 - 服务器在隔离环境中运行：
+# export API_KEY="secret"  # 在您的 shell 中
+# client = Client("my_server.py")  # 服务器看不到 API_KEY
 ```
 
-### Basic Usage
+### 基本用法
 
-To use STDIO transport, you create a transport instance with the command and arguments needed to run your server:
+要使用 STDIO 传输，您需要创建一个传输实例，包含运行服务器所需的命令和参数：
 
 ```python
 from fastmcp.client.transports import StdioTransport
@@ -78,7 +78,7 @@ transport = StdioTransport(
 client = Client(transport)
 ```
 
-You can configure additional settings like environment variables, working directory, or command arguments:
+您可以配置其他设置，如环境变量、工作目录或命令参数：
 
 ```python
 transport = StdioTransport(
@@ -90,19 +90,19 @@ transport = StdioTransport(
 client = Client(transport)
 ```
 
-For convenience, the client can also infer STDIO transport from file paths, but this doesn't allow configuration:
+为了方便，客户端也可以从文件路径推断 STDIO 传输，但这不允许配置：
 
 ```python
 from fastmcp import Client
 
-client = Client("my_server.py")  # Limited - no configuration options
+client = Client("my_server.py")  # 受限 - 无配置选项
 ```
 
-### Environment Variables
+### 环境变量
 
-Since STDIO servers don't inherit your environment, you need strategies for passing configuration. Here are two common approaches:
+由于 STDIO 服务器不会继承您的环境，您需要传递配置的策略。以下是两种常见方法：
 
-**Selective forwarding** passes only the variables your server actually needs:
+**选择性转发** 仅传递服务器实际需要的变量：
 
 ```python
 import os
@@ -123,7 +123,7 @@ transport = StdioTransport(
 client = Client(transport)
 ```
 
-**Loading from .env files** keeps configuration separate from code:
+**从 .env 文件加载** 将配置与代码分离：
 
 ```python
 from dotenv import dotenv_values
@@ -138,11 +138,11 @@ transport = StdioTransport(
 client = Client(transport)
 ```
 
-### Session Persistence
+### 会话持久性
 
-STDIO transports maintain sessions across multiple client contexts by default (`keep_alive=True`). This improves performance by reusing the same subprocess for multiple connections, but can be controlled when you need isolation.
+STDIO 传输默认在多个客户端上下文之间维护会话（`keep_alive=True`）。这通过为多个连接重用同一个子进程来提高性能，但在需要隔离时可以控制。
 
-By default, the subprocess persists between connections:
+默认情况下，子进程在连接之间持续存在：
 
 ```python
 from fastmcp.client.transports import StdioTransport
@@ -157,11 +157,11 @@ async def efficient_multiple_operations():
     async with client:
         await client.ping()
     
-    async with client:  # Reuses the same subprocess
+    async with client:  # 重用同一个子进程
         await client.call_tool("process_data", {"file": "data.csv"})
 ```
 
-For complete isolation between connections, disable session persistence:
+要在连接之间实现完全隔离，请禁用会话持久性：
 
 ```python
 transport = StdioTransport(
@@ -172,43 +172,43 @@ transport = StdioTransport(
 client = Client(transport)
 ```
 
-Use `keep_alive=False` when you need complete isolation (e.g., in test suites) or when server state could cause issues between connections.
+当您需要完全隔离（例如，在测试套件中）或当服务器状态可能在连接之间引起问题时，请使用 `keep_alive=False`。
 
-### Specialized STDIO Transports
+### 专用 STDIO 传输
 
-FastMCP provides convenience transports that are thin wrappers around `StdioTransport` with pre-configured commands:
+FastMCP 提供便利的传输方式，它们是围绕 `StdioTransport` 的轻量包装器，具有预配置的命令：
 
-- **`PythonStdioTransport`** - Uses `python` command for `.py` files
-- **`NodeStdioTransport`** - Uses `node` command for `.js` files  
-- **`UvStdioTransport`** - Uses `uv` for Python packages (uses `env_vars` parameter)
-- **`UvxStdioTransport`** - Uses `uvx` for Python packages (uses `env_vars` parameter)
-- **`NpxStdioTransport`** - Uses `npx` for Node packages (uses `env_vars` parameter)
+- **`PythonStdioTransport`** - 对 `.py` 文件使用 `python` 命令
+- **`NodeStdioTransport`** - 对 `.js` 文件使用 `node` 命令
+- **`UvStdioTransport`** - 对 Python 包使用 `uv`（使用 `env_vars` 参数）
+- **`UvxStdioTransport`** - 对 Python 包使用 `uvx`（使用 `env_vars` 参数）
+- **`NpxStdioTransport`** - 对 Node 包使用 `npx`（使用 `env_vars` 参数）
 
-For most use cases, instantiate `StdioTransport` directly with your desired command. These specialized transports are primarily useful for client inference shortcuts.
+对于大多数用例，请直接使用您所需的命令实例化 `StdioTransport`。这些专用传输主要对客户端推断快捷方式有用。
 
-## Remote Transports
+## 远程传输
 
-Remote transports connect to MCP servers running as web services. This is a fundamentally different model from STDIO transports—instead of your client launching and managing a server process, you connect to an already-running service that manages its own environment and lifecycle.
+远程传输连接到作为 Web 服务运行的 MCP 服务器。这与 STDIO 传输是根本不同的模式——您的客户端不是启动和管理服务器进程，而是连接到已经运行的、管理自己环境和生命周期的服务。
 
-### Streamable HTTP Transport
+### 流式 HTTP 传输
 
 <VersionBadge version="2.3.0" />
 
-Streamable HTTP is the recommended transport for production deployments, providing efficient bidirectional streaming over HTTP connections.
+流式 HTTP 是生产部署的推荐传输方式，通过 HTTP 连接提供高效的双向流式传输。
 
-- **Class:** `StreamableHttpTransport`
-- **Server compatibility:** FastMCP servers running with `mcp run --transport http`
+- **类：** `StreamableHttpTransport`
+- **服务器兼容性：** 使用 `mcp run --transport http` 运行的 FastMCP 服务器
 
-The transport requires a URL and optionally supports custom headers for authentication and configuration:
+该传输需要一个 URL，并可选择性地支持用于身份验证和配置的自定义头部：
 
 ```python
 from fastmcp.client.transports import StreamableHttpTransport
 
-# Basic connection
+# 基本连接
 transport = StreamableHttpTransport(url="https://api.example.com/mcp")
 client = Client(transport)
 
-# With custom headers for authentication
+# 使用自定义头部进行身份验证
 transport = StreamableHttpTransport(
     url="https://api.example.com/mcp",
     headers={
@@ -219,7 +219,7 @@ transport = StreamableHttpTransport(
 client = Client(transport)
 ```
 
-For convenience, FastMCP also provides authentication helpers:
+为了方便，FastMCP 还提供身份验证助手：
 
 ```python
 from fastmcp.client.auth import BearerAuth
@@ -230,14 +230,14 @@ client = Client(
 )
 ```
 
-### SSE Transport (Legacy)
+### SSE 传输（遗留）
 
-Server-Sent Events transport is maintained for backward compatibility but is superseded by Streamable HTTP for new deployments.
+服务器发送事件传输为向后兼容性而维护，但在新部署中已被流式 HTTP 取代。
 
-- **Class:** `SSETransport`  
-- **Server compatibility:** FastMCP servers running with `mcp run --transport sse`
+- **类：** `SSETransport`
+- **服务器兼容性：** 使用 `mcp run --transport sse` 运行的 FastMCP 服务器
 
-SSE transport supports the same configuration options as Streamable HTTP:
+SSE 传输支持与流式 HTTP 相同的配置选项：
 
 ```python
 from fastmcp.client.transports import SSETransport
@@ -249,16 +249,16 @@ transport = SSETransport(
 client = Client(transport)
 ```
 
-Use Streamable HTTP for new deployments unless you have specific infrastructure requirements for SSE.
+除非您对 SSE 有特定的基础设施要求，否则请在新部署中使用流式 HTTP。
 
-## In-Memory Transport
+## 内存传输
 
-In-memory transport connects directly to a FastMCP server instance within the same Python process. This eliminates both subprocess management and network overhead, making it ideal for testing and development.
+内存传输直接连接到同一 Python 进程中的 FastMCP 服务器实例。这消除了子进程管理和网络开销，使其非常适合测试和开发。
 
-- **Class:** `FastMCPTransport`
+- **类：** `FastMCPTransport`
 
 <Note>
-Unlike STDIO transports, in-memory servers have full access to your Python process's environment. They share the same memory space and environment variables as your client code—no isolation or explicit environment passing required.
+与 STDIO 传输不同，内存服务器可以完全访问您 Python 进程的环境。它们与您的客户端代码共享相同的内存空间和环境变量——不需要隔离或显式环境传递。
 </Note>
 
 ```python
@@ -278,13 +278,13 @@ async with client:
     result = await client.call_tool("greet", {"name": "World"})
 ```
 
-## MCP JSON Configuration Transport
+## MCP JSON 配置传输
 
 <VersionBadge version="2.4.0" />
 
-This transport supports the emerging MCP JSON configuration standard for defining multiple servers:
+此传输支持新兴的 MCP JSON 配置标准，用于定义多个服务器：
 
-- **Class:** `MCPConfigTransport`
+- **类：** `MCPConfigTransport`
 
 ```python
 config = {
@@ -304,14 +304,14 @@ config = {
 client = Client(config)
 
 async with client:
-    # Tools are namespaced by server
+    # 工具按服务器命名空间
     weather = await client.call_tool("weather_get_forecast", {"city": "NYC"})
     answer = await client.call_tool("assistant_ask", {"question": "What?"})
 ```
 
-### Tool Transformation with FastMCP and MCPConfig
+### 使用 FastMCP 和 MCPConfig 进行工具转换
 
-FastMCP supports basic tool transformations to be defined alongside the MCP Servers in the MCPConfig file.
+FastMCP 支持在 MCPConfig 文件中与 MCP 服务器一起定义基本的工具转换。
 
 ```python
 config = {
@@ -319,23 +319,23 @@ config = {
         "weather": {
             "url": "https://weather.example.com/mcp",
             "transport": "http",
-            "tools": { }   #  <--- This is the tool transformation section
+            "tools": { }   #  <--- 这是工具转换部分
         }
     }
 }
 ```
 
-With these transformations, you can transform (change) the name, title, description, tags, enablement, and arguments of a tool.
+通过这些转换，您可以转换（更改）工具的名称、标题、描述、标签、启用状态和参数。
 
-For each argument the tool takes, you can transform (change) the name, description, default, visibility, whether it's required, and you can provide example values.
+对于工具采用的每个参数，您可以转换（更改）名称、描述、默认值、可见性、是否必需，并且可以提供示例值。
 
-In the following example, we're transforming the `weather_get_forecast` tool to only retrieve the weather for `Miami` and hiding the `city` argument from the client.
+在以下示例中，我们将 `weather_get_forecast` 工具转换为仅检索 `Miami` 的天气，并从客户端隐藏 `city` 参数。
 
 ```python
 tool_transformations = {
     "weather_get_forecast": {
         "name": "miami_weather",
-        "description": "Get the weather for Miami",
+        "description": "获取迈阿密的天气",
         "arguments": {
             "city": {
                 "name": "city",
@@ -357,9 +357,9 @@ config = {
 }
 ```
 
-#### Allowlisting and Blocklisting Tools
+#### 工具白名单和黑名单
 
-Tools can be allowlisted or blocklisted from the client by applying `tags` to the tools on the server. In the following example, we're allowlisting only tools marked with the `forecast` tag, all other tools will be unavailable to the client.
+通过在服务器上为工具应用 `tags`，可以从客户端将工具列入白名单或黑名单。在以下示例中，我们仅将标记有 `forecast` 标签的工具列入白名单，所有其他工具对客户端不可用。
 
 ```python
 tool_transformations = {
