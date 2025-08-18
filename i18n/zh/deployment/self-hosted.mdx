@@ -1,27 +1,27 @@
 ---
-title: Self-Hosted Remote MCP
-sidebarTitle: Self-Hosted
-description: Deploy your FastMCP server as a remote MCP service accessible via URL
+title: 自托管远程 MCP
+sidebarTitle: 自托管
+description: 将您的 FastMCP 服务器部署为可通过 URL 访问的远程 MCP 服务
 icon: server
 ---
 
 <Tip>
-STDIO transport is perfect for local development and desktop applications. But to unlock the full potential of MCP—centralized services, multi-client access, and network availability—you need remote HTTP deployment.
+STDIO 传输非常适合本地开发和桌面应用程序。但要释放 MCP 的全部潜力——集中式服务、多客户端访问和网络可用性——您需要远程 HTTP 部署。
 </Tip>
 
-This guide walks you through deploying your FastMCP server as a remote MCP service that's accessible via a URL. Once deployed, your MCP server will be available over the network, allowing multiple clients to connect simultaneously and enabling integration with cloud-based LLM applications. This guide focuses specifically on remote MCP deployment, not local STDIO servers.
+本指南将指导您将 FastMCP 服务器部署为可通过 URL 访问的远程 MCP 服务。部署后，您的 MCP 服务器将可通过网络访问，允许多个客户端同时连接，并支持与基于云的 LLM 应用程序集成。本指南专门关注远程 MCP 部署，而非本地 STDIO 服务器。
 
-## Choosing Your Approach
+## 选择您的方法
 
-FastMCP provides two ways to deploy your server as an HTTP service. Understanding the trade-offs helps you choose the right approach for your needs.
+FastMCP 提供了两种将服务器部署为 HTTP 服务的方式。了解权衡有助于您为自己的需求选择正确的方法。
 
-The **direct HTTP server** approach is simpler and perfect for getting started quickly. You modify your server's `run()` method to use HTTP transport, and FastMCP handles all the web server configuration. This approach works well for standalone deployments where you want your MCP server to be the only service running on a port.
+**直接 HTTP 服务器**方法更简单，非常适合快速入门。您修改服务器的 `run()` 方法以使用 HTTP 传输，FastMCP 处理所有 Web 服务器配置。这种方法适用于独立部署，您希望 MCP 服务器是在端口上运行的唯一服务。
 
-The **ASGI application** approach gives you more control and flexibility. Instead of running the server directly, you create an ASGI application that can be served by production-grade servers like Uvicorn or Gunicorn. This approach is better when you need advanced server features like multiple workers, custom middleware, or when you're integrating with existing web applications.
+**ASGI 应用程序**方法为您提供更多控制和灵活性。您不是直接运行服务器，而是创建一个可由 Uvicorn 或 Gunicorn 等生产级服务器提供服务的 ASGI 应用程序。当您需要高级服务器功能（如多个工作进程、自定义中间件）或与现有 Web 应用程序集成时，这种方法更好。
 
-### Direct HTTP Server
+### 直接 HTTP 服务器
 
-The simplest way to get your MCP server online is to use the built-in `run()` method with HTTP transport. This approach handles all the server configuration for you and is ideal when you want a standalone MCP server without additional complexity.
+让您的 MCP 服务器上线的最简单方法是使用内置的 `run()` 方法和 HTTP 传输。这种方法为您处理所有服务器配置，非常适合在不需要额外复杂性的情况下需要独立 MCP 服务器。
 
 ```python server.py
 from fastmcp import FastMCP
@@ -30,25 +30,25 @@ mcp = FastMCP("My Server")
 
 @mcp.tool
 def process_data(input: str) -> str:
-    """Process data on the server"""
+    """在服务器上处理数据"""
     return f"Processed: {input}"
 
 if __name__ == "__main__":
     mcp.run(transport="http", host="0.0.0.0", port=8000)
 ```
 
-Run your server with a simple Python command:
+使用简单的 Python 命令运行您的服务器：
 ```bash
 python server.py
 ```
 
-Your server is now accessible at `http://localhost:8000/mcp/` (or use your server's actual IP address for remote access).
+您的服务器现在可在 `http://localhost:8000/mcp/` 访问（或使用您服务器的实际 IP 地址进行远程访问）。
 
-This approach is ideal when you want to get online quickly with minimal configuration. It's perfect for internal tools, development environments, or simple deployments where you don't need advanced server features. The built-in server handles all the HTTP details, letting you focus on your MCP implementation.
+这种方法非常适合在您希望以最少的配置快速上线时使用。它非常适合内部工具、开发环境或不需要高级服务器功能的简单部署。内置服务器处理所有 HTTP 细节，让您专注于 MCP 实现。
 
-### ASGI Application
+### ASGI 应用程序
 
-For production deployments, you'll often want more control over how your server runs. FastMCP can create a standard ASGI application that works with any ASGI server like Uvicorn, Gunicorn, or Hypercorn. This approach is particularly useful when you need to configure advanced server options, run multiple workers, or integrate with existing infrastructure.
+对于生产部署，您通常希望对服务器的运行方式有更多控制。FastMCP 可以创建一个标准的 ASGI 应用程序，可以与任何 ASGI 服务器（如 Uvicorn、Gunicorn 或 Hypercorn）一起工作。当您需要配置高级服务器选项、运行多个工作进程或与现有基础设施集成时，这种方法特别有用。
 
 ```python app.py
 from fastmcp import FastMCP
@@ -57,49 +57,49 @@ mcp = FastMCP("My Server")
 
 @mcp.tool
 def process_data(input: str) -> str:
-    """Process data on the server"""
+    """在服务器上处理数据"""
     return f"Processed: {input}"
 
-# Create ASGI application
+# 创建 ASGI 应用程序
 app = mcp.http_app()
 ```
 
-Run with any ASGI server - here's an example with Uvicorn:
+使用任何 ASGI 服务器运行 - 这里是使用 Uvicorn 的示例：
 ```bash
 uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-Your server is accessible at the same URL: `http://localhost:8000/mcp/` (or use your server's actual IP address for remote access).
+您的服务器可在相同的 URL 访问：`http://localhost:8000/mcp/`（或使用您服务器的实际 IP 地址进行远程访问）。
 
-The ASGI approach shines in production environments where you need reliability and performance. You can run multiple worker processes to handle concurrent requests, add custom middleware for logging or monitoring, integrate with existing deployment pipelines, or mount your MCP server as part of a larger application. This flexibility makes it the preferred choice for serious deployments.
+ASGI 方法在需要可靠性和性能的生产环境中表现出色。您可以运行多个工作进程来处理并发请求、为日志记录或监控添加自定义中间件、与现有部署管道集成，或将您的 MCP 服务器作为更大应用程序的一部分进行挂载。这种灵活性使其成为严肃部署的首选。
 
-## Configuring Your Server
+## 配置您的服务器
 
-### Custom Path
+### 自定义路径
 
-By default, your MCP server is accessible at `/mcp/` on your domain. You can customize this path to fit your URL structure or avoid conflicts with existing endpoints. This is particularly useful when integrating MCP into an existing application or following specific API conventions.
+默认情况下，您的 MCP 服务器可在您域名的 `/mcp/` 访问。您可以自定义此路径以适应您的 URL 结构或避免与现有端点冲突。当将 MCP 集成到现有应用程序中或遵循特定 API 约定时，这特别有用。
 
 ```python
-# Option 1: With mcp.run()
+# 选项 1：使用 mcp.run()
 mcp.run(transport="http", host="0.0.0.0", port=8000, path="/api/mcp/")
 
-# Option 2: With ASGI app
+# 选项 2：使用 ASGI 应用程序
 app = mcp.http_app(path="/api/mcp/")
 ```
 
-Now your server is accessible at `http://localhost:8000/api/mcp/`.
+现在您的服务器可在 `http://localhost:8000/api/mcp/` 访问。
 
-### Authentication
+### 身份验证
 
 <Warning>
-Authentication is **highly recommended** for remote MCP servers. Some LLM clients require authentication for remote servers and will refuse to connect without it.
+对于远程 MCP 服务器，**强烈推荐**使用身份验证。一些 LLM 客户端需要远程服务器进行身份验证，没有身份验证将拒绝连接。
 </Warning>
 
-FastMCP supports multiple authentication methods to secure your remote server. See the [Authentication Overview](/zh/servers/auth/authentication) for complete configuration options including Bearer tokens, JWT, and OAuth.
+FastMCP 支持多种身份验证方法来保护您的远程服务器。有关完整的配置选项（包括 Bearer 令牌、JWT 和 OAuth），请参阅[身份验证概述](/zh/servers/auth/authentication)。
 
-### Health Checks
+### 健康检查
 
-Health check endpoints are essential for monitoring your deployed server and ensuring it's responding correctly. FastMCP allows you to add custom routes alongside your MCP endpoints, making it easy to implement health checks that work with both deployment approaches.
+健康检查端点对于监控部署的服务器并确保其正确响应至关重要。FastMCP 允许您在 MCP 端点旁边添加自定义路由，使实现适用于两种部署方法的健康检查变得容易。
 
 ```python
 from starlette.responses import JSONResponse
@@ -109,101 +109,101 @@ async def health_check(request):
     return JSONResponse({"status": "healthy", "service": "mcp-server"})
 ```
 
-This health endpoint will be available at `http://localhost:8000/health` and can be used by load balancers, monitoring systems, or deployment platforms to verify your server is running.
+此健康端点将在 `http://localhost:8000/health` 可用，可以被负载均衡器、监控系统或部署平台用来验证您的服务器是否运行。
 
-## Integration with Web Frameworks
+## 与 Web 框架集成
 
-If you already have a web application running, you can add MCP capabilities by mounting a FastMCP server as a sub-application. This allows you to expose MCP tools alongside your existing API endpoints, sharing the same domain and infrastructure. The MCP server becomes just another route in your application, making it easy to manage and deploy.
+如果您已经有一个正在运行的 Web 应用程序，您可以通过将 FastMCP 服务器作为子应用程序挂载来添加 MCP 功能。这允许您在现有 API 端点旁边公开 MCP 工具，共享相同的域名和基础设施。MCP 服务器成为应用程序中的另一个路由，使其易于管理和部署。
 
-For detailed integration guides, see:
-- [FastAPI Integration](/zh/integrations/fastapi)
-- [Starlette Integration](/zh/integrations/starlette)
+有关详细集成指南，请参阅：
+- [FastAPI 集成](/zh/integrations/fastapi)
+- [Starlette 集成](/zh/integrations/starlette)
 
-Here's a quick example showing how to add MCP to an existing FastAPI application:
+这里是一个快速示例，显示如何将 MCP 添加到现有的 FastAPI 应用程序中：
 
 ```python
 from fastapi import FastAPI
 from fastmcp import FastMCP
 
-# Your existing API
+# 您现有的 API
 api = FastAPI()
 
 @api.get("/api/status")
 def status():
     return {"status": "ok"}
 
-# Create your MCP server
+# 创建您的 MCP 服务器
 mcp = FastMCP("API Tools")
 
 @mcp.tool
 def query_database(query: str) -> dict:
-    """Run a database query"""
+    """运行数据库查询"""
     return {"result": "data"}
 
-# Mount MCP at /mcp
+# 在 /mcp 挂载 MCP
 api.mount("/mcp", mcp.http_app())
 
-# Run with: uvicorn app:api --host 0.0.0.0 --port 8000
+# 使用以下命令运行：uvicorn app:api --host 0.0.0.0 --port 8000
 ```
 
-Your existing API remains at `http://localhost:8000/api/` while MCP is available at `http://localhost:8000/mcp/`.
+您现有的 API 仍在 `http://localhost:8000/api/`，而 MCP 在 `http://localhost:8000/mcp/` 可用。
 
-## Production Deployment
+## 生产部署
 
-### Running with Uvicorn
+### 使用 Uvicorn 运行
 
-When deploying to production, you'll want to optimize your server for performance and reliability. Uvicorn provides several options to improve your server's capabilities, including running multiple worker processes to handle concurrent requests and enabling enhanced logging for monitoring.
+在部署到生产环境时，您需要为性能和可靠性优化服务器。Uvicorn 提供了几个选项来改善服务器的能力，包括运行多个工作进程来处理并发请求以及启用增强的日志记录用于监控。
 
 ```bash
-# Install uvicorn with standard extras for better performance
+# 安装带有标准额外功能的 uvicorn 以获得更好的性能
 pip install 'uvicorn[standard]'
 
-# Run with multiple workers for better concurrency
+# 使用多个工作进程运行以获得更好的并发性
 uvicorn app:app --host 0.0.0.0 --port 8000 --workers 4
 
-# Enable detailed logging for monitoring
+# 启用详细日志记录用于监控
 uvicorn app:app --host 0.0.0.0 --port 8000 --log-level info
 ```
 
-### Environment Variables
+### 环境变量
 
-Production deployments should never hardcode sensitive information like API keys or authentication tokens. Instead, use environment variables to configure your server at runtime. This keeps your code secure and makes it easy to deploy the same code to different environments with different configurations.
+生产部署不应该在代码中硬编码敏感信息（如 API 密钥或身份验证令牌）。相反，使用环境变量在运行时配置服务器。这保持代码安全，并使将相同的代码部署到不同环境中使用不同配置变得容易。
 
-Here's an example using bearer token authentication (though OAuth is recommended for production):
+这里是使用 bearer 令牌身份验证的示例（尽管生产环境推荐使用 OAuth）：
 
 ```python
 import os
 from fastmcp import FastMCP
 from fastmcp.server.auth import BearerTokenAuth
 
-# Read configuration from environment
+# 从环境中读取配置
 auth_token = os.environ.get("MCP_AUTH_TOKEN")
 if auth_token:
     auth = BearerTokenAuth(token=auth_token)
-    mcp = FastMCP("Production Server", auth=auth)
+    mcp = FastMCP("生产服务器", auth=auth)
 else:
-    mcp = FastMCP("Production Server")
+    mcp = FastMCP("生产服务器")
 
 app = mcp.http_app()
 ```
 
-Deploy with your secrets safely stored in environment variables:
+使用安全存储在环境变量中的秘密进行部署：
 ```bash
 MCP_AUTH_TOKEN=secret uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-## Testing Your Deployment
+## 测试您的部署
 
-Once your server is deployed, you'll need to verify it's accessible and functioning correctly. For comprehensive testing strategies including connectivity tests, client testing, and authentication testing, see the [Testing Your Server](/zh/deployment/testing) guide.
+部署服务器后，您需要验证它可访问并正常运行。有关全面的测试策略（包括连接测试、客户端测试和身份验证测试），请参阅[测试您的服务器](/zh/deployment/testing)指南。
 
-## Hosting Your Server
+## 托管您的服务器
 
-This guide has shown you how to create an HTTP-accessible MCP server, but you'll still need a hosting provider to make it available on the internet. Your FastMCP server can run anywhere that supports Python web applications:
+本指南向您展示了如何创建可通过 HTTP 访问的 MCP 服务器，但您仍需要一个托管提供商来使其在互联网上可用。您的 FastMCP 服务器可以在任何支持 Python Web 应用程序的地方运行：
 
-- **Cloud VMs** (AWS EC2, Google Compute Engine, Azure VMs)
-- **Container platforms** (Cloud Run, Container Instances, ECS)  
-- **Platform-as-a-Service** (Railway, Render, Vercel)
-- **Edge platforms** (Cloudflare Workers)
-- **Kubernetes clusters** (self-managed or managed)
+- **云虚拟机** (AWS EC2、Google Compute Engine、Azure VMs)
+- **容器平台** (Cloud Run、Container Instances、ECS)
+- **平台即服务** (Railway、Render、Vercel)
+- **边缘平台** (Cloudflare Workers)
+- **Kubernetes 集群** (自管理或托管)
 
-The key requirements are Python 3.10+ support and the ability to expose an HTTP port. Most providers will require you to package your server (requirements.txt, Dockerfile, etc.) according to their deployment format. For managed, zero-configuration deployment, see [FastMCP Cloud](/zh/deployment/fastmcp-cloud).
+关键要求是支持 Python 3.10+ 和能够暴露 HTTP 端口。大多数提供商会要求您根据他们的部署格式打包您的服务器（requirements.txt、Dockerfile 等）。有关托管的零配置部署，请参阅 [FastMCP Cloud](/zh/deployment/fastmcp-cloud)。

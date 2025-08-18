@@ -1,36 +1,36 @@
 ---
-title: FastMCP Cloud
-sidebarTitle: FastMCP Cloud
-description: The fastest way to deploy your MCP server
+title: FastMCP 云
+sidebarTitle: FastMCP 云
+description: 部署 MCP 服务器的最快方式
 icon: cloud
 tag: NEW
 ---
 
-[FastMCP Cloud](https://fastmcp.cloud) is a managed platform for hosting MCP servers, built by the FastMCP team. While the FastMCP framework will always be fully open-source, we created FastMCP Cloud to solve the deployment challenges we've seen developers face. Our goal is to provide the absolute fastest way to make your MCP server available to LLM clients like Claude and Cursor. 
+[FastMCP Cloud](https://fastmcp.cloud) 是由 FastMCP 团队构建的托管 MCP 服务器平台。虽然 FastMCP 框架将始终保持完全开源，但我们创建了 FastMCP Cloud 来解决开发人员面临的部署挑战。我们的目标是提供最快的方式让您的 MCP 服务器能够被 Claude 和 Cursor 等 LLM 客户端使用。 
 
-FastMCP Cloud is a young product and we welcome your feedback. Please join our [Discord](https://discord.com/invite/aGsSC3yDF4) to share your thoughts and ideas, and you can expect to see new features and improvements every week.
+FastMCP Cloud 是一个年轻的产品，我们欢迎您的反馈。请加入我们的 [Discord](https://discord.com/invite/aGsSC3yDF4) 分享您的想法和建议，您可以期待每周都能看到新功能和改进。
 
 
 <Note>
-FastMCP Cloud supports both **FastMCP 2.0** servers and also **FastMCP 1.0** servers that were created with the official MCP Python SDK.
+FastMCP Cloud 支持 **FastMCP 2.0** 服务器，也支持使用官方 MCP Python SDK 创建的 **FastMCP 1.0** 服务器。
 </Note>
 
 <Tip>
-FastMCP Cloud is completely free while in beta!
+FastMCP Cloud 在 beta 期间完全免费！
 </Tip>
 
-## Prerequisites
+## 先决条件
 
-To use FastMCP Cloud, you'll need a [GitHub](https://github.com) account. In addition, you'll need a GitHub repo that contains a FastMCP server instance. If you don't want to create one yet, you can proceed to [step 1](#step-1-create-a-project) and use the FastMCP Cloud quickstart repo. 
+要使用 FastMCP Cloud，您需要一个 [GitHub](https://github.com) 账户。此外，您需要一个包含 FastMCP 服务器实例的 GitHub 仓库。如果您还不想创建一个，可以继续进行[步骤 1](#step-1-create-a-project)并使用 FastMCP Cloud 快速入门仓库。 
 
-Your repo can be public or private, but must include at least a Python file that contains a FastMCP server instance. 
+您的仓库可以是公开的或私有的，但必须至少包含一个包含 FastMCP 服务器实例的 Python 文件。 
 <Tip>
-To ensure your file is compatible with FastMCP Cloud, you can run `fastmcp inspect <file.py:server_object>` to see what FastMCP Cloud will see when it runs your server.
+要确保您的文件与 FastMCP Cloud 兼容，您可以运行 `fastmcp inspect <file.py:server_object>` 来查看 FastMCP Cloud 运行您的服务器时会看到什么。
 </Tip>
 
-If you have a `requirements.txt` or `pyproject.toml` in the repo, FastMCP Cloud will automatically detect your server's dependencies and install them for you. Note that your file *can* have an `if __name__ == "__main__"` block, but it will be ignored by FastMCP Cloud.
+如果您的仓库中有 `requirements.txt` 或 `pyproject.toml`，FastMCP Cloud 会自动检测您服务器的依赖项并为您安装它们。请注意，您的文件*可以*有 `if __name__ == "__main__"` 块，但它会被 FastMCP Cloud 忽略。
 
-For example, a minimal server file might look like:
+例如，一个最小的服务器文件可能如下所示：
 
 ```python
 from fastmcp import FastMCP
@@ -42,48 +42,48 @@ def hello(name: str) -> str:
     return f"Hello, {name}!"
 ```
 
-## Getting Started
+## 入门指南
 
-There are just three steps to deploying a server to FastMCP Cloud:
+向 FastMCP Cloud 部署服务器只需要三个步骤：
 
-### Step 1: Create a Project
+### 步骤 1：创建项目
 
-Visit [fastmcp.cloud](https://fastmcp.cloud) and sign in with your GitHub account. Then, create a project. Each project corresponds to a GitHub repo, and you can create one from either your own repo or using the FastMCP Cloud quickstart repo.
+访问 [fastmcp.cloud](https://fastmcp.cloud) 并使用您的 GitHub 账户登录。然后，创建一个项目。每个项目对应一个 GitHub 仓库，您可以从自己的仓库创建一个项目，或使用 FastMCP Cloud 快速入门仓库。
 
 <img src="/assets/images/fastmcp_cloud/quickstart.png" alt="FastMCP Cloud Quickstart Screen" />
 
-Next, you'll be prompted to configure your project.
+接下来，系统将提示您配置项目。
 
 <img src="/assets/images/fastmcp_cloud/create_project.png" alt="FastMCP Cloud Configuration Screen" />
 
-The configuration screen lets you specify:
-- **Name**: The name of your project. This will be used to generate a unique URL for your server.
-- **Entrypoint**: The Python file containing your FastMCP server (e.g., `echo.py`). This field has the same syntax as the `fastmcp run` command, for example `echo.py:my_server` to specify a specific object in the file.
-- **Authentication**: If disabled, your server is open to the public. If enabled, only other members of your FastMCP Cloud organization will be able to connect.
+配置界面允许您指定：
+- **名称**：您项目的名称。这将用于为您的服务器生成唯一的 URL。
+- **入口点**：包含您的 FastMCP 服务器的 Python 文件（例如，`echo.py`）。此字段与 `fastmcp run` 命令具有相同的语法，例如 `echo.py:my_server` 来指定文件中的特定对象。
+- **身份验证**：如果禁用，您的服务器对公众开放。如果启用，只有您 FastMCP Cloud 组织的其他成员才能连接。
 
-Note that FastMCP Cloud will automatically detect yours server's Python dependencies from either a `requirements.txt` or `pyproject.toml` file.
+请注意，FastMCP Cloud 会自动从 `requirements.txt` 或 `pyproject.toml` 文件中检测您服务器的 Python 依赖项。
 
-### Step 2: Deploy Your Server
+### 步骤 2：部署您的服务器
 
-Once you configure your project, FastMCP Cloud will:
-1. Clone the repository
-2. Build your FastMCP server
-3. Deploy it to a unique URL
-4. Make it immediately available for connections
+一旦您配置了项目，FastMCP Cloud 将：
+1. 克隆仓库
+2. 构建您的 FastMCP 服务器
+3. 将其部署到唯一的 URL
+4. 立即使其可用于连接
 
 <img src="/assets/images/fastmcp_cloud/deployment.png" alt="FastMCP Cloud Deployment Screen" />
 
-FastMCP Cloud will monitor your repo and redeploy your server whenever you push a change to the `main` branch. In addition, FastMCP Cloud will build and deploy servers for every PR your open, hosting them on unique URLs, so you can test changes before updating your production server.
+FastMCP Cloud 会监控您的仓库，并在您向 `main` 分支推送更改时重新部署您的服务器。此外，FastMCP Cloud 会为您打开的每个 PR 构建和部署服务器，将它们托管在唯一的 URL 上，这样您就可以在更新生产服务器之前测试更改。
 
-### Step 3: Connect to Your Server
+### 步骤 3：连接到您的服务器
 
-Once your server is deployed, it will be accessible at a URL like:
+一旦您的服务器部署完成，它将可通过类似以下的 URL 访问：
 
 ```
 https://your-project-name.fastmcp.app/mcp
 ```
 
-You should be able to connect to it as soon as you see the deployment succeed! FastMCP Cloud provides instant connection options for popular LLM clients:
+一旦看到部署成功，您应该就能立即连接到它！FastMCP Cloud 为热门的 LLM 客户端提供即时连接选项：
 
 <img src="/assets/images/fastmcp_cloud/connect.png" alt="FastMCP Cloud Connection Screen" />
 
