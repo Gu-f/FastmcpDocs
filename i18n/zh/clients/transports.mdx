@@ -1,7 +1,7 @@
 ---
-title: Client Transports
-sidebarTitle: Transports
-description: Configure how FastMCP Clients connect to and communicate with servers.
+title: 客户端传输
+sidebarTitle: 传输
+description: 配置 FastMCP 客户端如何连接和与服务器通信。
 icon: link
 ---
 
@@ -9,9 +9,9 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 <VersionBadge version="2.0.0" />
 
-The FastMCP `Client` communicates with MCP servers through transport objects that handle the underlying connection mechanics. While the client can automatically select a transport based on what you pass to it, instantiating transports explicitly gives you full control over configuration—environment variables, authentication, session management, and more.
+FastMCP `Client` 通过处理底层连接机制的传输对象与 MCP 服务器通信。虽然客户端可以根据您传递给它的内容自动选择传输方式，但显式实例化传输可以让您完全控制配置——环境变量、身份验证、会话管理等等。
 
-Think of transports as configurable adapters between your client code and MCP servers. Each transport type handles a different communication pattern: subprocesses with pipes, HTTP connections, or direct in-memory calls.
+将传输视为您的客户端代码和 MCP 服务器之间的可配置适配器。每种传输类型处理不同的通信模式：带管道的子进程、HTTP 连接或直接内存调用。
 
 ## Choosing the Right Transport
 

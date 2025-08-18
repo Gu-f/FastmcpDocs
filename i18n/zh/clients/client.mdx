@@ -1,7 +1,7 @@
 ---
-title: The FastMCP Client
-sidebarTitle: Overview
-description: Programmatic client for interacting with MCP servers through a well-typed, Pythonic interface.
+title: FastMCP 客户端
+sidebarTitle: 概述
+description: 通过类型良好的 Pythonic 接口与 MCP 服务器交互的程序化客户端。
 icon: user-robot
 ---
 
@@ -9,106 +9,106 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <VersionBadge version="2.0.0" />
 
-The central piece of MCP client applications is the `fastmcp.Client` class. This class provides a **programmatic interface** for interacting with any Model Context Protocol (MCP) server, handling protocol details and connection management automatically.
+MCP 客户端应用程序的核心部分是 `fastmcp.Client` 类。该类提供了一个**程序化接口**，用于与任何模型上下文协议 (MCP) 服务器交互，自动处理协议细节和连接管理。
 
-The FastMCP Client is designed for deterministic, controlled interactions rather than autonomous behavior, making it ideal for:
+FastMCP 客户端专为确定性的受控交互而设计，而非自主行为，这使其非常适合：
 
-- **Testing MCP servers** during development
-- **Building deterministic applications** that need reliable MCP interactions  
-- **Creating the foundation for agentic or LLM-based clients** with structured, type-safe operations
+- **在开发过程中测试 MCP 服务器**
+- **构建需要可靠 MCP 交互的确定性应用程序**  
+- **为智能体或基于 LLM 的客户端创建基础**，提供结构化的类型安全操作
 
-All client operations require using the `async with` context manager for proper connection lifecycle management.
+所有客户端操作都需要使用 `async with` 上下文管理器来正确管理连接生命周期。
 
 
 <Note>
-This is not an agentic client - it requires explicit function calls and provides direct control over all MCP operations. Use it as a building block for higher-level systems.
+这不是一个智能体客户端 - 它需要显式的函数调用，并提供对所有 MCP 操作的直接控制。将其用作高级系统的构建块。
 </Note>
 
-## Creating a Client
+## 创建客户端
 
-Creating a client is straightforward. You provide a server source and the client automatically infers the appropriate transport mechanism.
+创建客户端很简单。您提供服务器源，客户端会自动推断合适的传输机制。
 
 ```python
 import asyncio
 from fastmcp import Client, FastMCP
 
-# In-memory server (ideal for testing)
+# 内存服务器（非常适合测试）
 server = FastMCP("TestServer")
 client = Client(server)
 
-# HTTP server
+# HTTP 服务器
 client = Client("https://example.com/mcp")
 
-# Local Python script
+# 本地 Python 脚本
 client = Client("my_mcp_server.py")
 
 async def main():
     async with client:
-        # Basic server interaction
+        # 基本服务器交互
         await client.ping()
         
-        # List available operations
+        # 列出可用操作
         tools = await client.list_tools()
         resources = await client.list_resources()
         prompts = await client.list_prompts()
         
-        # Execute operations
+        # 执行操作
         result = await client.call_tool("example_tool", {"param": "value"})
         print(result)
 
 asyncio.run(main())
 ```
 
-## Client-Transport Architecture
+## 客户端-传输架构
 
-The FastMCP Client separates concerns between protocol and connection:
+FastMCP 客户端将协议和连接的关注点分离：
 
-- **`Client`**: Handles MCP protocol operations (tools, resources, prompts) and manages callbacks
-- **`Transport`**: Establishes and maintains the connection (WebSockets, HTTP, Stdio, in-memory)
+- **`Client`**：处理 MCP 协议操作（工具、资源、提示）并管理回调
+- **`Transport`**：建立和维护连接（WebSockets、HTTP、Stdio、内存）
 
-### Transport Inference
+### 传输推断
 
-The client automatically infers the appropriate transport based on the input:
+客户端根据输入自动推断合适的传输方式：
 
-1. **`FastMCP` instance** → In-memory transport (perfect for testing)
-2. **File path ending in `.py`** → Python Stdio transport
-3. **File path ending in `.js`** → Node.js Stdio transport  
-4. **URL starting with `http://` or `https://`** → HTTP transport
-5. **`MCPConfig` dictionary** → Multi-server client
+1. **`FastMCP` 实例** → 内存传输（非常适合测试）
+2. **以 `.py` 结尾的文件路径** → Python Stdio 传输
+3. **以 `.js` 结尾的文件路径** → Node.js Stdio 传输  
+4. **以 `http://` 或 `https://` 开头的 URL** → HTTP 传输
+5. **`MCPConfig` 字典** → 多服务器客户端
 
 ```python
 from fastmcp import Client, FastMCP
 
-# Examples of transport inference
+# 传输推断示例
 client_memory = Client(FastMCP("TestServer"))
 client_script = Client("./server.py") 
 client_http = Client("https://api.example.com/mcp")
 ```
 
 <Tip>
-For testing and development, always prefer the in-memory transport by passing a `FastMCP` server directly to the client. This eliminates network complexity and separate processes.
+对于测试和开发，始终建议通过将 `FastMCP` 服务器直接传递给客户端来优先使用内存传输。这消除了网络复杂性和单独进程。
 </Tip>
 
-## Configuration-Based Clients
+## 基于配置的客户端
 
 <VersionBadge version="2.4.0" />
 
-Create clients from MCP configuration dictionaries, which can include multiple servers. While there is no official standard for MCP configuration format, FastMCP follows established conventions used by tools like Claude Desktop.
+从 MCP 配置字典创建客户端，可以包含多个服务器。虽然 MCP 配置格式没有官方标准，FastMCP 遵循 Claude Desktop 等工具使用的既定惯例。
 
-### Configuration Format
+### 配置格式
 
 ```python
 config = {
     "mcpServers": {
         "server_name": {
-            # Remote HTTP/SSE server
-            "transport": "http",  # or "sse" 
+            # 远程 HTTP/SSE 服务器
+            "transport": "http",  # 或 "sse" 
             "url": "https://api.example.com/mcp",
             "headers": {"Authorization": "Bearer token"},
-            "auth": "oauth"  # or bearer token string
+            "auth": "oauth"  # 或 bearer token 字符串
         },
         "local_server": {
-            # Local stdio server
+            # 本地 stdio 服务器
             "transport": "stdio",
             "command": "python",
             "args": ["./server.py", "--verbose"],
@@ -119,7 +119,7 @@ config = {
 }
 ```
 
-### Multi-Server Example
+### 多服务器示例
 
 ```python
 config = {
@@ -132,118 +132,118 @@ config = {
 client = Client(config)
 
 async with client:
-    # Tools are prefixed with server names
+    # 工具使用服务器名称前缀
     weather_data = await client.call_tool("weather_get_forecast", {"city": "London"})
     response = await client.call_tool("assistant_answer_question", {"question": "What's the capital of France?"})
     
-    # Resources use prefixed URIs
+    # 资源使用前缀 URI
     icons = await client.read_resource("weather://weather/icons/sunny")
     templates = await client.read_resource("resource://assistant/templates/list")
 ```
 
-## Connection Lifecycle
+## 连接生命周期
 
-The client operates asynchronously and uses context managers for connection management:
+客户端异步运行，并使用上下文管理器进行连接管理：
 
 ```python
 async def example():
     client = Client("my_mcp_server.py")
     
-    # Connection established here
+    # 连接在此建立
     async with client:
         print(f"Connected: {client.is_connected()}")
         
-        # Make multiple calls within the same session
+        # 在同一会话中进行多次调用
         tools = await client.list_tools()
         result = await client.call_tool("greet", {"name": "World"})
         
-    # Connection closed automatically here
+    # 连接在此自动关闭
     print(f"Connected: {client.is_connected()}")
 ```
 
-## Operations
+## 操作
 
-FastMCP clients can interact with several types of server components:
+FastMCP 客户端可以与多种类型的服务器组件交互：
 
-### Tools
+### 工具
 
-Tools are server-side functions that the client can execute with arguments.
+工具是客户端可以使用参数执行的服务器端函数。
 
 ```python
 async with client:
-    # List available tools
+    # 列出可用工具
     tools = await client.list_tools()
     
-    # Execute a tool
+    # 执行工具
     result = await client.call_tool("multiply", {"a": 5, "b": 3})
     print(result.data)  # 15
 ```
 
 See [Tools](/zh/clients/tools) for detailed documentation.
 
-### Resources
+### 资源
 
-Resources are data sources that the client can read, either static or templated.
+资源是客户端可以读取的数据源，可以是静态的或模板化的。
 
 ```python
 async with client:
-    # List available resources
+    # 列出可用资源
     resources = await client.list_resources()
     
-    # Read a resource
+    # 读取资源
     content = await client.read_resource("file:///config/settings.json")
     print(content[0].text)
 ```
 
 See [Resources](/zh/clients/resources) for detailed documentation.
 
-### Prompts
+### 提示
 
-Prompts are reusable message templates that can accept arguments.
+提示是可以接受参数的可重用消息模板。
 
 ```python
 async with client:
-    # List available prompts
+    # 列出可用提示
     prompts = await client.list_prompts()
     
-    # Get a rendered prompt
+    # 获取渲染的提示
     messages = await client.get_prompt("analyze_data", {"data": [1, 2, 3]})
     print(messages.messages)
 ```
 
 See [Prompts](/zh/clients/prompts) for detailed documentation.
 
-### Server Connectivity
+### 服务器连接性
 
-Use `ping()` to verify the server is reachable:
+使用 `ping()` 验证服务器是否可达：
 
 ```python
 async with client:
     await client.ping()
-    print("Server is reachable")
+    print("服务器可达")
 ```
 
-## Client Configuration
+## 客户端配置
 
-Clients can be configured with additional handlers and settings for specialized use cases.
+可以为特殊用例配置客户端的附加处理程序和设置。
 
-### Callback Handlers
+### 回调处理程序
 
-The client supports several callback handlers for advanced server interactions:
+客户端支持多个回调处理程序用于高级服务器交互：
 
 ```python
 from fastmcp import Client
 from fastmcp.client.logging import LogMessage
 
 async def log_handler(message: LogMessage):
-    print(f"Server log: {message.data}")
+    print(f"服务器日志: {message.data}")
 
 async def progress_handler(progress: float, total: float | None, message: str | None):
-    print(f"Progress: {progress}/{total} - {message}")
+    print(f"进度: {progress}/{total} - {message}")
 
 async def sampling_handler(messages, params, context):
-    # Integrate with your LLM service here
-    return "Generated response"
+    # 在此集成您的 LLM 服务
+    return "生成的响应"
 
 client = Client(
     "my_mcp_server.py",
@@ -254,38 +254,38 @@ client = Client(
 )
 ```
 
-The `Client` constructor accepts several configuration options:
+`Client` 构造函数接受多个配置选项：
 
-- `transport`: Transport instance or source for automatic inference  
-- `log_handler`: Handle server log messages
-- `progress_handler`: Monitor long-running operations
-- `sampling_handler`: Respond to server LLM requests
-- `roots`: Provide local context to servers
-- `timeout`: Default timeout for requests (in seconds)
+- `transport`：传输实例或用于自动推断的源  
+- `log_handler`：处理服务器日志消息
+- `progress_handler`：监控长时间运行的操作
+- `sampling_handler`：响应服务器 LLM 请求
+- `roots`：为服务器提供本地上下文
+- `timeout`：请求的默认超时时间（秒）
 
-### Transport Configuration
+### 传输配置
 
-For detailed transport configuration (headers, authentication, environment variables), see the [Transports](/zh/clients/transports) documentation.
+有关详细的传输配置（标头、身份验证、环境变量），请参阅 [传输](/zh/clients/transports) 文档。
 
-## Next Steps
+## 下一步
 
-Explore the detailed documentation for each operation type:
+探索每种操作类型的详细文档：
 
-### Core Operations
-- **[Tools](/zh/clients/tools)** - Execute server-side functions and handle results
-- **[Resources](/zh/clients/resources)** - Access static and templated resources
-- **[Prompts](/zh/clients/prompts)** - Work with message templates and argument serialization
+### 核心操作
+- **[工具](/zh/clients/tools)** - 执行服务器端函数并处理结果
+- **[资源](/zh/clients/resources)** - 访问静态和模板化资源
+- **[提示](/zh/clients/prompts)** - 使用消息模板和参数序列化
 
-### Advanced Features
-- **[Logging](/zh/clients/logging)** - Handle server log messages
-- **[Progress](/zh/clients/progress)** - Monitor long-running operations
-- **[Sampling](/zh/clients/sampling)** - Respond to server LLM requests
-- **[Roots](/zh/clients/roots)** - Provide local context to servers
+### 高级功能
+- **[日志记录](/zh/clients/logging)** - 处理服务器日志消息
+- **[进度](/zh/clients/progress)** - 监控长时间运行的操作
+- **[采样](/zh/clients/sampling)** - 响应服务器 LLM 请求
+- **[根](/zh/clients/roots)** - 为服务器提供本地上下文
 
-### Connection Details
-- **[Transports](/zh/clients/transports)** - Configure connection methods and parameters
-- **[Authentication](/zh/clients/auth/oauth)** - Set up OAuth and bearer token authentication
+### 连接详情
+- **[传输](/zh/clients/transports)** - 配置连接方法和参数
+- **[身份验证](/zh/clients/auth/oauth)** - 设置 OAuth 和 bearer token 身份验证
 
 <Tip>
-The FastMCP Client is designed as a foundational tool. Use it directly for deterministic operations, or build higher-level agentic systems on top of its reliable, type-safe interface.
+FastMCP 客户端设计为基础工具。可以直接用于确定性操作，或在其可靠、类型安全的接口上构建更高级的智能体系统。
 </Tip>

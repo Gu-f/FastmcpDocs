@@ -1,7 +1,7 @@
 ---
-title: Message Handling
-sidebarTitle: Messages
-description: Handle MCP messages, requests, and notifications with custom message handlers.
+title: 消息处理
+sidebarTitle: 消息
+description: 使用自定义消息处理程序处理 MCP 消息、请求和通知。
 icon: envelope
 ---
 
@@ -9,26 +9,26 @@ import { VersionBadge } from "/snippets/version-badge.mdx";
 
 <VersionBadge version="2.9.1" />
 
-MCP clients can receive various types of messages from servers, including requests that need responses and notifications that don't. The message handler provides a unified way to process all these messages.
+MCP 客户端可以从服务器接收各种类型的消息，包括需要响应的请求和不需要响应的通知。消息处理程序提供了一种统一的方式来处理所有这些消息。
 
-## Function-Based Handler
+## 基于函数的处理程序
 
-The simplest way to handle messages is with a function that receives all messages:
+处理消息的最简单方法是使用接收所有消息的函数：
 
 ```python
 from fastmcp import Client
 
 async def message_handler(message):
-    """Handle all MCP messages from the server."""
+    """处理来自服务器的所有 MCP 消息。"""
     if hasattr(message, 'root'):
         method = message.root.method
-        print(f"Received: {method}")
+        print(f"接收到: {method}")
         
-        # Handle specific notifications
+        # 处理特定通知
         if method == "notifications/tools/list_changed":
-            print("Tools have changed - might want to refresh tool cache")
+            print("工具已更改 - 可能需要刷新工具缓存")
         elif method == "notifications/resources/list_changed":
-            print("Resources have changed")
+            print("资源已更改")
 
 client = Client(
     "my_mcp_server.py",
@@ -36,9 +36,9 @@ client = Client(
 )
 ```
 
-## Message Handler Class
+## 消息处理程序类
 
-For fine-grained targeting, FastMCP provides a `MessageHandler` class you can subclass to take advantage of specific hooks:
+为了细粒度的目标定向，FastMCP 提供了一个 `MessageHandler` 类，您可以子类化它以利用特定的钓子：
 
 ```python
 from fastmcp import Client
@@ -49,8 +49,8 @@ class MyMessageHandler(MessageHandler):
     async def on_tool_list_changed(
         self, notification: mcp.types.ToolListChangedNotification
     ) -> None:
-        """Handle tool list changes specifically."""
-        print("Tool list changed - refreshing available tools")
+        """特定地处理工具列表更改。"""
+        print("工具列表已更改 - 正在刷新可用工具")
 
 client = Client(
     "my_mcp_server.py",
@@ -58,47 +58,47 @@ client = Client(
 )
 ```
 
-### Available Handler Methods
+### 可用的处理程序方法
 
-All handler methods receive a single argument - the specific message type:
+所有处理程序方法都接收一个参数 - 特定的消息类型：
 
-<Card icon="code" title="Message Handler Methods">
+<Card icon="code" title="消息处理程序方法">
 <ResponseField name="on_message(message)" type="Any MCP message">
-  Called for ALL messages (requests and notifications)
+  对所有消息（请求和通知）调用
 </ResponseField>
 
 <ResponseField name="on_request(request)" type="mcp.types.ClientRequest">
-  Called for requests that expect responses
+  对期望响应的请求调用
 </ResponseField>
 
 <ResponseField name="on_notification(notification)" type="mcp.types.ServerNotification">
-  Called for notifications (fire-and-forget)
+  对通知（不需回复）调用
 </ResponseField>
 
 <ResponseField name="on_tool_list_changed(notification)" type="mcp.types.ToolListChangedNotification">
-  Called when the server's tool list changes
+  当服务器的工具列表更改时调用
 </ResponseField>
 
 <ResponseField name="on_resource_list_changed(notification)" type="mcp.types.ResourceListChangedNotification">
-  Called when the server's resource list changes
+  当服务器的资源列表更改时调用
 </ResponseField>
 
 <ResponseField name="on_prompt_list_changed(notification)" type="mcp.types.PromptListChangedNotification">
-  Called when the server's prompt list changes
+  当服务器的提示列表更改时调用
 </ResponseField>
 
 <ResponseField name="on_progress(notification)" type="mcp.types.ProgressNotification">
-  Called for progress updates during long-running operations
+  在长时间运行操作期间进行进度更新时调用
 </ResponseField>
 
 <ResponseField name="on_logging_message(notification)" type="mcp.types.LoggingMessageNotification">
-  Called for log messages from the server
+  对来自服务器的日志消息调用
 </ResponseField>
 </Card>
 
-## Example: Handling Tool Changes
+## 示例：处理工具更改
 
-Here's a practical example of handling tool list changes:
+这里是处理工具列表更改的实际示例：
 
 ```python
 from fastmcp.client.messages import MessageHandler
@@ -111,19 +111,19 @@ class ToolCacheHandler(MessageHandler):
     async def on_tool_list_changed(
         self, notification: mcp.types.ToolListChangedNotification
     ) -> None:
-        """Clear tool cache when tools change."""
-        print("Tools changed - clearing cache")
-        self.cached_tools = []  # Force refresh on next access
+        """工具更改时清除工具缓存。"""
+        print("工具已更改 - 清除缓存")
+        self.cached_tools = []  # 在下次访问时强制刷新
 
 client = Client("server.py", message_handler=ToolCacheHandler())
 ```
 
-## Handling Requests
+## 处理请求
 
-While the message handler receives server-initiated requests, for most use cases you should use the dedicated callback parameters instead:
+虽然消息处理程序接收服务器发起的请求，但对于大多数用例，您应该使用专用的回调参数：
 
-- **Sampling requests**: Use [`sampling_handler`](/zh/clients/sampling)
-- **Progress requests**: Use [`progress_handler`](/zh/clients/progress)
-- **Log requests**: Use [`log_handler`](/zh/clients/logging)
+- **采样请求**：使用 [`sampling_handler`](/zh/clients/sampling)
+- **进度请求**：使用 [`progress_handler`](/zh/clients/progress)
+- **日志请求**：使用 [`log_handler`](/zh/clients/logging)
 
-The message handler is primarily for monitoring and handling notifications rather than responding to requests.
+消息处理程序主要用于监控和处理通知，而不是响应请求。

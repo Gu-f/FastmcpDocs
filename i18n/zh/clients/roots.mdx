@@ -1,7 +1,7 @@
 ---
-title: Client Roots
-sidebarTitle: Roots
-description: Provide local context and resource boundaries to MCP servers.
+title: 客户端根
+sidebarTitle: 根
+description: 为 MCP 服务器提供本地上下文和资源边界。
 icon: folder-tree
 ---
 
@@ -9,14 +9,14 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <VersionBadge version="2.0.0" />
 
-Roots are a way for clients to inform servers about the resources they have access to. Servers can use this information to adjust behavior or provide more relevant responses.
+根是客户端向服务器告知它们可以访问的资源的一种方式。服务器可以使用这些信息来调整行为或提供更相关的响应。
 
-## Setting Static Roots
+## 设置静态根
 
-Provide a list of roots when creating the client:
+在创建客户端时提供根列表：
 
 <CodeGroup>
-```python Static Roots
+```python 静态根
 from fastmcp import Client
 
 client = Client(
@@ -25,12 +25,12 @@ client = Client(
 )
 ```
 
-```python Dynamic Roots Callback
+```python 动态根回调
 from fastmcp import Client
 from fastmcp.client.roots import RequestContext
 
 async def roots_callback(context: RequestContext) -> list[str]:
-    print(f"Server requested roots (Request ID: {context.request_id})")
+    print(f"服务器请求根 (请求 ID: {context.request_id})")
     return ["/path/to/root1", "/path/to/root2"]
 
 client = Client(

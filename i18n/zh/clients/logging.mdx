@@ -1,7 +1,7 @@
 ---
-title: Server Logging
-sidebarTitle: Logging
-description: Receive and handle log messages from MCP servers.
+title: 服务器日志记录
+sidebarTitle: 日志记录
+description: 接收和处理来自 MCP 服务器的日志消息。
 icon: receipt
 ---
 
@@ -9,41 +9,41 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <VersionBadge version="2.0.0" />
 
-MCP servers can emit log messages to clients. The client can handle these logs through a log handler callback.
+MCP 服务器可以向客户端发出日志消息。客户端可以通过日志处理程序回调来处理这些日志。
 
-## Log Handler
+## 日志处理程序
 
-Provide a `log_handler` function when creating the client. For robust logging, the log messages can be integrated with Python's standard `logging` module.
+在创建客户端时提供 `log_handler` 函数。为了健壮的日志记录，日志消息可以与 Python 的标准 `logging` 模块集成。
 
 ```python
 import logging
 from fastmcp import Client
 from fastmcp.client.logging import LogMessage
 
-# In a real app, you might configure this in your main entry point
+# 在真实应用中，您可能会在主入口点配置此项
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-# Get a logger for the module where the client is used
+# 为使用客户端的模块获取日志记录器
 logger = logging.getLogger(__name__)
 
-# This mapping is useful for converting MCP level strings to Python's levels
+# 此映射对于将 MCP 级别字符串转换为 Python 级别很有用
 LOGGING_LEVEL_MAP = logging.getLevelNamesMapping()
 
 async def log_handler(message: LogMessage):
     """
-    Handles incoming logs from the MCP server and forwards them
-    to the standard Python logging system.
+    处理来自 MCP 服务器的传入日志并将其转发
+    到标准 Python 日志记录系统。
     """
     msg = message.data.get('msg')
     extra = message.data.get('extra')
 
-    # Convert the MCP log level to a Python log level
+    # 将 MCP 日志级别转换为 Python 日志级别
     level = LOGGING_LEVEL_MAP.get(message.level.upper(), logging.INFO)
 
-    # Log the message using the standard logging library
+    # 使用标准日志记录库记录消息
     logger.log(level, msg, extra=extra)
 
 
@@ -53,33 +53,33 @@ client = Client(
 )
 ```
 
-## Handling Structured Logs
+## 处理结构化日志
 
-The `message.data` attribute is a dictionary that contains the log payload from the server. This enables structured logging, allowing you to receive rich, contextual information.
+`message.data` 属性是一个包含来自服务器的日志载荷的字典。这允许结构化日志记录，使您能够接收丰富的上下文信息。
 
-The dictionary contains two keys:
-- `msg`: The string log message.
-- `extra`: A dictionary containing any extra data sent from the server.
+该字典包含两个键：
+- `msg`：字符串日志消息。
+- `extra`：包含从服务器发送的任何额外数据的字典。
 
-This structure is preserved even when logs are forwarded through a FastMCP proxy, making it a powerful tool for debugging complex, multi-server applications.
+即使在通过 FastMCP 代理转发日志时，这种结构也得以保持，使其成为调试复杂多服务器应用程序的强大工具。
 
-### Handler Parameters
+### 处理程序参数
 
-The `log_handler` is called every time a log message is received. It receives a `LogMessage` object:
+每次接收到日志消息时都会调用 `log_handler`。它接收一个 `LogMessage` 对象：
 
-<Card icon="code" title="Log Handler Parameters">
+<Card icon="code" title="日志处理程序参数">
 <ResponseField name="LogMessage" type="Log Message Object">
   <Expandable title="attributes">
     <ResponseField name="level" type='Literal["debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"]'>
-      The log level
+      日志级别
     </ResponseField>
 
     <ResponseField name="logger" type="str | None">
-      The logger name (optional, may be None)
+      日志记录器名称（可选，可能为 None）
     </ResponseField>
 
     <ResponseField name="data" type="dict">
-      The log payload, containing `msg` and `extra` keys.
+      日志载荷，包含 `msg` 和 `extra` 键。
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -91,21 +91,21 @@ async def detailed_log_handler(message: LogMessage):
     extra = message.data.get('extra')
 
     if message.level == "error":
-        print(f"ERROR: {msg} | Details: {extra}")
+        print(f"错误: {msg} | 详情: {extra}")
     elif message.level == "warning":
-        print(f"WARNING: {msg} | Details: {extra}")
+        print(f"警告: {msg} | 详情: {extra}")
     else:
         print(f"{message.level.upper()}: {msg}")
 ```
 
-## Default Log Handling
+## 默认日志处理
 
-If you don't provide a custom `log_handler`, FastMCP's default handler routes server logs to the appropriate Python logging levels. The MCP levels are mapped as follows: `notice` → INFO; `alert` and `emergency` → CRITICAL. If the server includes a logger name, it is prefixed in the message, and any `extra` data is forwarded via the logging `extra` parameter.
+如果您不提供自定义的 `log_handler`，FastMCP 的默认处理程序会将服务器日志路由到适当的 Python 日志记录级别。MCP 级别映射如下：`notice` → INFO；`alert` 和 `emergency` → CRITICAL。如果服务器包含日志记录器名称，则在消息中加前缀，并通过日志记录 `extra` 参数转发任何 `extra` 数据。
 
 ```python
 client = Client("my_mcp_server.py")
 
 async with client:
-    # Server logs are forwarded at their proper severity (DEBUG/INFO/WARNING/ERROR/CRITICAL)
+    # 服务器日志以其适当的严重性转发 (DEBUG/INFO/WARNING/ERROR/CRITICAL)
     await client.call_tool("some_tool")
 ```

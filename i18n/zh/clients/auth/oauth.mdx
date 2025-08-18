@@ -1,7 +1,7 @@
 ---
-title: OAuth Authentication
+title: OAuth 身份验证
 sidebarTitle: OAuth
-description: Authenticate your FastMCP client via OAuth 2.1.
+description: 通过 OAuth 2.1 对您的 FastMCP 客户端进行身份验证。
 icon: window
 tag: NEW
 ---
@@ -11,32 +11,32 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 <VersionBadge version="2.6.0" />
 
 <Tip>
-OAuth authentication is only relevant for HTTP-based transports and requires user interaction via a web browser.
+OAuth 身份验证仅适用于基于 HTTP 的传输方式，并需要通过 Web 浏览器进行用户交互。
 </Tip>
 
-When your FastMCP client needs to access an MCP server protected by OAuth 2.1, and the process requires user interaction (like logging in and granting consent), you should use the Authorization Code Flow. FastMCP provides the `fastmcp.client.auth.OAuth` helper to simplify this entire process.
+当您的 FastMCP 客户端需要访问受 OAuth 2.1 保护的 MCP 服务器，且该过程需要用户交互（如登录和授予同意）时，您应该使用授权码流程。FastMCP 提供了 `fastmcp.client.auth.OAuth` 辅助类来简化整个过程。
 
-This flow is common for user-facing applications where the application acts on behalf of the user.
+此流程常用于面向用户的应用程序，其中应用程序代表用户行事。
 
-## Client Usage
+## 客户端使用
 
 
-### Default Configuration
+### 默认配置
 
-The simplest way to use OAuth is to pass the string `"oauth"` to the `auth` parameter of the `Client` or transport instance. FastMCP will automatically configure the client to use OAuth with default settings:
+使用 OAuth 的最简单方法是将字符串 `"oauth"` 传递给 `Client` 或传输实例的 `auth` 参数。FastMCP 将自动配置客户端使用默认设置的 OAuth：
 
 ```python {4}
 from fastmcp import Client
 
-# Uses default OAuth settings
+# 使用默认 OAuth 设置
 async with Client("https://fastmcp.cloud/mcp", auth="oauth") as client:
     await client.ping()
 ```
 
 
-### `OAuth` Helper
+### `OAuth` 辅助类
 
-To fully configure the OAuth flow, use the `OAuth` helper and pass it to the `auth` parameter of the `Client` or transport instance. `OAuth` manages the complexities of the OAuth 2.1 Authorization Code Grant with PKCE (Proof Key for Code Exchange) for enhanced security, and implements the full `httpx.Auth` interface.
+要完全配置 OAuth 流程，请使用 `OAuth` 辅助类并将其传递给 `Client` 或传输实例的 `auth` 参数。`OAuth` 管理 OAuth 2.1 授权码授予和 PKCE（代码交换证明密钥）的复杂性以增强安全性，并实现完整的 `httpx.Auth` 接口。
 
 ```python {2, 4, 6}
 from fastmcp import Client
@@ -48,59 +48,59 @@ async with Client("https://fastmcp.cloud/mcp", auth=oauth) as client:
     await client.ping()
 ```
 
-#### `OAuth` Parameters
+#### `OAuth` 参数
 
-- **`mcp_url`** (`str`): The full URL of the target MCP server endpoint. Used to discover OAuth server metadata
-- **`scopes`** (`str | list[str]`, optional): OAuth scopes to request. Can be space-separated string or list of strings
-- **`client_name`** (`str`, optional): Client name for dynamic registration. Defaults to `"FastMCP Client"`
-- **`token_storage_cache_dir`** (`Path`, optional): Token cache directory. Defaults to `~/.fastmcp/oauth-mcp-client-cache/`
-- **`additional_client_metadata`** (`dict[str, Any]`, optional): Extra metadata for client registration
-- **`callback_port`** (`int`, optional): Fixed port for OAuth callback server. If not specified, uses a random available port
+- **`mcp_url`** (`str`)：目标 MCP 服务器端点的完整 URL。用于发现 OAuth 服务器元数据
+- **`scopes`** (`str | list[str]`，可选)：要请求的 OAuth 作用域。可以是空格分隔的字符串或字符串列表
+- **`client_name`** (`str`，可选)：用于动态注册的客户端名称。默认为 `"FastMCP Client"`
+- **`token_storage_cache_dir`** (`Path`，可选)：令牌缓存目录。默认为 `~/.fastmcp/oauth-mcp-client-cache/`
+- **`additional_client_metadata`** (`dict[str, Any]`，可选)：客户端注册的额外元数据
+- **`callback_port`** (`int`，可选)：OAuth 回调服务器的固定端口。如果未指定，则使用随机可用端口
 
 
-## OAuth Flow
+## OAuth 流程
 
-The OAuth flow is triggered when you use a FastMCP `Client` configured to use OAuth.
+当您使用配置为使用 OAuth 的 FastMCP `Client` 时，将触发 OAuth 流程。
 
 <Steps>
-<Step title="Token Check">
-The client first checks the `token_storage_cache_dir` for existing, valid tokens for the target server. If one is found, it will be used to authenticate the client.
+<Step title="令牌检查">
+客户端首先检查 `token_storage_cache_dir` 中是否存在目标服务器的有效令牌。如果找到，它将用于验证客户端。
 </Step>
-<Step title="OAuth Server Discovery">
-If no valid tokens exist, the client attempts to discover the OAuth server's endpoints using a well-known URI (e.g., `/.well-known/oauth-authorization-server`) based on the `mcp_url`.
+<Step title="OAuth 服务器发现">
+如果不存在有效令牌，客户端会尝试使用基于 `mcp_url` 的已知 URI（例如 `/.well-known/oauth-authorization-server`）来发现 OAuth 服务器的端点。
 </Step>
-<Step title="Dynamic Client Registration">
-If the OAuth server supports it and the client isn't already registered (or credentials aren't cached), the client performs dynamic client registration according to RFC 7591.
+<Step title="动态客户端注册">
+如果 OAuth 服务器支持且客户端尚未注册（或凭据未缓存），客户端将根据 RFC 7591 执行动态客户端注册。
 </Step>
-<Step title="Local Callback Server">
-A temporary local HTTP server is started on an available port (or the port specified via `callback_port`). This server's address (e.g., `http://127.0.0.1:<port>/callback`) acts as the `redirect_uri` for the OAuth flow.
+<Step title="本地回调服务器">
+在可用端口（或通过 `callback_port` 指定的端口）上启动临时本地 HTTP 服务器。该服务器的地址（例如 `http://127.0.0.1:<port>/callback`）作为 OAuth 流程的 `redirect_uri`。
 </Step>
-<Step title="Browser Interaction">
-The user's default web browser is automatically opened, directing them to the OAuth server's authorization endpoint. The user logs in and grants (or denies) the requested `scopes`.
+<Step title="浏览器交互">
+用户的默认 Web 浏览器会自动打开，将他们定向到 OAuth 服务器的授权端点。用户登录并授予（或拒绝）请求的 `scopes`。
 </Step>
-<Step title="Authorization Code & Token Exchange">
-Upon approval, the OAuth server redirects the user's browser to the local callback server with an `authorization_code`. The client captures this code and exchanges it with the OAuth server's token endpoint for an `access_token` (and often a `refresh_token`) using PKCE for security.
+<Step title="授权码和令牌交换">
+批准后，OAuth 服务器将用户的浏览器重定向到本地回调服务器，并带有 `authorization_code`。客户端捕获此代码，并使用 PKCE 增强安全性，与 OAuth 服务器的令牌端点交换 `access_token`（通常还有 `refresh_token`）。
 </Step>
-<Step title="Token Caching">
-The obtained tokens are saved to the `token_storage_cache_dir` for future use, eliminating the need for repeated browser interactions.
+<Step title="令牌缓存">
+获得的令牌保存到 `token_storage_cache_dir` 供将来使用，无需重复浏览器交互。
 </Step> 
-<Step title="Authenticated Requests">
-The access token is automatically included in the `Authorization` header for requests to the MCP server. 
+<Step title="已验证请求">
+访问令牌会自动包含在对 MCP 服务器请求的 `Authorization` 标头中。
 </Step>
-<Step title="Refresh Token">
-If the access token expires, the client will automatically use the refresh token to get a new access token.
+<Step title="刷新令牌">
+如果访问令牌过期，客户端将自动使用刷新令牌获取新的访问令牌。
 </Step>
 </Steps>
 
-## Token Management
+## 令牌管理
 
-### Token Storage
+### 令牌存储
 
-OAuth access tokens are automatically cached in `~/.fastmcp/oauth-mcp-client-cache/` and persist between application runs. Files are keyed by the OAuth server's base URL.
+OAuth 访问令牌会自动缓存在 `~/.fastmcp/oauth-mcp-client-cache/` 中，并在应用程序运行之间保持。文件按 OAuth 服务器的基本 URL 键入。
 
-### Managing Cache
+### 管理缓存
 
-To clear the tokens for a specific server, instantiate a `FileTokenStorage` instance and call the `clear` method:
+要清除特定服务器的令牌，请实例化 `FileTokenStorage` 实例并调用 `clear` 方法：
 
 ```python
 from fastmcp.client.auth.oauth import FileTokenStorage
@@ -109,7 +109,7 @@ storage = FileTokenStorage(server_url="https://fastmcp.cloud/mcp")
 await storage.clear()
 ```
 
-To clear *all* tokens for all servers, call the `clear_all` method on the `FileTokenStorage` class:
+要清除*所有*服务器的所有令牌，请在 `FileTokenStorage` 类上调用 `clear_all` 方法：
 
 ```python
 from fastmcp.client.auth.oauth import FileTokenStorage

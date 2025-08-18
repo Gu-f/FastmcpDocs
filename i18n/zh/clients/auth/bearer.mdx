@@ -1,7 +1,7 @@
 ---
-title: Bearer Token Authentication
-sidebarTitle: Bearer Auth
-description: Authenticate your FastMCP client with a Bearer token.
+title: Bearer Token 身份验证
+sidebarTitle: Bearer 认证
+description: 使用 Bearer token 对您的 FastMCP 客户端进行身份验证。
 icon: key
 ---
 
@@ -10,24 +10,24 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 <VersionBadge version="2.6.0" />
 
 <Tip>
-Bearer Token authentication is only relevant for HTTP-based transports.
+Bearer Token 身份验证仅适用于基于 HTTP 的传输方式。
 </Tip>
 
-You can configure your FastMCP client to use **bearer authentication** by supplying a valid access token. This is most appropriate for service accounts, long-lived API keys, CI/CD, applications where authentication is managed separately, or other non-interactive authentication methods.
+您可以通过提供有效的访问令牌来配置 FastMCP 客户端使用 **bearer 身份验证**。这最适用于服务账户、长期有效的 API 密钥、CI/CD、单独管理身份验证的应用程序或其他非交互式身份验证方法。
 
-A Bearer token is a JSON Web Token (JWT) that is used to authenticate a request. It is most commonly used in the `Authorization` header of an HTTP request, using the `Bearer` scheme:
+Bearer token 是一个用于验证请求的 JSON Web Token (JWT)。它最常用于 HTTP 请求的 `Authorization` 标头中，使用 `Bearer` 方案：
 
 ```http
 Authorization: Bearer <token>
 ```
 
 
-## Client Usage
+## 客户端使用
 
-The most straightforward way to use a pre-existing Bearer token is to provide it as a string to the `auth` parameter of the `fastmcp.Client` or transport instance. FastMCP will automatically format it correctly for the `Authorization` header and bearer scheme.
+使用预先存在的 Bearer token 的最直接方法是将其作为字符串提供给 `fastmcp.Client` 或传输实例的 `auth` 参数。FastMCP 将自动为 `Authorization` 标头和 bearer 方案正确格式化它。
 
 <Tip>
-If you're using a string token, do not include the `Bearer` prefix. FastMCP will add it for you.
+如果您使用字符串令牌，请不要包含 `Bearer` 前缀。FastMCP 会为您添加。
 </Tip>
 
 ```python {5}
@@ -40,7 +40,7 @@ async with Client(
     await client.ping()
 ```
 
-You can also supply a Bearer token to a transport instance, such as `StreamableHttpTransport` or `SSETransport`:
+您也可以将 Bearer token 提供给传输实例，例如 `StreamableHttpTransport` 或 `SSETransport`：
 
 ```python {6}
 from fastmcp import Client
@@ -55,9 +55,9 @@ async with Client(transport) as client:
     await client.ping()
 ```
 
-## `BearerAuth` Helper
+## `BearerAuth` 辅助类
 
-If you prefer to be more explicit and not rely on FastMCP to transform your string token, you can use the `BearerAuth` class yourself, which implements the `httpx.Auth` interface.
+如果您希望更明确一些，不依赖 FastMCP 来转换您的字符串令牌，您可以自己使用 `BearerAuth` 类，它实现了 `httpx.Auth` 接口。
 
 ```python {6}
 from fastmcp import Client
@@ -70,9 +70,9 @@ async with Client(
     await client.ping()
 ```
 
-## Custom Headers
+## 自定义标头
 
-If the MCP server expects a custom header or token scheme, you can manually set the client's `headers` instead of using the `auth` parameter by setting them on your transport:
+如果 MCP 服务器期望自定义标头或令牌方案，您可以通过在传输上设置客户端的 `headers` 来手动设置，而不是使用 `auth` 参数：
 
 ```python {5}
 from fastmcp import Client

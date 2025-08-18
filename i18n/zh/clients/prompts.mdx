@@ -1,7 +1,7 @@
 ---
-title: Prompts
-sidebarTitle: Prompts
-description: Use server-side prompt templates with automatic argument serialization.
+title: 提示(Prompts)
+sidebarTitle: 提示(Prompts)
+description: 使用带有自动参数序列化的服务器端提示模板。
 icon: message-lines
 ---
 
@@ -9,11 +9,11 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <VersionBadge version="2.0.0" />
 
-Prompts are reusable message templates exposed by MCP servers. They can accept arguments to generate personalized message sequences for LLM interactions.
+提示是由 MCP 服务器公开的可重用消息模板。它们可以接受参数来为 LLM 交互生成个性化的消息序列。
 
-## Listing Prompts
+## 列出提示
 
-Use `list_prompts()` to retrieve all available prompt templates:
+使用 `list_prompts()` 检索所有可用的提示模板：
 
 ```python
 async with client:
@@ -21,27 +21,27 @@ async with client:
     # prompts -> list[mcp.types.Prompt]
     
     for prompt in prompts:
-        print(f"Prompt: {prompt.name}")
-        print(f"Description: {prompt.description}")
+        print(f"提示: {prompt.name}")
+        print(f"描述: {prompt.description}")
         if prompt.arguments:
-            print(f"Arguments: {[arg.name for arg in prompt.arguments]}")
-        # Access tags and other metadata
+            print(f"参数: {[arg.name for arg in prompt.arguments]}")
+        # 访问标签和其他元数据
         if hasattr(prompt, '_meta') and prompt._meta:
             fastmcp_meta = prompt._meta.get('_fastmcp', {})
-            print(f"Tags: {fastmcp_meta.get('tags', [])}")
+            print(f"标签: {fastmcp_meta.get('tags', [])}")
 ```
 
-### Filtering by Tags
+### 按标签筛选
 
 <VersionBadge version="2.11.0" />
 
-You can use the `meta` field to filter prompts based on their tags:
+您可以使用 `meta` 字段根据标签筛选提示：
 
 ```python
 async with client:
     prompts = await client.list_prompts()
     
-    # Filter prompts by tag
+    # 按标签筛选提示
     analysis_prompts = [
         prompt for prompt in prompts 
         if hasattr(prompt, '_meta') and prompt._meta and
@@ -49,53 +49,53 @@ async with client:
            'analysis' in prompt._meta.get('_fastmcp', {}).get('tags', [])
     ]
     
-    print(f"Found {len(analysis_prompts)} analysis prompts")
+    print(f"找到 {len(analysis_prompts)} 个分析提示")
 ```
 
 <Note>
-The `_meta` field is part of the standard MCP specification. FastMCP servers include tags and other metadata within a `_fastmcp` namespace (e.g., `_meta._fastmcp.tags`) to avoid conflicts with user-defined metadata. This behavior can be controlled with the server's `include_fastmcp_meta` setting - when disabled, the `_fastmcp` namespace won't be included. Other MCP server implementations may not provide this metadata structure.
+`_meta` 字段是标准 MCP 规范的一部分。FastMCP 服务器在 `_fastmcp` 命名空间内包含标签和其他元数据（例如 `_meta._fastmcp.tags`）以避免与用户定义的元数据冲突。这种行为可以通过服务器的 `include_fastmcp_meta` 设置控制 - 如果禁用，将不会包含 `_fastmcp` 命名空间。其他 MCP 服务器实现可能不提供此元数据结构。
 </Note>
 
-## Using Prompts
+## 使用提示
 
-### Basic Usage
+### 基本用法
 
-Request a rendered prompt using `get_prompt()` with the prompt name and arguments:
+使用 `get_prompt()` 和提示名称和参数请求渲染的提示：
 
 ```python
 async with client:
-    # Simple prompt without arguments
+    # 不带参数的简单提示
     result = await client.get_prompt("welcome_message")
     # result -> mcp.types.GetPromptResult
     
-    # Access the generated messages
+    # 访问生成的消息
     for message in result.messages:
-        print(f"Role: {message.role}")
-        print(f"Content: {message.content}")
+        print(f"角色: {message.role}")
+        print(f"内容: {message.content}")
 ```
 
-### Prompts with Arguments
+### 带参数的提示
 
-Pass arguments as a dictionary to customize the prompt:
+将参数作为字典传递以自定义提示：
 
 ```python
 async with client:
-    # Prompt with simple arguments
+    # 带简单参数的提示
     result = await client.get_prompt("user_greeting", {
         "name": "Alice",
         "role": "administrator"
     })
     
-    # Access the personalized messages
+    # 访问个性化消息
     for message in result.messages:
-        print(f"Generated message: {message.content}")
+        print(f"生成的消息: {message.content}")
 ```
 
-## Automatic Argument Serialization
+## 自动参数序列化
 
 <VersionBadge version="2.9.0" />
 
-FastMCP automatically serializes complex arguments to JSON strings as required by the MCP specification. This allows you to pass typed objects directly:
+FastMCP 按照 MCP 规范的要求自动将复杂参数序列化为 JSON 字符串。这允许您直接传递类型化对象：
 
 ```python
 from dataclasses import dataclass
@@ -106,23 +106,23 @@ class UserData:
     age: int
 
 async with client:
-    # Complex arguments are automatically serialized
+    # 复杂参数会被自动序列化
     result = await client.get_prompt("analyze_user", {
-        "user": UserData(name="Alice", age=30),     # Automatically serialized to JSON
-        "preferences": {"theme": "dark"},           # Dict serialized to JSON string
-        "scores": [85, 92, 78],                     # List serialized to JSON string
-        "simple_name": "Bob"                        # Strings passed through unchanged
+        "user": UserData(name="Alice", age=30),     # 自动序列化为 JSON
+        "preferences": {"theme": "dark"},           # 字典序列化为 JSON 字符串
+        "scores": [85, 92, 78],                     # 列表序列化为 JSON 字符串
+        "simple_name": "Bob"                        # 字符串保持不变
     })
 ```
 
-The client handles serialization using `pydantic_core.to_json()` for consistent formatting. FastMCP servers can automatically deserialize these JSON strings back to the expected types.
+客户端使用 `pydantic_core.to_json()` 处理序列化以实现一致的格式化。FastMCP 服务器可以自动将这些 JSON 字符串反序列化为预期类型。
 
-### Serialization Examples
+### 序列化示例
 
 ```python
 async with client:
     result = await client.get_prompt("data_analysis", {
-        # These will be automatically serialized to JSON strings:
+        # 这些将被自动序列化为 JSON 字符串：
         "config": {
             "format": "csv",
             "include_headers": True,
@@ -132,33 +132,33 @@ async with client:
             {"field": "age", "operator": ">", "value": 18},
             {"field": "status", "operator": "==", "value": "active"}
         ],
-        # This remains a string:
+        # 这仍然是字符串：
         "report_title": "Monthly Analytics Report"
     })
 ```
 
-## Working with Prompt Results
+## 处理提示结果
 
-The `get_prompt()` method returns a `GetPromptResult` object containing a list of messages:
+`get_prompt()` 方法返回一个包含消息列表的 `GetPromptResult` 对象：
 
 ```python
 async with client:
     result = await client.get_prompt("conversation_starter", {"topic": "climate"})
     
-    # Access individual messages
+    # 访问单个消息
     for i, message in enumerate(result.messages):
-        print(f"Message {i + 1}:")
-        print(f"  Role: {message.role}")
-        print(f"  Content: {message.content.text if hasattr(message.content, 'text') else message.content}")
+        print(f"消息 {i + 1}:")
+        print(f"  角色: {message.role}")
+        print(f"  内容: {message.content.text if hasattr(message.content, 'text') else message.content}")
 ```
 
-## Raw MCP Protocol Access
+## 原始 MCP 协议访问
 
-For access to the complete MCP protocol objects, use the `*_mcp` methods:
+要访问完整的 MCP 协议对象，请使用 `*_mcp` 方法：
 
 ```python
 async with client:
-    # Raw MCP method returns full protocol object
+    # 原始 MCP 方法返回完整的协议对象
     prompts_result = await client.list_prompts_mcp()
     # prompts_result -> mcp.types.ListPromptsResult
     
@@ -166,22 +166,22 @@ async with client:
     # prompt_result -> mcp.types.GetPromptResult
 ```
 
-## Multi-Server Clients
+## 多服务器客户端
 
-When using multi-server clients, prompts are accessible without prefixing (unlike tools):
+使用多服务器客户端时，提示可以直接访问而不需前缀（与工具不同）：
 
 ```python
 async with client:  # Multi-server client
-    # Prompts from any server are directly accessible
+    # 来自任何服务器的提示都可以直接访问
     result1 = await client.get_prompt("weather_prompt", {"city": "London"})
     result2 = await client.get_prompt("assistant_prompt", {"query": "help"})
 ```
 
-## Common Prompt Patterns
+## 常见提示模式
 
-### System Messages
+### 系统消息
 
-Many prompts generate system messages for LLM configuration:
+许多提示为 LLM 配置生成系统消息：
 
 ```python
 async with client:
@@ -190,14 +190,14 @@ async with client:
         "expertise": "python programming"
     })
     
-    # Typically returns messages with role="system"
+    # 通常返回 role="system" 的消息
     system_message = result.messages[0]
-    print(f"System prompt: {system_message.content}")
+    print(f"系统提示: {system_message.content}")
 ```
 
-### Conversation Templates
+### 对话模板
 
-Prompts can generate multi-turn conversation templates:
+提示可以生成多轮对话模板：
 
 ```python
 async with client:
@@ -206,11 +206,11 @@ async with client:
         "position": "Senior Developer"
     })
     
-    # Multiple messages for a conversation flow
+    # 对话流的多个消息
     for message in result.messages:
         print(f"{message.role}: {message.content}")
 ```
 
 <Tip>
-Prompt arguments and their expected types depend on the specific prompt implementation. Check the server's documentation or use `list_prompts()` to see available arguments for each prompt.
+提示参数及其预期类型取决于特定的提示实现。请查看服务器的文档或使用 `list_prompts()` 查看每个提示的可用参数。
 </Tip>

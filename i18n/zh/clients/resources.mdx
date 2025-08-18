@@ -1,7 +1,7 @@
 ---
-title: Resource Operations
-sidebarTitle: Resources
-description: Access static and templated resources from MCP servers.
+title: 资源操作
+sidebarTitle: 资源
+description: 从 MCP 服务器访问静态和模板化资源。
 icon: folder-open
 ---
 
@@ -9,20 +9,20 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <VersionBadge version="2.0.0" />
 
-Resources are data sources exposed by MCP servers. They can be static files or dynamic templates that generate content based on parameters.
+资源是由 MCP 服务器公开的数据源。它们可以是静态文件或根据参数生成内容的动态模板。
 
-## Types of Resources
+## 资源类型
 
-MCP servers expose two types of resources:
+MCP 服务器公开两种类型的资源：
 
-- **Static Resources**: Fixed content accessible via URI (e.g., configuration files, documentation)
-- **Resource Templates**: Dynamic resources that accept parameters to generate content (e.g., API endpoints, database queries)
+- **静态资源**：通过 URI 访问的固定内容（例如配置文件、文档）
+- **资源模板**：接受参数生成内容的动态资源（例如 API 端点、数据库查询）
 
-## Listing Resources
+## 列出资源
 
-### Static Resources
+### 静态资源
 
-Use `list_resources()` to retrieve all static resources available on the server:
+使用 `list_resources()` 检索服务器上所有可用的静态资源：
 
 ```python
 async with client:
@@ -30,19 +30,19 @@ async with client:
     # resources -> list[mcp.types.Resource]
     
     for resource in resources:
-        print(f"Resource URI: {resource.uri}")
-        print(f"Name: {resource.name}")
-        print(f"Description: {resource.description}")
-        print(f"MIME Type: {resource.mimeType}")
-        # Access tags and other metadata
+        print(f"资源 URI: {resource.uri}")
+        print(f"名称: {resource.name}")
+        print(f"描述: {resource.description}")
+        print(f"MIME 类型: {resource.mimeType}")
+        # 访问标签和其他元数据
         if hasattr(resource, '_meta') and resource._meta:
             fastmcp_meta = resource._meta.get('_fastmcp', {})
-            print(f"Tags: {fastmcp_meta.get('tags', [])}")
+            print(f"标签: {fastmcp_meta.get('tags', [])}")
 ```
 
-### Resource Templates
+### 资源模板
 
-Use `list_resource_templates()` to retrieve available resource templates:
+使用 `list_resource_templates()` 检索可用的资源模板：
 
 ```python
 async with client:
@@ -50,26 +50,26 @@ async with client:
     # templates -> list[mcp.types.ResourceTemplate]
     
     for template in templates:
-        print(f"Template URI: {template.uriTemplate}")
-        print(f"Name: {template.name}")
-        print(f"Description: {template.description}")
-        # Access tags and other metadata
+        print(f"模板 URI: {template.uriTemplate}")
+        print(f"名称: {template.name}")
+        print(f"描述: {template.description}")
+        # 访问标签和其他元数据
         if hasattr(template, '_meta') and template._meta:
             fastmcp_meta = template._meta.get('_fastmcp', {})
-            print(f"Tags: {fastmcp_meta.get('tags', [])}")
+            print(f"标签: {fastmcp_meta.get('tags', [])}")
 ```
 
-### Filtering by Tags
+### 按标签筛选
 
 <VersionBadge version="2.11.0" />
 
-You can use the `meta` field to filter resources based on their tags:
+您可以使用 `meta` 字段根据标签筛选资源：
 
 ```python
 async with client:
     resources = await client.list_resources()
     
-    # Filter resources by tag
+    # 按标签筛选资源
     config_resources = [
         resource for resource in resources 
         if hasattr(resource, '_meta') and resource._meta and
@@ -77,53 +77,53 @@ async with client:
            'config' in resource._meta.get('_fastmcp', {}).get('tags', [])
     ]
     
-    print(f"Found {len(config_resources)} config resources")
+    print(f"找到 {len(config_resources)} 个配置资源")
 ```
 
 <Note>
-The `_meta` field is part of the standard MCP specification. FastMCP servers include tags and other metadata within a `_fastmcp` namespace (e.g., `_meta._fastmcp.tags`) to avoid conflicts with user-defined metadata. This behavior can be controlled with the server's `include_fastmcp_meta` setting - when disabled, the `_fastmcp` namespace won't be included. Other MCP server implementations may not provide this metadata structure.
+`_meta` 字段是标准 MCP 规范的一部分。FastMCP 服务器在 `_fastmcp` 命名空间内包含标签和其他元数据（例如 `_meta._fastmcp.tags`）以避免与用户定义的元数据冲突。这种行为可以通过服务器的 `include_fastmcp_meta` 设置控制 - 如果禁用，将不会包含 `_fastmcp` 命名空间。其他 MCP 服务器实现可能不提供此元数据结构。
 </Note>
 
-## Reading Resources
+## 读取资源
 
-### Static Resources
+### 静态资源
 
-Read a static resource using its URI:
+使用 URI 读取静态资源：
 
 ```python
 async with client:
-    # Read a static resource
+    # 读取静态资源
     content = await client.read_resource("file:///path/to/README.md")
     # content -> list[mcp.types.TextResourceContents | mcp.types.BlobResourceContents]
     
-    # Access text content
+    # 访问文本内容
     if hasattr(content[0], 'text'):
         print(content[0].text)
     
-    # Access binary content
+    # 访问二进制内容
     if hasattr(content[0], 'blob'):
-        print(f"Binary data: {len(content[0].blob)} bytes")
+        print(f"二进制数据: {len(content[0].blob)} 字节")
 ```
 
-### Resource Templates
+### 资源模板
 
-Read from a resource template by providing the URI with parameters:
+通过提供带参数的 URI 从资源模板读取：
 
 ```python
 async with client:
-    # Read a resource generated from a template
-    # For example, a template like "weather://{{city}}/current"
+    # 读取从模板生成的资源
+    # 例如，像 "weather://{{city}}/current" 这样的模板
     weather_content = await client.read_resource("weather://london/current")
     
-    # Access the generated content
-    print(weather_content[0].text)  # Assuming text JSON response
+    # 访问生成的内容
+    print(weather_content[0].text)  # 假设文本 JSON 响应
 ```
 
-## Content Types
+## 内容类型
 
-Resources can return different content types:
+资源可以返回不同的内容类型：
 
-### Text Resources
+### 文本资源
 
 ```python
 async with client:
@@ -131,11 +131,11 @@ async with client:
     
     for item in content:
         if hasattr(item, 'text'):
-            print(f"Text content: {item.text}")
-            print(f"MIME type: {item.mimeType}")
+            print(f"文本内容: {item.text}")
+            print(f"MIME 类型: {item.mimeType}")
 ```
 
-### Binary Resources
+### 二进制资源
 
 ```python
 async with client:
@@ -143,35 +143,35 @@ async with client:
     
     for item in content:
         if hasattr(item, 'blob'):
-            print(f"Binary content: {len(item.blob)} bytes")
-            print(f"MIME type: {item.mimeType}")
+            print(f"二进制内容: {len(item.blob)} 字节")
+            print(f"MIME 类型: {item.mimeType}")
             
-            # Save to file
+            # 保存到文件
             with open("downloaded_logo.png", "wb") as f:
                 f.write(item.blob)
 ```
 
-## Working with Multi-Server Clients
+## 使用多服务器客户端
 
-When using multi-server clients, resource URIs are automatically prefixed with the server name:
+使用多服务器客户端时，资源 URI 会自动以服务器名称为前缀：
 
 ```python
 async with client:  # Multi-server client
-    # Access resources from different servers
+    # 访问来自不同服务器的资源
     weather_icons = await client.read_resource("weather://weather/icons/sunny")
     templates = await client.read_resource("resource://assistant/templates/list")
     
-    print(f"Weather icon: {weather_icons[0].blob}")
-    print(f"Templates: {templates[0].text}")
+    print(f"天气图标: {weather_icons[0].blob}")
+    print(f"模板: {templates[0].text}")
 ```
 
-## Raw MCP Protocol Access
+## 原始 MCP 协议访问
 
-For access to the complete MCP protocol objects, use the `*_mcp` methods:
+要访问完整的 MCP 协议对象，请使用 `*_mcp` 方法：
 
 ```python
 async with client:
-    # Raw MCP methods return full protocol objects
+    # 原始 MCP 方法返回完整的协议对象
     resources_result = await client.list_resources_mcp()
     # resources_result -> mcp.types.ListResourcesResult
     
@@ -182,23 +182,23 @@ async with client:
     # content_result -> mcp.types.ReadResourceResult
 ```
 
-## Common Resource URI Patterns
+## 常见资源 URI 模式
 
-Different MCP servers may use various URI schemes:
+不同的 MCP 服务器可能使用各种 URI 方案：
 
 ```python
-# File system resources
+# 文件系统资源
 "file:///path/to/file.txt"
 
-# Custom protocol resources  
+# 自定义协议资源  
 "weather://london/current"
 "database://users/123"
 
-# Generic resource protocol
+# 通用资源协议
 "resource://config/settings"
 "resource://templates/email"
 ```
 
 <Tip>
-Resource URIs and their formats depend on the specific MCP server implementation. Check the server's documentation for available resources and their URI patterns.
+资源 URI 及其格式取决于特定的 MCP 服务器实现。请查看服务器的文档以了解可用资源及其 URI 模式。
 </Tip>
