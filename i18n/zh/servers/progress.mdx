@@ -1,26 +1,26 @@
 ---
-title: Progress Reporting
-sidebarTitle: Progress
-description: Update clients on the progress of long-running operations through the MCP context.
+title: 进度报告
+sidebarTitle: 进度
+description: 通过 MCP 上下文向客户端更新长时间运行操作的进度。
 icon: chart-line
 ---
 
 import { VersionBadge } from '/snippets/version-badge.mdx'
 
-Progress reporting allows MCP tools to notify clients about the progress of long-running operations. This enables clients to display progress indicators and provide better user experience during time-consuming tasks.
+进度报告允许 MCP 工具向客户端通知长时间运行操作的进度。这使客户端能够显示进度指示器，并在耗时任务期间提供更好的用户体验。
 
-## Why Use Progress Reporting?
+## 为什么使用进度报告？
 
-Progress reporting is valuable for:
+进度报告对以下方面很有价值：
 
-- **User experience**: Keep users informed about long-running operations
-- **Progress indicators**: Enable clients to show progress bars or percentages
-- **Timeout prevention**: Demonstrate that operations are actively progressing
-- **Debugging**: Track execution progress for performance analysis
+- **用户体验**：让用户了解长时间运行的操作
+- **进度指示器**：使客户端能够显示进度条或百分比
+- **防止超时**：证明操作正在积极进行
+- **调试**：跟踪执行进度以进行性能分析
 
-### Basic Usage
+### 基本用法
 
-Use `ctx.report_progress()` to send progress updates to the client:
+使用 `ctx.report_progress()` 向客户端发送进度更新：
 
 ```python {14, 21}
 from fastmcp import FastMCP, Context
@@ -30,106 +30,106 @@ mcp = FastMCP("ProgressDemo")
 
 @mcp.tool
 async def process_items(items: list[str], ctx: Context) -> dict:
-    """Process a list of items with progress updates."""
+    """通过进度更新处理项目列表。"""
     total = len(items)
     results = []
     
     for i, item in enumerate(items):
-        # Report progress as we process each item
+        # 在处理每个项目时报告进度
         await ctx.report_progress(progress=i, total=total)
         
-        # Simulate processing time
+        # 模拟处理时间
         await asyncio.sleep(0.1)
         results.append(item.upper())
     
-    # Report 100% completion
+    # 报告 100% 完成
     await ctx.report_progress(progress=total, total=total)
     
     return {"processed": len(results), "results": results}
 ```
 
-## Method Signature
+## 方法签名
 
-<Card icon="code" title="Context Progress Method">
-<ResponseField name="ctx.report_progress" type="async method">
-  Report progress to the client for long-running operations
+<Card icon="code" title="上下文进度方法">
+<ResponseField name="ctx.report_progress" type="异步方法">
+  为长时间运行的操作向客户端报告进度
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ResponseField name="progress" type="float">
-      Current progress value (e.g., 24, 0.75, 1500)
+      当前进度值（例如，24、0.75、1500）
     </ResponseField>
     
     <ResponseField name="total" type="float | None" default="None">
-      Optional total value (e.g., 100, 1.0, 2000). When provided, clients may interpret this as enabling percentage calculation.
+      可选的总值（例如，100、1.0、2000）。提供时，客户端可能将此解释为启用百分比计算。
     </ResponseField>
   </Expandable>
 </ResponseField>
 </Card>
 
-## Progress Patterns
+## 进度模式
 
-### Percentage-Based Progress
+### 基于百分比的进度
 
-Report progress as a percentage (0-100):
+将进度报告为百分比（0-100）：
 
 ```python {13-14}
 @mcp.tool
 async def download_file(url: str, ctx: Context) -> str:
-    """Download a file with percentage progress."""
+    """通过百分比进度下载文件。"""
     total_size = 1000  # KB
     downloaded = 0
     
     while downloaded < total_size:
-        # Download chunk
+        # 下载块
         chunk_size = min(50, total_size - downloaded)
         downloaded += chunk_size
         
-        # Report percentage progress
+        # 报告百分比进度
         percentage = (downloaded / total_size) * 100
         await ctx.report_progress(progress=percentage, total=100)
         
-        await asyncio.sleep(0.1)  # Simulate download time
+        await asyncio.sleep(0.1)  # 模拟下载时间
     
-    return f"Downloaded file from {url}"
+    return f"从 {url} 下载文件完成"
 ```
 
-### Absolute Progress
+### 绝对进度
 
-Report progress with absolute values:
+使用绝对值报告进度：
 
 ```python {10}
 @mcp.tool
 async def backup_database(ctx: Context) -> str:
-    """Backup database tables with absolute progress."""
+    """通过绝对进度备份数据库表。"""
     tables = ["users", "orders", "products", "inventory", "logs"]
     
     for i, table in enumerate(tables):
-        await ctx.info(f"Backing up table: {table}")
+        await ctx.info(f"正在备份表：{table}")
         
-        # Report absolute progress
+        # 报告绝对进度
         await ctx.report_progress(progress=i + 1, total=len(tables))
         
-        # Simulate backup time
+        # 模拟备份时间
         await asyncio.sleep(0.5)
     
-    return "Database backup completed"
+    return "数据库备份完成"
 ```
 
-### Indeterminate Progress
+### 不确定进度
 
-Report progress without a known total for operations where the endpoint is unknown:
+对于终点未知的操作，在没有已知总数的情况下报告进度：
 
 ```python {11}
 @mcp.tool
 async def scan_directory(directory: str, ctx: Context) -> dict:
-    """Scan directory with indeterminate progress."""
+    """通过不确定进度扫描目录。"""
     files_found = 0
     
-    # Simulate directory scanning
-    for i in range(10):  # Unknown number of files
+    # 模拟目录扫描
+    for i in range(10):  # 未知文件数量
         files_found += 1
         
-        # Report progress without total for indeterminate operations
+        # 对于不确定操作，报告进度时不提供总数
         await ctx.report_progress(progress=files_found)
         
         await asyncio.sleep(0.2)
@@ -137,53 +137,53 @@ async def scan_directory(directory: str, ctx: Context) -> dict:
     return {"files_found": files_found, "directory": directory}
 ```
 
-### Multi-Stage Operations
+### 多阶段操作
 
-Break complex operations into stages with progress for each:
+将复杂操作分解为阶段，每个阶段都有进度：
 
 ```python
 @mcp.tool
 async def data_migration(source: str, destination: str, ctx: Context) -> str:
-    """Migrate data with multi-stage progress reporting."""
+    """通过多阶段进度报告迁移数据。"""
     
-    # Stage 1: Validation (0-25%)
-    await ctx.info("Validating source data")
+    # 阶段 1：验证（0-25%）
+    await ctx.info("验证源数据")
     for i in range(5):
         await ctx.report_progress(progress=i * 5, total=100)
         await asyncio.sleep(0.1)
     
-    # Stage 2: Export (25-60%)
-    await ctx.info("Exporting data from source")
+    # 阶段 2：导出（25-60%）
+    await ctx.info("从源导出数据")
     for i in range(7):
         progress = 25 + (i * 5)
         await ctx.report_progress(progress=progress, total=100)
         await asyncio.sleep(0.1)
     
-    # Stage 3: Transform (60-80%)
-    await ctx.info("Transforming data format")
+    # 阶段 3：转换（60-80%）
+    await ctx.info("转换数据格式")
     for i in range(4):
         progress = 60 + (i * 5)
         await ctx.report_progress(progress=progress, total=100)
         await asyncio.sleep(0.1)
     
-    # Stage 4: Import (80-100%)
-    await ctx.info("Importing to destination")
+    # 阶段 4：导入（80-100%）
+    await ctx.info("导入到目标")
     for i in range(4):
         progress = 80 + (i * 5)
         await ctx.report_progress(progress=progress, total=100)
         await asyncio.sleep(0.1)
     
-    # Final completion
+    # 最终完成
     await ctx.report_progress(progress=100, total=100)
     
-    return f"Migration from {source} to {destination} completed"
+    return f"从 {source} 到 {destination} 的迁移完成"
 ```
 
 
-## Client Requirements
+## 客户端要求
 
-Progress reporting requires clients to support progress handling:
+进度报告需要客户端支持进度处理：
 
-- Clients must send a `progressToken` in the initial request to receive progress updates
-- If no progress token is provided, progress calls will have no effect (they won't error)
-- See [Client Progress](/zh/clients/progress) for details on implementing client-side progress handling
+- 客户端必须在初始请求中发送 `progressToken` 以接收进度更新
+- 如果未提供进度令牌，进度调用将不会产生任何效果（不会报错）
+- 有关实现客户端进度处理的详细信息，请参阅[客户端进度](/zh/clients/progress)

@@ -1,32 +1,32 @@
 ---
-title: Server Logging
-sidebarTitle: Logging
-description: Send log messages back to MCP clients through the context.
+title: 服务器日志记录
+sidebarTitle: 日志记录
+description: 通过上下文向 MCP 客户端发送日志消息。
 icon: receipt
 ---
 
 import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <Tip>
-This documentation covers **MCP client logging** - sending messages from your server to MCP clients. For standard server-side logging (e.g., writing to files, console), use `fastmcp.utilities.logging.get_logger()` or Python's built-in `logging` module.
+本文档涵盖 **MCP 客户端日志记录** - 从您的服务器向 MCP 客户端发送消息。对于标准的服务器端日志记录（例如，写入文件、控制台），请使用 `fastmcp.utilities.logging.get_logger()` 或 Python 的内置 `logging` 模块。
 </Tip>
 
-Server logging allows MCP tools to send debug, info, warning, and error messages back to the client. This provides visibility into function execution and helps with debugging during development and operation.
+服务器日志记录允许 MCP 工具向客户端发送调试、信息、警告和错误消息。这提供了函数执行的可见性，并有助于在开发和运行期间进行调试。
 
-## Why Use Server Logging?
+## 为什么使用服务器日志记录？
 
-Server logging is essential for:
+服务器日志记录对以下方面至关重要：
 
-- **Debugging**: Send detailed execution information to help diagnose issues
-- **Progress visibility**: Keep users informed about what the tool is doing
-- **Error reporting**: Communicate problems and their context to clients
-- **Audit trails**: Create records of tool execution for compliance or analysis
+- **调试**：发送详细的执行信息以帮助诊断问题
+- **进度可见性**：让用户了解工具正在做什么
+- **错误报告**：向客户端传达问题及其上下文
+- **审计跟踪**：创建工具执行记录以便合规或分析
 
-Unlike standard Python logging, MCP server logging sends messages directly to the client, making them visible in the client's interface or logs.
+与标准 Python 日志记录不同，MCP 服务器日志记录直接向客户端发送消息，使它们在客户端的界面或日志中可见。
 
-### Basic Usage
+### 基本用法
 
-Use the context logging methods within any tool function:
+在任何工具函数中使用上下文日志记录方法：
 
 ```python {8-9, 13, 17, 21}
 from fastmcp import FastMCP, Context
@@ -35,188 +35,188 @@ mcp = FastMCP("LoggingDemo")
 
 @mcp.tool
 async def analyze_data(data: list[float], ctx: Context) -> dict:
-    """Analyze numerical data with comprehensive logging."""
-    await ctx.debug("Starting analysis of numerical data")
-    await ctx.info(f"Analyzing {len(data)} data points")
+    """通过全面的日志记录分析数值数据。"""
+    await ctx.debug("开始分析数值数据")
+    await ctx.info(f"正在分析 {len(data)} 个数据点")
     
     try:
         if not data:
-            await ctx.warning("Empty data list provided")
-            return {"error": "Empty data list"}
+            await ctx.warning("提供了空数据列表")
+            return {"error": "空数据列表"}
         
         result = sum(data) / len(data)
-        await ctx.info(f"Analysis complete, average: {result}")
+        await ctx.info(f"分析完成，平均值：{result}")
         return {"average": result, "count": len(data)}
         
     except Exception as e:
-        await ctx.error(f"Analysis failed: {str(e)}")
+        await ctx.error(f"分析失败：{str(e)}")
         raise
 ```
 
-## Structured Logging with `extra`
+## 使用 `extra` 进行结构化日志记录
 
-All logging methods (`debug`, `info`, `warning`, `error`, `log`) now accept an `extra` parameter, which is a dictionary of arbitrary data. This allows you to send structured data to the client, which is useful for creating rich, queryable logs.
+所有日志记录方法（`debug`、`info`、`warning`、`error`、`log`）现在都接受一个 `extra` 参数，它是一个包含任意数据的字典。这允许您向客户端发送结构化数据，这对于创建丰富的、可查询的日志很有用。
 
 ```python
 @mcp.tool
 async def process_transaction(transaction_id: str, amount: float, ctx: Context):
     await ctx.info(
-        f"Processing transaction {transaction_id}",
+        f"正在处理交易 {transaction_id}",
         extra={
             "transaction_id": transaction_id,
             "amount": amount,
             "currency": "USD"
         }
     )
-    # ... processing logic ...
+    # ... 处理逻辑 ...
 ```
 
-## Logging Methods
+## 日志记录方法
 
-<Card icon="code" title="Context Logging Methods">
-<ResponseField name="ctx.debug" type="async method">
-  Send debug-level messages for detailed execution information
+<Card icon="code" title="上下文日志记录方法">
+<ResponseField name="ctx.debug" type="异步方法">
+  发送调试级别的消息以获取详细的执行信息
   
-  <Expandable title="parameters">
+  <Expandable title="参数">
     <ResponseField name="message" type="str">
-      The debug message to send to the client
+      发送给客户端的调试消息
     </ResponseField>
     <ResponseField name="extra" type="dict | None" default="None">
-      Optional dictionary for structured logging data
+      用于结构化日志记录数据的可选字典
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="ctx.info" type="async method">
-  Send informational messages about normal execution
+<ResponseField name="ctx.info" type="异步方法">
+  发送有关正常执行的信息消息
   
-  <Expandable title="parameters">
+  <Expandable title="参数">
     <ResponseField name="message" type="str">
-      The information message to send to the client
+      发送给客户端的信息消息
     </ResponseField>
     <ResponseField name="extra" type="dict | None" default="None">
-      Optional dictionary for structured logging data
+      用于结构化日志记录数据的可选字典
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="ctx.warning" type="async method">
-  Send warning messages for potential issues that didn't prevent execution
+<ResponseField name="ctx.warning" type="异步方法">
+  为未阻止执行的潜在问题发送警告消息
   
-  <Expandable title="parameters">
+  <Expandable title="参数">
     <ResponseField name="message" type="str">
-      The warning message to send to the client
+      发送给客户端的警告消息
     </ResponseField>
     <ResponseField name="extra" type="dict | None" default="None">
-      Optional dictionary for structured logging data
+      用于结构化日志记录数据的可选字典
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="ctx.error" type="async method">
-  Send error messages for problems that occurred during execution
+<ResponseField name="ctx.error" type="异步方法">
+  为执行期间发生的问题发送错误消息
   
-  <Expandable title="parameters">
+  <Expandable title="参数">
     <ResponseField name="message" type="str">
-      The error message to send to the client
+      发送给客户端的错误消息
     </ResponseField>
     <ResponseField name="extra" type="dict | None" default="None">
-      Optional dictionary for structured logging data
+      用于结构化日志记录数据的可选字典
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="ctx.log" type="async method">
-  Generic logging method with custom level and logger name
+<ResponseField name="ctx.log" type="异步方法">
+  具有自定义级别和记录器名称的通用日志记录方法
   
-  <Expandable title="parameters">
+  <Expandable title="参数">
     <ResponseField name="level" type="Literal['debug', 'info', 'warning', 'error']">
-      The log level for the message
+      消息的日志级别
     </ResponseField>
     
     <ResponseField name="message" type="str">
-      The message to send to the client
+      发送给客户端的消息
     </ResponseField>
     
     <ResponseField name="logger_name" type="str | None" default="None">
-      Optional custom logger name for categorizing messages
+      用于分类消息的可选自定义记录器名称
     </ResponseField>
     <ResponseField name="extra" type="dict | None" default="None">
-      Optional dictionary for structured logging data
+      用于结构化日志记录数据的可选字典
     </ResponseField>
   </Expandable>
 </ResponseField>
 </Card>
 
-## Log Levels
+## 日志级别
 
-### Debug
-Use for detailed information that's typically only useful when diagnosing problems:
+### Debug（调试）
+用于详细信息，通常仅在诊断问题时有用：
 
 ```python 
 @mcp.tool
 async def process_file(file_path: str, ctx: Context) -> str:
-    """Process a file with detailed debug logging."""
-    await ctx.debug(f"Starting to process file: {file_path}")
-    await ctx.debug("Checking file permissions")
+    """通过详细的调试日志记录处理文件。"""
+    await ctx.debug(f"开始处理文件：{file_path}")
+    await ctx.debug("检查文件权限")
     
-    # File processing logic
-    await ctx.debug("File processing completed successfully")
-    return "File processed"
+    # 文件处理逻辑
+    await ctx.debug("文件处理成功完成")
+    return "文件已处理"
 ```
 
-### Info
-Use for general information about normal program execution:
+### Info（信息）
+用于有关正常程序执行的一般信息：
 
 ```python
 @mcp.tool
 async def backup_database(ctx: Context) -> str:
-    """Backup database with progress information."""
-    await ctx.info("Starting database backup")
-    await ctx.info("Connecting to database")
-    await ctx.info("Backup completed successfully")
-    return "Database backed up"
+    """通过进度信息备份数据库。"""
+    await ctx.info("开始数据库备份")
+    await ctx.info("连接到数据库")
+    await ctx.info("备份成功完成")
+    return "数据库已备份"
 ```
 
-### Warning
-Use for potentially harmful situations that don't prevent execution:
+### Warning（警告）
+用于不会阻止执行的潜在有害情况：
 
 ```python
 @mcp.tool
 async def validate_config(config: dict, ctx: Context) -> dict:
-    """Validate configuration with warnings for deprecated options."""
+    """验证配置，对已弃用的选项发出警告。"""
     if "old_api_key" in config:
         await ctx.warning(
-            "Using deprecated 'old_api_key' field. Please use 'api_key' instead",
+            "正在使用已弃用的 'old_api_key' 字段。请改用 'api_key'",
             extra={"deprecated_field": "old_api_key"}
         )
     
     if config.get("timeout", 30) > 300:
         await ctx.warning(
-            "Timeout value is very high (>5 minutes), this may cause issues",
+            "超时值非常高（>5分钟），这可能会导致问题",
             extra={"timeout_value": config.get("timeout")}
         )
     
-    return {"status": "valid", "warnings": "see logs"}
+    return {"status": "valid", "warnings": "查看日志"}
 ```
 
-### Error
-Use for error events that might still allow the application to continue:
+### Error（错误）
+用于可能仍允许应用程序继续的错误事件：
 
 ```python
 @mcp.tool
 async def batch_process(items: list[str], ctx: Context) -> dict:
-    """Process multiple items, logging errors for failed items."""
+    """处理多个项目，为失败的项目记录错误。"""
     successful = 0
     failed = 0
     
     for item in items:
         try:
-            # Process item
+            # 处理项目
             successful += 1
         except Exception as e:
             await ctx.error(
-                f"Failed to process item '{item}': {str(e)}",
+                f"处理项目 '{item}' 失败：{str(e)}",
                 extra={"failed_item": item}
             )
             failed += 1
@@ -225,12 +225,12 @@ async def batch_process(items: list[str], ctx: Context) -> dict:
 ```
 
 
-## Client Handling
+## 客户端处理
 
-Log messages are sent to the client through the MCP protocol. How clients handle these messages depends on their implementation:
+日志消息通过 MCP 协议发送给客户端。客户端如何处理这些消息取决于它们的实现：
 
-- **Development clients**: May display logs in real-time for debugging
-- **Production clients**: May store logs for later analysis or display to users
-- **Integration clients**: May forward logs to external logging systems
+- **开发客户端**：可能实时显示日志以进行调试
+- **生产客户端**：可能存储日志以供稍后分析或向用户显示
+- **集成客户端**：可能将日志转发到外部日志记录系统
 
-See [Client Logging](/zh/clients/logging) for details on how clients can handle server log messages.
+有关客户端如何处理服务器日志消息的详细信息，请参阅[客户端日志记录](/zh/clients/logging)。

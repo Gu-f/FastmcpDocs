@@ -1,7 +1,7 @@
 ---
-title: LLM Sampling
-sidebarTitle: Sampling
-description: Request the client's LLM to generate text based on provided messages through the MCP context.
+title: LLM 采样
+sidebarTitle: 采样
+description: 通过 MCP 上下文请求客户端的 LLM 基于提供的消息生成文本。
 icon: robot
 ---
 
@@ -9,20 +9,20 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <VersionBadge version="2.0.0" />
 
-LLM sampling allows MCP tools to request the client's LLM to generate text based on provided messages. This is useful when tools need to leverage the LLM's capabilities to process data, generate responses, or perform text-based analysis.
+LLM 采样允许 MCP 工具请求客户端的 LLM 基于提供的消息生成文本。当工具需要利用 LLM 的能力来处理数据、生成响应或执行基于文本的分析时，这非常有用。
 
-## Why Use LLM Sampling?
+## 为什么使用 LLM 采样？
 
-LLM sampling enables tools to:
+LLM 采样使工具能够：
 
-- **Leverage AI capabilities**: Use the client's LLM for text generation and analysis
-- **Offload complex reasoning**: Let the LLM handle tasks requiring natural language understanding
-- **Generate dynamic content**: Create responses, summaries, or transformations based on data
-- **Maintain context**: Use the same LLM instance that the user is already interacting with
+- **利用 AI 能力**：使用客户端的 LLM 进行文本生成和分析
+- **减轻复杂推理负担**：让 LLM 处理需要自然语言理解的任务
+- **生成动态内容**：基于数据创建响应、摘要或转换
+- **保持上下文**：使用用户已在交互的同一 LLM 实例
 
-### Basic Usage
+### 基本用法
 
-Use `ctx.sample()` to request text generation from the client's LLM:
+使用 `ctx.sample()` 请求客户端的 LLM 生成文本：
 
 ```python {14}
 from fastmcp import FastMCP, Context
@@ -31,92 +31,92 @@ mcp = FastMCP("SamplingDemo")
 
 @mcp.tool
 async def analyze_sentiment(text: str, ctx: Context) -> dict:
-    """Analyze the sentiment of text using the client's LLM."""
-    prompt = f"""Analyze the sentiment of the following text as positive, negative, or neutral. 
-    Just output a single word - 'positive', 'negative', or 'neutral'.
+    """使用客户端的 LLM 分析文本情感。"""
+    prompt = f"""分析以下文本的情感为积极、消极或中性。
+    只输出一个词 - '积极'、'消极' 或 '中性'。
     
-    Text to analyze: {text}"""
+    要分析的文本：{text}"""
     
-    # Request LLM analysis
+    # 请求 LLM 分析
     response = await ctx.sample(prompt)
     
-    # Process the LLM's response
+    # 处理 LLM 的响应
     sentiment = response.text.strip().lower()
     
-    # Map to standard sentiment values
-    if "positive" in sentiment:
-        sentiment = "positive"
-    elif "negative" in sentiment:
-        sentiment = "negative"
+    # 映射到标准情感值
+    if "积极" in sentiment or "positive" in sentiment:
+        sentiment = "积极"
+    elif "消极" in sentiment or "negative" in sentiment:
+        sentiment = "消极"
     else:
-        sentiment = "neutral"
+        sentiment = "中性"
     
     return {"text": text, "sentiment": sentiment}
 ```
 
-## Method Signature
+## 方法签名
 
-<Card icon="code" title="Context Sampling Method">
-<ResponseField name="ctx.sample" type="async method">
-  Request text generation from the client's LLM
+<Card icon="code" title="上下文采样方法">
+<ResponseField name="ctx.sample" type="异步方法">
+  从客户端的 LLM 请求文本生成
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ResponseField name="messages" type="str | list[str | SamplingMessage]">
-      A string or list of strings/message objects to send to the LLM
+      发送给 LLM 的字符串或字符串/消息对象列表
     </ResponseField>
     
     <ResponseField name="system_prompt" type="str | None" default="None">
-      Optional system prompt to guide the LLM's behavior
+      用于指导 LLM 行为的可选系统提示
     </ResponseField>
     
     <ResponseField name="temperature" type="float | None" default="None">
-      Optional sampling temperature (controls randomness, typically 0.0-1.0)
+      可选的采样温度（控制随机性，通常为 0.0-1.0）
     </ResponseField>
     
     <ResponseField name="max_tokens" type="int | None" default="512">
-      Optional maximum number of tokens to generate
+      可选的最大生成令牌数
     </ResponseField>
     
     <ResponseField name="model_preferences" type="ModelPreferences | str | list[str] | None" default="None">
-      Optional model selection preferences (e.g., model hint string, list of hints, or ModelPreferences object)
+      可选的模型选择偏好（例如，模型提示字符串、提示列表或 ModelPreferences 对象）
     </ResponseField>
   </Expandable>
   
-  <Expandable title="Response">
+  <Expandable title="响应">
     <ResponseField name="response" type="TextContent | ImageContent">
-      The LLM's response content (typically TextContent with a .text attribute)
+      LLM 的响应内容（通常是带有 .text 属性的 TextContent）
     </ResponseField>
   </Expandable>
 </ResponseField>
 </Card>
 
-## Simple Text Generation
+## 简单文本生成
 
-### Basic Prompting
+### 基本提示
 
-Generate text with simple string prompts:
+使用简单字符串提示生成文本：
 
 ```python {6}
 @mcp.tool
 async def generate_summary(content: str, ctx: Context) -> str:
-    """Generate a summary of the provided content."""
-    prompt = f"Please provide a concise summary of the following content:\n\n{content}"
+    """生成提供内容的摘要。"""
+    prompt = f"请提供以下内容的简洁摘要：\n\n{content}"
     
     response = await ctx.sample(prompt)
     return response.text
 ```
 
-### System Prompt
+### 系统提示
 
-Use system prompts to guide the LLM's behavior:
+使用系统提示来指导 LLM 的行为：
 
 ```python {4-9}
 @mcp.tool
 async def generate_code_example(concept: str, ctx: Context) -> str:
-    """Generate a Python code example for a given concept."""
+    """为给定概念生成 Python 代码示例。"""
     response = await ctx.sample(
-        messages=f"Write a simple Python code example demonstrating '{concept}'.",
-        system_prompt="You are an expert Python programmer. Provide concise, working code examples without explanations.",
+        messages=f"编写一个演示 '{concept}' 的简单 Python 代码示例。",
+        system_prompt="你是一个专业的 Python 程序员。提供简洁、可运行的代码示例，不需要解释。",
         temperature=0.7,
         max_tokens=300
     )
@@ -126,19 +126,19 @@ async def generate_code_example(concept: str, ctx: Context) -> str:
 ```
 
 
-### Model Preferences
+### 模型偏好
 
-Specify model preferences for different use cases:
+为不同用例指定模型偏好：
 
 ```python {4-8, 17-22}
 @mcp.tool
 async def creative_writing(topic: str, ctx: Context) -> str:
-    """Generate creative content using a specific model."""
+    """使用特定模型生成创意内容。"""
     response = await ctx.sample(
-        messages=f"Write a creative short story about {topic}",
-        model_preferences="claude-3-sonnet",  # Prefer a specific model
-        include_context="thisServer",  # Use the server's context
-        temperature=0.9,  # High creativity
+        messages=f"写一个关于 {topic} 的创意短篇小说",
+        model_preferences="claude-3-sonnet",  # 偏好特定模型
+        include_context="thisServer",  # 使用服务器的上下文
+        temperature=0.9,  # 高创造性
         max_tokens=1000
     )
     
@@ -146,46 +146,46 @@ async def creative_writing(topic: str, ctx: Context) -> str:
 
 @mcp.tool
 async def technical_analysis(data: str, ctx: Context) -> str:
-    """Perform technical analysis with a reasoning-focused model."""
+    """使用专注推理的模型执行技术分析。"""
     response = await ctx.sample(
-        messages=f"Analyze this technical data and provide insights: {data}",
-        model_preferences=["claude-3-opus", "gpt-4"],  # Prefer reasoning models
-        temperature=0.2,  # Low randomness for consistency
+        messages=f"分析这些技术数据并提供见解：{data}",
+        model_preferences=["claude-3-opus", "gpt-4"],  # 偏好推理模型
+        temperature=0.2,  # 低随机性保证一致性
         max_tokens=800
     )
     
     return response.text
 ```
 
-### Complex Message Structures
+### 复杂消息结构
 
-Use structured messages for more complex interactions:
+使用结构化消息进行更复杂的交互：
 
 ```python {1, 6-10}
 from fastmcp.client.sampling import SamplingMessage
 
 @mcp.tool
 async def multi_turn_analysis(user_query: str, context_data: str, ctx: Context) -> str:
-    """Perform analysis using multi-turn conversation structure."""
+    """使用多轮对话结构执行分析。"""
     messages = [
-        SamplingMessage(role="user", content=f"I have this data: {context_data}"),
-        SamplingMessage(role="assistant", content="I can see your data. What would you like me to analyze?"),
+        SamplingMessage(role="user", content=f"我有这些数据：{context_data}"),
+        SamplingMessage(role="assistant", content="我能看到您的数据。您希望我分析什么？"),
         SamplingMessage(role="user", content=user_query)
     ]
     
     response = await ctx.sample(
         messages=messages,
-        system_prompt="You are a data analyst. Provide detailed insights based on the conversation context.",
+        system_prompt="你是一个数据分析师。基于对话上下文提供详细见解。",
         temperature=0.3
     )
     
     return response.text
 ```
 
-## Client Requirements
+## 客户端要求
 
-LLM sampling requires client support:
+LLM 采样需要客户端支持：
 
-- Clients must implement sampling handlers to process requests
-- If the client doesn't support sampling, calls to `ctx.sample()` will fail
-- See [Client Sampling](/zh/clients/sampling) for details on implementing client-side sampling handlers
+- 客户端必须实现采样处理程序来处理请求
+- 如果客户端不支持采样，调用 `ctx.sample()` 将失败
+- 有关实现客户端采样处理程序的详细信息，请参阅[客户端采样](/zh/clients/sampling)

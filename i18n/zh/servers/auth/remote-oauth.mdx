@@ -1,7 +1,7 @@
 ---
-title: Remote OAuth
-sidebarTitle: Remote OAuth
-description: Integrate your FastMCP server with external identity providers like WorkOS, Auth0, and corporate SSO systems.
+title: 远程 OAuth
+sidebarTitle: 远程 OAuth
+description: 将您的 FastMCP 服务器与外部身份提供商（如 WorkOS、Auth0 和企业 SSO 系统）集成。
 icon: camera-cctv
 tag: NEW
 ---
@@ -10,71 +10,71 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 <VersionBadge version="2.11.0" />
 
-Remote OAuth integration allows your FastMCP server to leverage external identity providers while maintaining the automated authentication flows that MCP clients require. This approach provides enterprise-grade authentication features without the complexity of implementing them yourself, making it the recommended pattern for most production applications.
+远程 OAuth 集成允许您的 FastMCP 服务器利用外部身份提供商，同时保持 MCP 客户端所需的自动化身份验证流程。这种方法提供企业级身份验证功能，而无需自己实现复杂性，使其成为大多数生产应用程序的推荐模式。
 
 <Tip>
-Remote OAuth requires identity providers that support **Dynamic Client Registration (DCR)**. This enables MCP clients to automatically register and authenticate without manual configuration steps.
+远程 OAuth 需要支持**动态客户端注册（DCR）**的身份提供商。这使得 MCP 客户端能够自动注册和验证身份，无需手动配置步骤。
 </Tip>
 
-## The Remote OAuth Challenge
+## 远程 OAuth 挑战
 
-Traditional OAuth flows assume human users with web browsers who can interact with login forms, consent screens, and redirects. MCP clients operate differently - they're often automated systems that need to authenticate programmatically without human intervention.
+传统的 OAuth 流程假设有使用网络浏览器的人类用户，可以与登录表单、同意屏幕和重定向进行交互。MCP 客户端的运行方式不同——它们通常是需要在无人干预的情况下以编程方式进行身份验证的自动化系统。
 
-This creates several unique requirements that standard OAuth implementations don't address well:
+这产生了几个标准 OAuth 实现无法很好解决的独特要求：
 
-**Automatic Discovery**: MCP clients must discover authentication requirements by examining server metadata rather than encountering HTTP redirects. They need to know which identity provider to use and how to reach it before making any authenticated requests.
+**自动发现**：MCP 客户端必须通过检查服务器元数据来发现身份验证要求，而不是遇到 HTTP 重定向。它们需要在发出任何经过身份验证的请求之前知道要使用哪个身份提供商以及如何访问它。
 
-**Programmatic Registration**: Clients need to register themselves with identity providers automatically. Manual client registration doesn't work when clients might be dynamically created tools or services.
+**编程式注册**：客户端需要自动向身份提供商注册自己。当客户端可能是动态创建的工具或服务时，手动客户端注册不起作用。
 
-**Seamless Token Management**: Clients must obtain, store, and refresh tokens without user interaction. The authentication flow needs to work in headless environments where no human is available to complete OAuth consent flows.
+**无缝令牌管理**：客户端必须在没有用户交互的情况下获取、存储和刷新令牌。身份验证流程需要在没有人类可用来完成 OAuth 同意流程的无头环境中工作。
 
-**Protocol Integration**: The authentication process must integrate cleanly with MCP's JSON-RPC transport layer and error handling mechanisms.
+**协议集成**：身份验证过程必须与 MCP 的 JSON-RPC 传输层和错误处理机制清晰地集成。
 
-These requirements mean that your MCP server needs to do more than just validate tokens - it needs to provide discovery metadata that enables MCP clients to understand and navigate your authentication requirements automatically.
+这些要求意味着您的 MCP 服务器需要做的不仅仅是验证令牌——它需要提供发现元数据，使 MCP 客户端能够自动理解和导航您的身份验证要求。
 
-## MCP Authentication Discovery
+## MCP 身份验证发现
 
-MCP authentication discovery relies on well-known endpoints that clients can examine to understand your authentication requirements. Your server becomes a bridge between MCP clients and your chosen identity provider.
+MCP 身份验证发现依赖于客户端可以检查的已知端点来理解您的身份验证要求。您的服务器成为 MCP 客户端和您选择的身份提供商之间的桥梁。
 
-The core discovery endpoint is `/.well-known/oauth-protected-resource`, which tells clients that your server requires OAuth authentication and identifies the authorization servers you trust. This endpoint contains static metadata that points clients to your identity provider without requiring any dynamic lookups.
+核心发现端点是 `/.well-known/oauth-protected-resource`，它告诉客户端您的服务器需要 OAuth 身份验证，并标识您信任的授权服务器。此端点包含静态元数据，将客户端指向您的身份提供商，而无需任何动态查找。
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant FastMCPServer as FastMCP Server
-    participant ExternalIdP as Identity Provider
+    participant Client as 客户端
+    participant FastMCPServer as FastMCP 服务器
+    participant ExternalIdP as 身份提供商
 
     Client->>FastMCPServer: 1. GET /.well-known/oauth-protected-resource
-    FastMCPServer-->>Client: 2. "Use https://my-idp.com for auth"
+    FastMCPServer-->>Client: 2. "使用 https://my-idp.com 进行身份验证"
     
-    note over Client, ExternalIdP: Client goes directly to the IdP
-    Client->>ExternalIdP: 3. Authenticate & get token via DCR
-    ExternalIdP-->>Client: 4. Access token
+    note over Client, ExternalIdP: 客户端直接联系身份提供商
+    Client->>ExternalIdP: 3. 通过 DCR 进行身份验证并获取令牌
+    ExternalIdP-->>Client: 4. 访问令牌
     
-    Client->>FastMCPServer: 5. MCP request with Bearer token
-    FastMCPServer->>FastMCPServer: 6. Verify token signature
-    FastMCPServer-->>Client: 7. MCP response
+    Client->>FastMCPServer: 5. 带有 Bearer 令牌的 MCP 请求
+    FastMCPServer->>FastMCPServer: 6. 验证令牌签名
+    FastMCPServer-->>Client: 7. MCP 响应
 ```
 
-This flow separates concerns cleanly: your MCP server handles resource protection and token validation, while your identity provider handles user authentication and token issuance. The client coordinates between these systems using standardized OAuth discovery mechanisms.
+这个流程清晰地分离了关注点：您的 MCP 服务器处理资源保护和令牌验证，而您的身份提供商处理用户身份验证和令牌发行。客户端使用标准化的 OAuth 发现机制在这些系统之间进行协调。
 
-## FastMCP Remote Authentication
+## FastMCP 远程身份验证
 
 <VersionBadge version="2.11.1" />
 
-FastMCP provides `RemoteAuthProvider` to handle the complexities of remote OAuth integration. This class combines token validation capabilities with the OAuth discovery metadata that MCP clients require.
+FastMCP 提供 `RemoteAuthProvider` 来处理远程 OAuth 集成的复杂性。此类将令牌验证功能与 MCP 客户端所需的 OAuth 发现元数据相结合。
 
-### RemoteAuthProvider
+### 远程身份提供者(RemoteAuthProvider)
 
-`RemoteAuthProvider` works by composing a [`TokenVerifier`](/zh/servers/auth/token-verification) with authorization server information. A `TokenVerifier` is another FastMCP authentication class that focuses solely on token validation - signature verification, expiration checking, and claim extraction. The `RemoteAuthProvider` takes that token validation capability and adds the OAuth discovery endpoints that enable MCP clients to automatically find and authenticate with your identity provider.
+`RemoteAuthProvider` 通过将 [`TokenVerifier`](/zh/servers/auth/token-verification) 与授权服务器信息组合来工作。`TokenVerifier` 是另一个专注于令牌验证的 FastMCP 身份验证类——签名验证、过期检查和声明提取。`RemoteAuthProvider` 利用该令牌验证功能并添加 OAuth 发现端点，使 MCP 客户端能够自动找到您的身份提供商并进行身份验证。
 
-This composition pattern means you can use any token validation strategy (JWT verification, introspection endpoints, custom validation logic) while maintaining consistent OAuth discovery behavior. The separation allows you to change token validation approaches without affecting the client discovery experience.
+这种组合模式意味着您可以使用任何令牌验证策略（JWT 验证、内省端点、自定义验证逻辑），同时保持一致的 OAuth 发现行为。这种分离允许您更改令牌验证方法而不影响客户端发现体验。
 
-The class automatically generates the required OAuth metadata endpoints using the MCP SDK's standardized route creation functions. This ensures compatibility with MCP clients while reducing the implementation complexity for server developers.
+该类使用 MCP SDK 的标准化路由创建函数自动生成所需的 OAuth 元数据端点。这确保了与 MCP 客户端的兼容性，同时降低了服务器开发人员的实现复杂性。
 
-### Basic Implementation
+### 基本实现
 
-Most applications can use `RemoteAuthProvider` directly without subclassing. The implementation requires a `TokenVerifier` instance, a list of trusted authorization servers, and your server's URL for metadata generation.
+大多数应用程序可以直接使用 `RemoteAuthProvider` 而无需子类化。实现需要一个 `TokenVerifier` 实例、一个受信任的授权服务器列表，以及您的服务器的 URL 用于元数据生成。
 
 ```python
 from fastmcp import FastMCP
@@ -82,30 +82,30 @@ from fastmcp.server.auth import RemoteAuthProvider
 from fastmcp.server.auth.providers.jwt import JWTVerifier
 from pydantic import AnyHttpUrl
 
-# Configure token validation for your identity provider
+# 为您的身份提供商配置令牌验证
 token_verifier = JWTVerifier(
     jwks_uri="https://auth.yourcompany.com/.well-known/jwks.json",
     issuer="https://auth.yourcompany.com",
     audience="mcp-production-api"
 )
 
-# Create the remote auth provider
+# 创建远程身份验证提供商
 auth = RemoteAuthProvider(
     token_verifier=token_verifier,
     authorization_servers=[AnyHttpUrl("https://auth.yourcompany.com")],
     resource_server_url="https://api.yourcompany.com"
 )
 
-mcp = FastMCP(name="Company API", auth=auth)
+mcp = FastMCP(name="公司 API", auth=auth)
 ```
 
-This configuration creates a server that accepts tokens issued by `auth.yourcompany.com` and provides the OAuth discovery metadata that MCP clients need. The `JWTVerifier` handles token validation using your identity provider's public keys, while the `RemoteAuthProvider` generates the required OAuth endpoints.
+此配置创建一个接受由 `auth.yourcompany.com` 发行的令牌的服务器，并提供 MCP 客户端所需的 OAuth 发现元数据。`JWTVerifier` 使用您的身份提供商的公钥处理令牌验证，而 `RemoteAuthProvider` 生成所需的 OAuth 端点。
 
-The `authorization_servers` list tells MCP clients which identity providers you trust. The `resource_server_url` identifies your server in OAuth metadata, enabling proper token audience validation.
+`authorization_servers` 列表告诉 MCP 客户端您信任哪些身份提供商。`resource_server_url` 在 OAuth 元数据中标识您的服务器，启用适当的令牌受众验证。
 
-### Custom Endpoints
+### 自定义端点
 
-You can extend `RemoteAuthProvider` to add additional endpoints beyond the standard OAuth protected resource metadata. These don't have to be OAuth-specific - you can add any endpoints your authentication integration requires.
+您可以扩展 `RemoteAuthProvider` 以添加标准 OAuth 受保护资源元数据之外的其他端点。这些不必是 OAuth 特定的——您可以添加身份验证集成所需的任何端点。
 
 ```python
 import httpx
@@ -127,12 +127,12 @@ class CompanyAuthProvider(RemoteAuthProvider):
         )
     
     def get_routes(self) -> list[Route]:
-        """Add custom endpoints to the standard protected resource routes."""
+        """将自定义端点添加到标准受保护资源路由中。"""
         
-        # Get the standard OAuth protected resource routes
+        # 获取标准 OAuth 受保护资源路由
         routes = super().get_routes()
         
-        # Add authorization server metadata forwarding for client convenience
+        # 为客户端便利添加授权服务器元数据转发
         async def authorization_server_metadata(request):
             async with httpx.AsyncClient() as client:
                 response = await client.get(
@@ -147,14 +147,14 @@ class CompanyAuthProvider(RemoteAuthProvider):
         
         return routes
 
-mcp = FastMCP(name="Company API", auth=CompanyAuthProvider())
+mcp = FastMCP(name="公司 API", auth=CompanyAuthProvider())
 ```
 
-This pattern uses `super().get_routes()` to get the standard protected resource routes, then adds additional endpoints as needed. A common use case is providing authorization server metadata forwarding, which allows MCP clients to discover your identity provider's capabilities through your MCP server rather than contacting the identity provider directly.
+这种模式使用 `super().get_routes()` 获取标准受保护资源路由，然后根据需要添加其他端点。一个常见的用例是提供授权服务器元数据转发，这允许 MCP 客户端通过您的 MCP 服务器发现您的身份提供商的功能，而不是直接联系身份提供商。
 
-## WorkOS AuthKit Integration
+## WorkOS AuthKit 集成
 
-WorkOS AuthKit provides an excellent example of remote OAuth integration. The `AuthKitProvider` demonstrates how to implement both token validation and OAuth metadata forwarding in a production-ready package.
+WorkOS AuthKit 提供了远程 OAuth 集成的绝佳示例。`AuthKitProvider` 演示了如何在生产就绪的包中实现令牌验证和 OAuth 元数据转发。
 
 ```python
 from fastmcp import FastMCP
@@ -165,25 +165,25 @@ auth = AuthKitProvider(
     base_url="https://your-mcp-server.com"
 )
 
-mcp = FastMCP(name="Protected Application", auth=auth)
+mcp = FastMCP(name="受保护的应用程序", auth=auth)
 ```
 
-The `AuthKitProvider` automatically configures JWT validation against WorkOS's public keys and provides both protected resource metadata and authorization server metadata forwarding. This implementation handles the complete remote OAuth integration with minimal configuration.
+`AuthKitProvider` 自动配置针对 WorkOS 公钥的 JWT 验证，并提供受保护资源元数据和授权服务器元数据转发。此实现以最少的配置处理完整的远程 OAuth 集成。
 
-WorkOS's support for Dynamic Client Registration makes it particularly well-suited for MCP applications. Clients can automatically register themselves with your WorkOS project and obtain the credentials needed for authentication without manual intervention.
+WorkOS 对动态客户端注册的支持使其特别适合 MCP 应用程序。客户端可以自动向您的 WorkOS 项目注册自己，并获得身份验证所需的凭据，无需手动干预。
 
-→ **Complete WorkOS tutorial**: [AuthKit Integration Guide](/zh/integrations/authkit)
+→ **完整 WorkOS 教程**：[AuthKit 集成指南](/zh/integrations/authkit)
 
-## Implementation Considerations
+## 实现考虑因素
 
-Remote OAuth integration requires careful attention to several technical details that affect reliability and security.
+远程 OAuth 集成需要仔细关注影响可靠性和安全性的几个技术细节。
 
-**Token Validation Performance**: Your server validates every incoming token by checking signatures against your identity provider's public keys. Consider implementing key caching and rotation handling to minimize latency while maintaining security.
+**令牌验证性能**：您的服务器通过检查您的身份提供商的公钥签名来验证每个传入的令牌。考虑实现密钥缓存和轮换处理以最小化延迟，同时保持安全性。
 
-**Error Handling**: Network issues with your identity provider can affect token validation. Implement appropriate timeouts, retry logic, and graceful degradation to maintain service availability during identity provider outages.
+**错误处理**：与您的身份提供商的网络问题可能影响令牌验证。实现适当的超时、重试逻辑和优雅降级，以在身份提供商中断期间维持服务可用性。
 
-**Audience Validation**: Ensure that tokens intended for your server are not accepted by other applications. Proper audience validation prevents token misuse across different services in your ecosystem.
+**受众验证**：确保专为您的服务器设计的令牌不被其他应用程序接受。适当的受众验证防止令牌在您的生态系统中的不同服务间被滥用。
 
-**Scope Management**: Map token scopes to your application's permission model consistently. Consider how scope changes affect existing tokens and plan for smooth permission updates.
+**范围管理**：将令牌范围一致地映射到您的应用程序的权限模型。考虑范围更改如何影响现有令牌，并计划平滑的权限更新。
 
-The complexity of these considerations reinforces why external identity providers are recommended over custom OAuth implementations. Established providers handle these technical details with extensive testing and operational experience.
+这些考虑因素的复杂性强化了为什么推荐使用外部身份提供商而不是自定义 OAuth 实现。成熟的提供商通过广泛的测试和运营经验处理这些技术细节。

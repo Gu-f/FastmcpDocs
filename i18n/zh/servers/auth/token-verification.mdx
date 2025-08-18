@@ -1,7 +1,7 @@
 ---
-title: Token Verification
-sidebarTitle: Token Verification
-description: Protect your server by validating bearer tokens issued by external systems.
+title: 令牌验证
+sidebarTitle: 令牌验证
+description: 通过验证外部系统发行的承载令牌来保护您的服务器。
 icon: key
 tag: NEW
 ---
@@ -10,85 +10,85 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 <VersionBadge version="2.11.0" />
 
-Token verification enables your FastMCP server to validate bearer tokens issued by external systems without participating in user authentication flows. Your server acts as a pure resource server, focusing on token validation and authorization decisions while delegating identity management to other systems in your infrastructure.
+令牌验证使您的 FastMCP 服务器能够验证外部系统发行的承载令牌，而无需参与用户身份验证流程。您的服务器充当纯资源服务器，专注于令牌验证和授权决策，同时将身份管理委托给基础设施中的其他系统。
 
 <Note>
-Token verification operates somewhat outside the formal MCP authentication flow, which expects OAuth-style discovery. It's best suited for internal systems, microservices architectures, or when you have full control over token generation and distribution.
+令牌验证在某种程度上在正式的 MCP 身份验证流程之外运行，该流程期望 OAuth 风格的发现。它最适合内部系统、微服务架构，或当您完全控制令牌生成和分发时。
 </Note>
 
-## Understanding Token Verification
+## 理解令牌验证
 
-Token verification addresses scenarios where authentication responsibility is distributed across multiple systems. Your MCP server receives structured tokens containing identity and authorization information, validates their authenticity, and makes access control decisions based on their contents.
+令牌验证解决身份验证责任分布在多个系统中的场景。您的 MCP 服务器接收包含身份和授权信息的结构化令牌，验证其真实性，并根据其内容做出访问控制决策。
 
-This pattern emerges naturally in microservices architectures where a central authentication service issues tokens that multiple downstream services validate independently. It also works well when integrating MCP servers into existing systems that already have established token-based authentication mechanisms.
+这种模式在微服务架构中自然出现，其中中央身份验证服务发行令牌，多个下游服务独立验证。当将 MCP 服务器集成到已经建立了基于令牌的身份验证机制的现有系统中时，它也运行良好。
 
-### The Token Verification Model
+### 令牌验证模型
 
-Token verification treats your MCP server as a resource server in OAuth terminology. The key insight is that token validation and token issuance are separate concerns that can be handled by different systems.
+在 OAuth 术语中，令牌验证将您的 MCP 服务器视为资源服务器。关键洞察是令牌验证和令牌发行是可以由不同系统处理的独立关注点。
 
-**Token Issuance**: Another system (API gateway, authentication service, or identity provider) handles user authentication and creates signed tokens containing identity and permission information.
+**令牌发行**：另一个系统（API 网关、身份验证服务或身份提供商）处理用户身份验证并创建包含身份和权限信息的签名令牌。
 
-**Token Validation**: Your MCP server receives these tokens, verifies their authenticity using cryptographic signatures, and extracts authorization information from their claims.
+**令牌验证**：您的 MCP 服务器接收这些令牌，使用密码学签名验证其真实性，并从其声明中提取授权信息。
 
-**Access Control**: Based on token contents, your server determines what resources, tools, and prompts the client can access.
+**访问控制**：基于令牌内容，您的服务器确定客户端可以访问哪些资源、工具和提示。
 
-This separation allows your MCP server to focus on its core functionality while leveraging existing authentication infrastructure. The token acts as a portable proof of identity that travels with each request.
+这种分离使您的 MCP 服务器能够专注于其核心功能，同时利用现有的身份验证基础设施。令牌充当随每个请求传递的可移植身份证明。
 
-### Token Security Considerations
+### 令牌安全考虑因素
 
-Token-based authentication relies on cryptographic signatures to ensure token integrity. Your MCP server validates tokens using public keys corresponding to the private keys used for token creation. This asymmetric approach means your server never needs access to signing secrets.
+基于令牌的身份验证依赖密码学签名来确保令牌完整性。您的 MCP 服务器使用与令牌创建所使用的私钥对应的公钥验证令牌。这种非对称方法意味着您的服务器永远不需要访问签名密钥。
 
-Token validation must address several security requirements: signature verification ensures tokens haven't been tampered with, expiration checking prevents use of stale tokens, and audience validation ensures tokens intended for your server aren't accepted by other systems.
+令牌验证必须解决几个安全要求：签名验证确保令牌未被篡改，过期检查防止使用过时令牌，受众验证确保专为您的服务器设计的令牌不会被其他系统接受。
 
-The challenge in MCP environments is that clients need to obtain valid tokens before making requests, but the MCP protocol doesn't provide built-in discovery mechanisms for token endpoints. Clients must obtain tokens through separate channels or prior configuration.
+MCP 环境中的挑战是客户端需要在发出请求之前获得有效令牌，但 MCP 协议不为令牌端点提供内置发现机制。客户端必须通过单独的渠道或先前配置获取令牌。
 
-## FastMCP Token Verification
+## FastMCP 令牌验证
 
-FastMCP provides the `TokenVerifier` class to handle token validation complexity while remaining flexible about token sources and validation strategies.
+FastMCP 提供 `TokenVerifier` 类来处理令牌验证复杂性，同时在令牌源和验证策略方面保持灵活性。
 
-### TokenVerifier Design
+### TokenVerifier 设计
 
-`TokenVerifier` focuses exclusively on token validation without providing OAuth discovery metadata. This makes it ideal for internal systems where clients already know how to obtain tokens, or for microservices that trust tokens from known issuers.
+`TokenVerifier` 专门专注于令牌验证，而不提供 OAuth 发现元数据。这使其非常适合客户端已经知道如何获取令牌的内部系统，或信任来自已知发行商的令牌的微服务。
 
-The class validates token signatures, checks expiration timestamps, and extracts authorization information from token claims. It supports various token formats and validation strategies while maintaining a consistent interface for authorization decisions.
+该类验证令牌签名，检查过期时间戳，并从令牌声明中提取授权信息。它支持各种令牌格式和验证策略，同时为授权决策维护一致的接口。
 
-You can subclass `TokenVerifier` to implement custom validation logic for specialized token formats or validation requirements. The base class handles common patterns while allowing extension for unique use cases.
+您可以子类化 `TokenVerifier` 为专门的令牌格式或验证要求实现自定义验证逻辑。基类处理常见模式，同时允许对独特用例进行扩展。
 
-### JWT Token Verification
+### JWT 令牌验证
 
-JSON Web Tokens (JWTs) represent the most common token format for modern applications. FastMCP's `JWTVerifier` validates JWTs using industry-standard cryptographic techniques and claim validation.
+JSON Web Tokens (JWT) 代表现代应用程序最常见的令牌格式。FastMCP 的 `JWTVerifier` 使用行业标准的密码学技术和声明验证来验证 JWT。
 
-#### JWKS Endpoint Integration
+#### JWKS 端点集成
 
-JWKS endpoint integration provides the most flexible approach for production systems. The verifier automatically fetches public keys from a JSON Web Key Set endpoint, enabling automatic key rotation without server configuration changes.
+JWKS 端点集成为生产系统提供了最灵活的方法。验证器自动从 JSON Web Key Set 端点获取公钥，实现自动密钥轮换而无需服务器配置更改。
 
 ```python
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.jwt import JWTVerifier
 
-# Configure JWT verification against your identity provider
+# 针对您的身份提供商配置 JWT 验证
 verifier = JWTVerifier(
     jwks_uri="https://auth.yourcompany.com/.well-known/jwks.json",
     issuer="https://auth.yourcompany.com",
     audience="mcp-production-api"
 )
 
-mcp = FastMCP(name="Protected API", auth=verifier)
+mcp = FastMCP(name="受保护的 API", auth=verifier)
 ```
 
-This configuration creates a server that validates JWTs issued by `auth.yourcompany.com`. The verifier periodically fetches public keys from the JWKS endpoint and validates incoming tokens against those keys. Only tokens with the correct issuer and audience claims will be accepted.
+此配置创建一个验证由 `auth.yourcompany.com` 发行的 JWT 的服务器。验证器定期从 JWKS 端点获取公钥，并针对这些密钥验证传入令牌。只有具有正确发行商和受众声明的令牌才会被接受。
 
-The `issuer` parameter ensures tokens come from your trusted authentication system, while `audience` validation prevents tokens intended for other services from being accepted by your MCP server.
+`issuer` 参数确保令牌来自您信任的身份验证系统，而 `audience` 验证防止专为其他服务设计的令牌被您的 MCP 服务器接受。
 
-#### Static Public Key Verification
+#### 静态公钥验证
 
-Static public key verification works when you have a fixed signing key and don't need automatic key rotation. This approach simplifies deployment in environments where JWKS endpoints aren't available.
+当您有固定的签名密钥且不需要自动密钥轮换时，静态公钥验证有效。这种方法简化了在 JWKS 端点不可用的环境中的部署。
 
 ```python
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.jwt import JWTVerifier
 
-# Use a static public key for token verification
+# 使用静态公钥进行令牌验证
 public_key_pem = """-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
 -----END PUBLIC KEY-----"""
@@ -99,24 +99,24 @@ verifier = JWTVerifier(
     audience="mcp-production-api"
 )
 
-mcp = FastMCP(name="Protected API", auth=verifier)
+mcp = FastMCP(name="受保护的 API", auth=verifier)
 ```
 
-This configuration validates tokens using a specific public key. The key must correspond to the private key used by your token issuer. While less flexible than JWKS endpoints, this approach works well for controlled environments or when using dedicated signing keys.
+此配置使用特定公钥验证令牌。密钥必须与令牌发行商使用的私钥相对应。虽然不如 JWKS 端点灵活，但这种方法在受控环境中或使用专用签名密钥时效果良好。
 
-### Development and Testing
+### 开发和测试
 
-Development environments often need simpler token management without the complexity of full JWT infrastructure. FastMCP provides tools specifically designed for these scenarios.
+开发环境通常需要更简单的令牌管理，而无需完整 JWT 基础设施的复杂性。FastMCP 提供专门为这些场景设计的工具。
 
-#### Static Token Verification
+#### 静态令牌验证
 
-Static token verification enables rapid development by accepting predefined tokens with associated claims. This approach eliminates the need for token generation infrastructure during development and testing.
+静态令牌验证通过接受具有相关声明的预定义令牌来实现快速开发。这种方法在开发和测试期间消除了对令牌生成基础设施的需要。
 
 ```python
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
 
-# Define development tokens and their associated claims
+# 定义开发令牌及其相关声明
 verifier = StaticTokenVerifier(
     tokens={
         "dev-alice-token": {
@@ -131,33 +131,33 @@ verifier = StaticTokenVerifier(
     required_scopes=["read:data"]
 )
 
-mcp = FastMCP(name="Development Server", auth=verifier)
+mcp = FastMCP(name="开发服务器", auth=verifier)
 ```
 
-Clients can now authenticate using `Authorization: Bearer dev-alice-token` headers. The server will recognize the token and load the associated claims for authorization decisions. This approach enables immediate development without external dependencies.
+客户端现在可以使用 `Authorization: Bearer dev-alice-token` 标头进行身份验证。服务器将识别令牌并加载相关声明用于授权决策。这种方法实现了无外部依赖的即时开发。
 
 <Warning>
-Static token verification stores tokens as plain text and should never be used in production environments. It's designed exclusively for development and testing scenarios.
+静态令牌验证将令牌存储为纯文本，绝不应在生产环境中使用。它专门为开发和测试场景设计。
 </Warning>
 
-#### Test Token Generation
+#### 测试令牌生成
 
-Test token generation helps when you need to test JWT verification without setting up complete identity infrastructure. FastMCP includes utilities for generating test key pairs and signed tokens.
+当您需要测试 JWT 验证而无需设置完整的身份基础设施时，测试令牌生成很有帮助。FastMCP 包括用于生成测试密钥对和签名令牌的实用工具。
 
 ```python
 from fastmcp.server.auth.providers.jwt import JWTVerifier, RSAKeyPair
 
-# Generate a key pair for testing
+# 生成测试用的密钥对
 key_pair = RSAKeyPair.generate()
 
-# Configure your server with the public key
+# 使用公钥配置您的服务器
 verifier = JWTVerifier(
     public_key=key_pair.public_key,
     issuer="https://test.yourcompany.com",
     audience="test-mcp-server"
 )
 
-# Generate a test token using the private key
+# 使用私钥生成测试令牌
 test_token = key_pair.create_token(
     subject="test-user-123",
     issuer="https://test.yourcompany.com", 
@@ -165,36 +165,36 @@ test_token = key_pair.create_token(
     scopes=["read", "write", "admin"]
 )
 
-print(f"Test token: {test_token}")
+print(f"测试令牌：{test_token}")
 ```
 
-This pattern enables comprehensive testing of JWT validation logic without depending on external token issuers. The generated tokens are cryptographically valid and will pass all standard JWT validation checks.
+这种模式实现了对 JWT 验证逻辑的全面测试，而无需依赖外部令牌发行商。生成的令牌在密码学上有效，将通过所有标准 JWT 验证检查。
 
-## Environment Configuration
+## 环境配置
 
-FastMCP supports both programmatic and environment-based configuration for token verification, enabling flexible deployment across different environments.
+FastMCP 支持令牌验证的编程式和基于环境的配置，实现跨不同环境的灵活部署。
 
-Environment-based configuration separates authentication settings from application code, following twelve-factor app principles and simplifying deployment pipelines.
+基于环境的配置将身份验证设置与应用程序代码分离，遵循十二因子应用原则并简化部署流水线。
 
 ```bash
-# Enable JWT verification
+# 启用 JWT 验证
 export FASTMCP_SERVER_AUTH=JWT
 
-# Configure JWT verification parameters  
+# 配置 JWT 验证参数  
 export FASTMCP_SERVER_AUTH_JWT_JWKS_URI="https://auth.company.com/.well-known/jwks.json"
 export FASTMCP_SERVER_AUTH_JWT_ISSUER="https://auth.company.com"
 export FASTMCP_SERVER_AUTH_JWT_AUDIENCE="mcp-production-api"
 export FASTMCP_SERVER_AUTH_JWT_REQUIRED_SCOPES="read:data,write:data"
 ```
 
-With these environment variables configured, your FastMCP server automatically enables JWT verification:
+配置了这些环境变量后，您的 FastMCP 服务器自动启用 JWT 验证：
 
 ```python
 from fastmcp import FastMCP
 
-# Authentication automatically configured from environment
-mcp = FastMCP(name="Production API")
+# 身份验证自动从环境配置
+mcp = FastMCP(name="生产 API")
 ```
 
-This approach enables the same codebase to run across development, staging, and production environments with different authentication requirements. Development might use static tokens while production uses JWT verification, all controlled through environment configuration.
+这种方法使相同的代码库能够在具有不同身份验证要求的开发、预发布和生产环境中运行。开发环境可能使用静态令牌，而生产环境使用 JWT 验证，全部通过环境配置控制。
 

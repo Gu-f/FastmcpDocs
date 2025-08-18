@@ -1,7 +1,7 @@
 ---
-title: User Elicitation
-sidebarTitle: Elicitation
-description: Request structured input from users during tool execution through the MCP context.
+title: 用户征询
+sidebarTitle: 征询
+description: 在工具执行期间通过 MCP 上下文从用户请求结构化输入。
 icon: message-question
 tag: NEW
 ---
@@ -10,26 +10,26 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <VersionBadge version="2.10.0" />
 
-User elicitation allows MCP servers to request structured input from users during tool execution. Instead of requiring all inputs upfront, tools can interactively ask for missing parameters, clarification, or additional context as needed.
+用户征询允许 MCP 服务器在工具执行期间从用户请求结构化输入。工具可以交互式地请求缺失的参数、澄清或根需要的额外上下文，而不是需要在前期提供所有输入。
 
 <Tip>
-Most of the examples in this document assume you have a FastMCP server instance named `mcp` and show how to use the `ctx.elicit` method to request user input from an `@mcp.tool`-decorated function.
+本文档中的大多数示例假设您有一个名为 `mcp` 的 FastMCP 服务器实例，并展示如何从 `@mcp.tool` 装饰的函数中使用 `ctx.elicit` 方法请求用户输入。
 </Tip>
 
-## What is Elicitation?
+## 什么是征询？
 
-Elicitation enables tools to pause execution and request specific information from users. This is particularly useful for:
+征询使工具能够暂停执行并从用户请求特定信息。这对以下情况特别有用：
 
-- **Missing parameters**: Ask for required information not provided initially
-- **Clarification requests**: Get user confirmation or choices for ambiguous scenarios  
-- **Progressive disclosure**: Collect complex information step-by-step
-- **Dynamic workflows**: Adapt tool behavior based on user responses
+- **缺失参数**：请求初始未提供的必需信息
+- **澄清请求**：获取用户对模糊情况的确认或选择
+- **渐进式公开**：逐步收集复杂信息
+- **动态工作流**：根据用户响应调整工具行为
 
-For example, a file management tool might ask "Which directory should I create?" or a data analysis tool might request "What date range should I analyze?"
+例如，文件管理工具可能会问“我应该创建哪个目录？”，或数据分析工具可能会请求“我应该分析哪个日期范围？”
 
-### Basic Usage
+### 基本用法
 
-Use the `ctx.elicit()` method within any tool function to request user input:
+在任何工具函数中使用 `ctx.elicit()` 方法请求用户输入：
 
 ```python {14-17}
 from fastmcp import FastMCP, Context
@@ -44,46 +44,46 @@ class UserInfo:
 
 @mcp.tool
 async def collect_user_info(ctx: Context) -> str:
-    """Collect user information through interactive prompts."""
+    """通过交互式提示收集用户信息。"""
     result = await ctx.elicit(
-        message="Please provide your information",
+        message="请提供您的信息",
         response_type=UserInfo
     )
     
     if result.action == "accept":
         user = result.data
-        return f"Hello {user.name}, you are {user.age} years old"
+        return f"您好 {user.name}，您 {user.age} 岁"
     elif result.action == "decline":
-        return "Information not provided"
+        return "未提供信息"
     else:  # cancel
-        return "Operation cancelled"
+        return "操作已取消"
 ```
 
-## Method Signature
+## 方法签名
 
-<Card icon="code" title="Context Elicitation Method">
-<ResponseField name="ctx.elicit" type="async method">
-  <Expandable title="Parameters">
+<Card icon="code" title="上下文征询方法">
+<ResponseField name="ctx.elicit" type="异步方法">
+  <Expandable title="参数">
     <ResponseField name="message" type="str">
-      The prompt message to display to the user
+      向用户显示的提示消息
     </ResponseField>
     
     <ResponseField name="response_type" type="type" default="None">
-      The Python type defining the expected response structure (dataclass, primitive type, etc.) Note that elicitation responses are subject to a restricted subset of JSON Schema types. See [Supported Response Types](#supported-response-types) for more details. 
+      定义预期响应结构的 Python 类型（数据类、基本类型等）。请注意，征询响应受到 JSON Schema 类型的限制子集的限制。更多详细信息请参阅[支持的响应类型](#supported-response-types)。
     </ResponseField>
   </Expandable>
   
-  <Expandable title="Response">
+  <Expandable title="响应">
     <ResponseField name="ElicitationResult" type="object">
-      Result object containing the user's response
+      包含用户响应的结果对象
       
-      <Expandable title="properties">
+      <Expandable title="属性">
         <ResponseField name="action" type="Literal['accept', 'decline', 'cancel']">
-          How the user responded to the request
+          用户对请求的响应方式
         </ResponseField>
         
         <ResponseField name="data" type="response_type | None">
-          The user's input data (only present when action is "accept")
+          用户的输入数据（仅在 action 为 "accept" 时存在）
         </ResponseField>
       </Expandable>
     </ResponseField>
@@ -91,28 +91,28 @@ async def collect_user_info(ctx: Context) -> str:
 </ResponseField>
 </Card>
 
-## Elicitation Actions
+## 征询动作
 
-The elicitation result contains an `action` field indicating how the user responded:
+征询结果包含一个 `action` 字段，指示用户的响应方式：
 
-- **`accept`**: User provided valid input - data is available in the `data` field
-- **`decline`**: User chose not to provide the requested information and the data field is `None`
-- **`cancel`**: User cancelled the entire operation and the data field is `None`
+- **`accept`**：用户提供了有效输入 - 数据在 `data` 字段中可用
+- **`decline`**：用户选择不提供请求的信息，data 字段为 `None`
+- **`cancel`**：用户取消了整个操作，data 字段为 `None`
 
 ```python {5, 7}
 @mcp.tool
 async def my_tool(ctx: Context) -> str:
-    result = await ctx.elicit("Choose an action")
+    result = await ctx.elicit("选择一个动作")
 
     if result.action == "accept":
-        return "Accepted!"
+        return "已接受！"
     elif result.action == "decline":
-        return "Declined!"
+        return "已拒绝！"
     else:
-        return "Cancelled!"
+        return "已取消！"
 ```
 
-FastMCP also provides typed result classes for pattern matching on the `action` field:
+FastMCP 还提供了类型化结果类用于对 `action` 字段进行模式匹配：
 
 ```python {1-5, 12, 14, 16}
 from fastmcp.server.elicitation import (
@@ -123,138 +123,138 @@ from fastmcp.server.elicitation import (
 
 @mcp.tool
 async def pattern_example(ctx: Context) -> str:
-    result = await ctx.elicit("Enter your name:", response_type=str)
+    result = await ctx.elicit("输入您的姓名：", response_type=str)
     
     match result:
         case AcceptedElicitation(data=name):
-            return f"Hello {name}!"
+            return f"您好 {name}！"
         case DeclinedElicitation():
-            return "No name provided"
+            return "未提供姓名"
         case CancelledElicitation():
-            return "Operation cancelled"
+            return "操作已取消"
 ```
 
-## Response Types
+## 响应类型
 
-The server must send a schema to the client indicating the type of data it expects in response to the elicitation request. If the request is `accept`-ed, the client must send a response that matches the schema.
+服务器必须向客户端发送一个结构，指示它对征询请求的响应期望的数据类型。如果请求被 `accept`，客户端必须发送与架构匹配的响应。
 
-The MCP spec only supports a limited subset of JSON Schema types for elicitation responses. Specifically, it only supports JSON  **objects** with **primitive** properties including `string`, `number` (or `integer`), `boolean` and `enum` fields.
+MCP 规范仅支持对征询响应使用 JSON Schema 类型的有限子集。具体来说，它仅支持具有**基本**属性的 JSON **对象**，包括 `string`、`number`（或 `integer`）、`boolean` 和 `enum` 字段。
 
-FastMCP makes it easy to request a broader range of types, including scalars (e.g. `str`) or no response at all, by automatically wrapping them in MCP-compatible object schemas.
+FastMCP 通过自动将它们包装在 MCP 兼容的对象架构中，使得请求更广泛的类型范围变得容易，包括标量（例如 `str`）或根本不需要响应。
 
 
-### Scalar Types
+### 标量类型
 
-You can request simple scalar data types for basic input, such as a string, integer, or boolean.
+您可以为基本输入请求简单的标量数据类型，例如字符串、整数或布尔值。
 
-When you request a scalar type, FastMCP automatically wraps it in an object schema for MCP spec compatibility. Clients will see a corresponding schema requesting a single "value" field of the requested type. Once clients respond, the provided object is "unwrapped" and the scalar value is returned to your tool function as the `data` field of the `ElicitationResult` object.
+当您请求标量类型时，FastMCP 会自动将其包装在对象架构中以兼容 MCP 规范。客户端将看到相应的架构，请求所请求类型的单个 "value" 字段。一旦客户端响应，提供的对象将被“解包”，标量值作为 `ElicitationResult` 对象的 `data` 字段返回给您的工具函数。
 
-As a developer, this means you do not have to worry about creating or accessing a structured object when you only need a scalar value.
+作为开发者，这意味着当您只需要标量值时，不必担心创建或访问结构化对象。
 
 <CodeGroup>
-```python {4} title="Request a string"
+```python {4} title="请求字符串"
 @mcp.tool
 async def get_user_name(ctx: Context) -> str:
-    """Get the user's name."""
-    result = await ctx.elicit("What's your name?", response_type=str)
+    """获取用户姓名。"""
+    result = await ctx.elicit("您的姓名是什么？", response_type=str)
     
     if result.action == "accept":
-        return f"Hello, {result.data}!"
-    return "No name provided"
+        return f"您好，{result.data}！"
+    return "未提供姓名"
 ```
-```python {4} title="Request an integer"
+```python {4} title="请求整数"
 @mcp.tool
 async def pick_a_number(ctx: Context) -> str:
-    """Pick a number."""
-    result = await ctx.elicit("Pick a number!", response_type=int)
+    """选择一个数字。"""
+    result = await ctx.elicit("选择一个数字！", response_type=int)
     
     if result.action == "accept":
-        return f"You picked {result.data}"
-    return "No number provided"
+        return f"您选择了 {result.data}"
+    return "未提供数字"
 ```
-```python {4} title="Request a boolean"
+```python {4} title="请求布尔值"
 @mcp.tool
 async def pick_a_boolean(ctx: Context) -> str:
-    """Pick a boolean."""
-    result = await ctx.elicit("True or false?", response_type=bool)
+    """选择布尔值。"""
+    result = await ctx.elicit("真或假？", response_type=bool)
     
     if result.action == "accept":
-        return f"You picked {result.data}"
-    return "No boolean provided"
+        return f"您选择了 {result.data}"
+    return "未提供布尔值"
 ```
 </CodeGroup>
 
-### No Response
+### 无响应
 
-Sometimes, the goal of an elicitation is to simply get a user to approve or reject an action. In this case, you can pass `None` as the response type to indicate that no response is expected. In order to comply with the MCP spec, the client will see a schema requesting an empty object in response. In this case, the `data` field of the `ElicitationResult` object will be `None` when the user accepts the elicitation.
+有时，征询的目标只是让用户批准或拒绝一个动作。在这种情况下，您可以传递 `None` 作为响应类型，表示不期望响应。为了符合 MCP 规范，客户端将看到请求空对象作为响应的架构。在这种情况下，当用户接受征询时，`ElicitationResult` 对象的 `data` 字段将为 `None`。
 
-```python {4} title="No response"
+```python {4} title="无响应"
 @mcp.tool
 async def approve_action(ctx: Context) -> str:
-    """Approve an action."""
-    result = await ctx.elicit("Approve this action?", response_type=None)
+    """批准动作。"""
+    result = await ctx.elicit("批准此动作？", response_type=None)
 
     if result.action == "accept":
         return do_action()
     else:
-        raise ValueError("Action rejected")
+        raise ValueError("动作被拒绝")
 ```
 
-### Constrained Options
+### 约束选项
 
-Often you'll want to constrain the user's response to a specific set of values. You can do this by using a `Literal` type or a Python enum as the response type, or by passing a list of strings to the `response_type` parameter as a convenient shortcut.
+通常您希望将用户的响应限制为特定的值集。您可以通过使用 `Literal` 类型或 Python 枚举作为响应类型来实现这一点，或者通过将字符串列表传递给 `response_type` 参数作为便捷的快捷方式。
 
 <CodeGroup>
-```python {6} title="Using a list of strings"
+```python {6} title="使用字符串列表"
 @mcp.tool
 async def set_priority(ctx: Context) -> str:
-    """Set task priority level."""
+    """设置任务优先级。"""
     result = await ctx.elicit(
-        "What priority level?", 
-        response_type=["low", "medium", "high"],
+        "什么优先级？", 
+        response_type=["低", "中", "高"],
     )
     
     if result.action == "accept":
-        return f"Priority set to: {result.data}"
+        return f"优先级设置为：{result.data}"
 ```
-```python {1, 8} title="Using a Literal type"
+```python {1, 8} title="使用 Literal 类型"
 from typing import Literal
 
 @mcp.tool
 async def set_priority(ctx: Context) -> str:
-    """Set task priority level."""
+    """设置任务优先级。"""
     result = await ctx.elicit(
-        "What priority level?", 
-        response_type=Literal["low", "medium", "high"]
+        "什么优先级？", 
+        response_type=Literal["低", "中", "高"]
     )
     
     if result.action == "accept":
-        return f"Priority set to: {result.data}"
-    return "No priority set"
+        return f"优先级设置为：{result.data}"
+    return "未设置优先级"
 ```
-```python {1, 11} title="Using a Python enum"
+```python {1, 11} title="使用 Python 枚举"
 from enum import Enum
 
 class Priority(Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"   
+    LOW = "低"
+    MEDIUM = "中"
+    HIGH = "高"   
 
 @mcp.tool
 async def set_priority(ctx: Context) -> str:
-    """Set task priority level."""
-    result = await ctx.elicit("What priority level?", response_type=Priority)
+    """设置任务优先级。"""
+    result = await ctx.elicit("什么优先级？", response_type=Priority)
     
     if result.action == "accept":
-        return f"Priority set to: {result.data.value}"
-    return "No priority set"
+        return f"优先级设置为：{result.data.value}"
+    return "未设置优先级"
 ```
 </CodeGroup>
 
 
-### Structured Responses
+### 结构化响应
 
-You can request structured data with multiple fields by using a dataclass, typed dict, or Pydantic model as the response type. Note that the MCP spec only supports shallow objects with scalar (string, number, boolean) or enum properties.
+您可以通过使用数据类、类型字典或 Pydantic 模型作为响应类型来请求具有多个字段的结构化数据。请注意，MCP 规范仅支持具有标量（字符串、数字、布尔值）或枚举属性的浅层对象。
 
 ```python {1, 16, 20}
 from dataclasses import dataclass
@@ -264,57 +264,57 @@ from typing import Literal
 class TaskDetails:
     title: str
     description: str
-    priority: Literal["low", "medium", "high"]
+    priority: Literal["低", "中", "高"]
     due_date: str
 
 @mcp.tool
 async def create_task(ctx: Context) -> str:
-    """Create a new task with user-provided details."""
+    """使用用户提供的详细信息创建新任务。"""
     result = await ctx.elicit(
-        "Please provide task details",
+        "请提供任务详细信息",
         response_type=TaskDetails
     )
     
     if result.action == "accept":
         task = result.data
-        return f"Created task: {task.title} (Priority: {task.priority})"
-    return "Task creation cancelled"
+        return f"已创建任务：{task.title}（优先级：{task.priority}）"
+    return "任务创建已取消"
 ```
 
-## Multi-Turn Elicitation
+## 多轮征询
 
-Tools can make multiple elicitation calls to gather information progressively:
+工具可以进行多次征询调用来逐步收集信息：
 
 ```python {6, 11, 16-19}
 @mcp.tool
 async def plan_meeting(ctx: Context) -> str:
-    """Plan a meeting by gathering details step by step."""
+    """通过逐步收集详细信息来规划会议。"""
     
-    # Get meeting title
-    title_result = await ctx.elicit("What's the meeting title?", response_type=str)
+    # 获取会议标题
+    title_result = await ctx.elicit("会议标题是什么？", response_type=str)
     if title_result.action != "accept":
-        return "Meeting planning cancelled"
+        return "会议规划已取消"
     
-    # Get duration
-    duration_result = await ctx.elicit("Duration in minutes?", response_type=int)
+    # 获取持续时间
+    duration_result = await ctx.elicit("持续时间（分钟）？", response_type=int)
     if duration_result.action != "accept":
-        return "Meeting planning cancelled"
+        return "会议规划已取消"
     
-    # Get priority
+    # 获取优先级
     priority_result = await ctx.elicit(
-        "Is this urgent?", 
-        response_type=Literal["yes", "no"]
+        "这是紧急的吗？", 
+        response_type=Literal["是", "否"]
     )
     if priority_result.action != "accept":
-        return "Meeting planning cancelled"
+        return "会议规划已取消"
     
-    urgent = priority_result.data == "yes"
-    return f"Meeting '{title_result.data}' planned for {duration_result.data} minutes (Urgent: {urgent})"
+    urgent = priority_result.data == "是"
+    return f"会议 '{title_result.data}' 已规划为 {duration_result.data} 分钟（紧急：{urgent}）"
 ```
 
 
-## Client Requirements
+## 客户端要求
 
-Elicitation requires the client to implement an elicitation handler. See [Client Elicitation](/zh/clients/elicitation) for details on how clients can handle these requests.
+征询需要客户端实现征询处理程序。有关客户端如何处理这些请求的详细信息，请参阅[客户端征询](/zh/clients/elicitation)。
 
-If a client doesn't support elicitation, calls to `ctx.elicit()` will raise an error indicating that elicitation is not supported.
+如果客户端不支持征询，调用 `ctx.elicit()` 将引发一个错误，指示不支持征询。

@@ -1,42 +1,42 @@
 ---
-title: MCP Context
-sidebarTitle: Context
-description: Access MCP capabilities like logging, progress, and resources within your MCP objects.
+title: MCP 上下文
+sidebarTitle: 上下文
+description: 在您的 MCP 对象中访问 MCP 功能，如日志记录、进度和资源。
 icon: rectangle-code
 ---
 import { VersionBadge } from '/snippets/version-badge.mdx'
 
-When defining FastMCP [tools](/zh/servers/tools), [resources](/zh/servers/resources), resource templates, or [prompts](/zh/servers/prompts), your functions might need to interact with the underlying MCP session or access advanced server capabilities. FastMCP provides the `Context` object for this purpose.
+在定义 FastMCP [工具](/zh/servers/tools)、[资源](/zh/servers/resources)、资源模板或[提示](/zh/servers/prompts)时，您的函数可能需要与底层 MCP 会话交互或访问高级服务器功能。FastMCP 为此目的提供了 `Context` 对象。
 
-## What Is Context?
+## 什么是 Context？
 
-The `Context` object provides a clean interface to access MCP features within your functions, including:
+`Context` 对象提供了一个干净的接口，用于在您的函数中访问 MCP 功能，包括：
 
-- **Logging**: Send debug, info, warning, and error messages back to the client
-- **Progress Reporting**: Update the client on the progress of long-running operations
-- **Resource Access**: Read data from resources registered with the server
-- **LLM Sampling**: Request the client's LLM to generate text based on provided messages
-- **User Elicitation**: Request structured input from users during tool execution
-- **State Management**: Store and share data across middleware and tool calls within a request
-- **Request Information**: Access metadata about the current request
-- **Server Access**: When needed, access the underlying FastMCP server instance
+- **日志记录**：向客户端发送调试、信息、警告和错误消息
+- **进度报告**：向客户端更新长时间运行操作的进度
+- **资源访问**：从服务器注册的资源中读取数据
+- **LLM 采样**：请求客户端的 LLM 基于提供的消息生成文本
+- **用户征询**：在工具执行期间从用户请求结构化输入
+- **状态管理**：在请求中的中间件和工具调用之间存储和共享数据
+- **请求信息**：访问当前请求的元数据
+- **服务器访问**：需要时，访问底层 FastMCP 服务器实例
 
-## Accessing the Context
+## 访问上下文
 
-### Via Dependency Injection
+### 通过依赖注入
 
-To use the context object within any of your functions, simply add a parameter to your function signature and type-hint it as `Context`. FastMCP will automatically inject the context instance when your function is called.
+要在任何函数中使用上下文对象，只需在函数签名中添加一个参数并将其类型提示为 `Context`。FastMCP 将在调用函数时自动注入上下文实例。
 
-**Key Points:**
+**要点：**
 
-- The parameter name (e.g., `ctx`, `context`) doesn't matter, only the type hint `Context` is important.
-- The context parameter can be placed anywhere in your function's signature; it will not be exposed to MCP clients as a valid parameter.
-- The context is optional - functions that don't need it can omit the parameter entirely.
-- Context methods are async, so your function usually needs to be async as well.
-- The type hint can be a union (`Context | None`) or use `Annotated[]` and it will still work properly.
-- Context is only available during a request; attempting to use context methods outside a request will raise errors. If you need to debug or call your context methods outside of a request, you can type your variable as `Context | None=None` to avoid missing argument errors.
+- 参数名称（例如，`ctx`、`context`）不重要，只有类型提示 `Context` 很重要。
+- 上下文参数可以放在函数签名的任何位置；它不会作为有效参数暴露给 MCP 客户端。
+- 上下文是可选的 - 不需要它的函数可以完全省略该参数。
+- 上下文方法是异步的，因此您的函数通常也需要是异步的。
+- 类型提示可以是联合类型（`Context | None`）或使用 `Annotated[]`，它仍然可以正常工作。
+- 上下文仅在请求期间可用；在请求之外尝试使用上下文方法将引发错误。如果您需要在请求之外调试或调用上下文方法，可以将变量类型设置为 `Context | None=None` 以避免缺少参数的错误。
 
-#### Tools
+#### 工具
 
 ```python {1, 6}
 from fastmcp import FastMCP, Context
@@ -45,12 +45,12 @@ mcp = FastMCP(name="Context Demo")
 
 @mcp.tool
 async def process_file(file_uri: str, ctx: Context) -> str:
-    """Processes a file, using context for logging and resource access."""
-    # Context is available as the ctx parameter
+    """处理文件，使用上下文进行日志记录和资源访问。"""
+    # 上下文可作为 ctx 参数使用
     return "Processed file"
 ```
 
-#### Resources and Templates
+#### 资源和模板
 
 <VersionBadge version="2.2.5" />
 
@@ -61,18 +61,18 @@ mcp = FastMCP(name="Context Demo")
 
 @mcp.resource("resource://user-data")
 async def get_user_data(ctx: Context) -> dict:
-    """Fetch personalized user data based on the request context."""
-    # Context is available as the ctx parameter
+    """基于请求上下文获取个性化用户数据。"""
+    # 上下文可作为 ctx 参数使用
     return {"user_id": "example"}
 
 @mcp.resource("resource://users/{user_id}/profile")
 async def get_user_profile(user_id: str, ctx: Context) -> dict:
-    """Fetch user profile with context-aware logging."""
-    # Context is available as the ctx parameter
+    """使用上下文感知日志记录获取用户配置文件。"""
+    # 上下文可作为 ctx 参数使用
     return {"id": user_id}
 ```
 
-#### Prompts
+#### 提示
 
 <VersionBadge version="2.2.5" />
 
@@ -83,19 +83,19 @@ mcp = FastMCP(name="Context Demo")
 
 @mcp.prompt
 async def data_analysis_request(dataset: str, ctx: Context) -> str:
-    """Generate a request to analyze data with contextual information."""
-    # Context is available as the ctx parameter
+    """生成带有上下文信息的数据分析请求。"""
+    # 上下文可作为 ctx 参数使用
     return f"Please analyze the following dataset: {dataset}"
 ```
 
 
-### Via Runtime Dependency Function
+### 通过运行时依赖函数
 
 <VersionBadge version="2.2.11" />
 
-While the simplest way to access context is through function parameter injection as shown above, there are cases where you need to access the context in code that may not be easy to modify to accept a context parameter, or that is nested deeper within your function calls.
+虽然访问上下文的最简单方法是通过如上所示的函数参数注入，但在某些情况下，您需要在可能不容易通过修改来实现接受上下文参数的代码中访问上下文，或者在函数调用的更深层嵌套中访问上下文。
 
-FastMCP provides dependency functions that allow you to retrieve the active context from anywhere within a server request's execution flow:
+FastMCP 提供了依赖函数，允许您从服务器请求执行流程中的任何位置检索活动上下文：
 
 ```python {2,9}
 from fastmcp import FastMCP
@@ -103,45 +103,45 @@ from fastmcp.server.dependencies import get_context
 
 mcp = FastMCP(name="Dependency Demo")
 
-# Utility function that needs context but doesn't receive it as a parameter
+# 需要上下文但不作为参数接收的实用函数
 async def process_data(data: list[float]) -> dict:
-    # Get the active context - only works when called within a request
+    # 获取活动上下文 - 仅在请求内调用时有效
     ctx = get_context()    
     await ctx.info(f"Processing {len(data)} data points")
     
 @mcp.tool
 async def analyze_dataset(dataset_name: str) -> dict:
-    # Call utility function that uses context internally
+    # 调用内部使用上下文的实用函数
     data = load_data(dataset_name)
     await process_data(data)
 ```
 
-**Important Notes:**
+**重要说明：**
 
-- The `get_context` function should only be used within the context of a server request. Calling it outside of a request will raise a `RuntimeError`.
-- The `get_context` function is server-only and should not be used in client code.
+- `get_context` 函数应该仅在服务器请求的上下文中使用。在请求之外调用它将引发 `RuntimeError`。
+- `get_context` 函数仅用于服务器，不应在客户端代码中使用。
 
-## Context Capabilities
+## 上下文功能
 
-FastMCP provides several advanced capabilities through the context object. Each capability has dedicated documentation with comprehensive examples and best practices:
+FastMCP 通过上下文对象提供了几种高级功能。每种功能都有专门的文档，包含详细的示例和最佳实践：
 
-### Logging
+### 日志记录
 
-Send debug, info, warning, and error messages back to the MCP client for visibility into function execution.
+将调试、信息、警告和错误消息发送回 MCP 客户端，以便了解函数执行情况。
 
 ```python
-await ctx.debug("Starting analysis")
-await ctx.info(f"Processing {len(data)} items") 
-await ctx.warning("Deprecated parameter used")
-await ctx.error("Processing failed")
+await ctx.debug("开始分析")
+await ctx.info(f"处理 {len(data)} 项内容")
+await ctx.warning("使用了弃用的参数")
+await ctx.error("处理失败")
 ```
 
-See [Server Logging](/zh/servers/logging) for complete documentation and examples.
-### Client Elicitation
+有关完整文档和示例，请参阅[服务器日志记录](/zh/servers/logging)。
+### 客户端征询
 
 <VersionBadge version="2.10.0" />
 
-Request structured input from clients during tool execution, enabling interactive workflows and progressive disclosure. This is a new feature in the 6/18/2025 MCP spec.
+在工具执行期间从客户端请求结构化输入，实现交互式工作流程和渐进式公开。这是 2025 年 6 月 18 日 MCP 规范中的新功能。
 
 ```python
 result = await ctx.elicit("Enter your name:", response_type=str)
@@ -149,52 +149,52 @@ if result.action == "accept":
     name = result.data
 ```
 
-See [User Elicitation](/zh/servers/elicitation) for detailed examples and supported response types.
+有关详细示例和支持的响应类型，请参阅[用户征询](/zh/servers/elicitation)。
 
-### LLM Sampling
+### LLM 采样
 
 <VersionBadge version="2.0.0" />
 
-Request the client's LLM to generate text based on provided messages, useful for leveraging AI capabilities within your tools.
+请求客户端的 LLM 基于提供的消息生成文本，用于在工具中利用 AI 功能。
 
 ```python
 response = await ctx.sample("Analyze this data", temperature=0.7)
 ```
 
-See [LLM Sampling](/zh/servers/sampling) for comprehensive usage and advanced techniques.
+有关全面的用法和高级技术，请参阅[LLM 采样](/zh/servers/sampling)。
 
 
-### Progress Reporting
+### 进度报告
 
-Update clients on the progress of long-running operations, enabling progress indicators and better user experience.
+向客户端更新长时间运行操作的进度，启用进度指示器并提供更好的用户体验。
 
 ```python
-await ctx.report_progress(progress=50, total=100)  # 50% complete
+await ctx.report_progress(progress=50, total=100)  # 50% 完成
 ```
 
-See [Progress Reporting](/zh/servers/progress) for detailed patterns and examples.
+有关详细模式和示例，请参阅[进度报告](/zh/servers/progress)。
 
-### Resource Access
+### 资源访问
 
-Read data from resources registered with your FastMCP server, allowing access to files, configuration, or dynamic content.
+从在 FastMCP 服务器中注册的资源读取数据，允许访问文件、配置或动态内容。
 
 ```python
 content_list = await ctx.read_resource("resource://config")
 content = content_list[0].content
 ```
 
-**Method signature:**
-- **`ctx.read_resource(uri: str | AnyUrl) -> list[ReadResourceContents]`**: Returns a list of resource content parts
+**方法签名：**
+- **`ctx.read_resource(uri: str | AnyUrl) -> list[ReadResourceContents]`**：返回资源内容部分的列表
 
-### State Management
+### 状态管理
 
 <VersionBadge version="2.11.0" />
 
-Store and share data across middleware and tool calls within a request. Context objects maintain a state dictionary that's especially useful for passing information from [middleware](/zh/servers/middleware) to your tools.
+在请求中的中间件和工具调用之间存储和共享数据。上下文对象维护一个状态字典，特别适用于从[中间件](/zh/servers/middleware)向工具传递信息。
 
-To store a value in the context state, use `ctx.set_state(key, value)`. To retrieve a value, use `ctx.get_state(key)`.
+要在上下文状态中存储值，请使用 `ctx.set_state(key, value)`。要检索值，请使用 `ctx.get_state(key)`。
 
-This simplified example shows how to use MCP middleware to store user info in the context state, and how to access that state in a tool:
+这个简化示例展示了如何使用 MCP 中间件在上下文状态中存储用户信息，以及如何在工具中访问该状态：
 
 ```python {7-8, 16-17}
 from fastmcp.server.middleware import Middleware, MiddlewareContext
@@ -202,7 +202,7 @@ from fastmcp.server.middleware import Middleware, MiddlewareContext
 class UserAuthMiddleware(Middleware):
     async def on_call_tool(self, context: MiddlewareContext, call_next):
 
-        # Middleware stores user info in context state
+        # 中间件在上下文状态中存储用户信息
         context.fastmcp_context.set_state("user_id", "user_123")
         context.fastmcp_context.set_state("permissions", ["read", "write"])
         
@@ -210,7 +210,7 @@ class UserAuthMiddleware(Middleware):
 
 @mcp.tool
 async def secure_operation(data: str, ctx: Context) -> str:
-    """Tool can access state set by middleware."""
+    """工具可以访问中间件设置的状态。"""
 
     user_id = ctx.get_state("user_id")  # "user_123"
     permissions = ctx.get_state("permissions")  # ["read", "write"]
@@ -221,79 +221,79 @@ async def secure_operation(data: str, ctx: Context) -> str:
     return f"Processing {data} for user {user_id}"
 ```
 
-**Method signatures:**
-- **`ctx.set_state(key: str, value: Any) -> None`**: Store a value in the context state
-- **`ctx.get_state(key: str) -> Any`**: Retrieve a value from the context state (returns None if not found)
+**方法签名：**
+- **`ctx.set_state(key: str, value: Any) -> None`**：在上下文状态中存储值
+- **`ctx.get_state(key: str) -> Any`**：从上下文状态中检索值（如果未找到则返回 None）
 
-**State Inheritance:**
-When a new context is created (nested contexts), it inherits a copy of its parent's state. This ensures that:
-- State set on a child context never affects the parent context
-- State set on a parent context after the child context is initialized is not propagated to the child context
+**状态继承：**
+当创建新上下文（嵌套上下文）时，它会继承其父级状态的副本。这确保了：
+- 在子上下文上设置的状态永远不会影响父上下文
+- 在子上下文初始化后在父上下文上设置的状态不会传播到子上下文
 
-This makes state management predictable and prevents unexpected side effects between nested operations.
+这使状态管理变得可预测，并防止嵌套操作之间的意外副作用。
 
-### Change Notifications
+### 变更通知
 
 <VersionBadge version="2.9.1" />
 
-FastMCP automatically sends list change notifications when components (such as tools, resources, or prompts) are added, removed, enabled, or disabled. In rare cases where you need to manually trigger these notifications, you can use the context methods:
+FastMCP 在添加、删除、启用或禁用组件（如工具、资源或提示）时会自动发送列表变更通知。在需要手动触发这些通知的罕见情况下，您可以使用上下文方法：
 
 ```python
 @mcp.tool
 async def custom_tool_management(ctx: Context) -> str:
-    """Example of manual notification after custom tool changes."""
-    # After making custom changes to tools
+    """自定义工具更改后手动通知的示例。"""
+    # 对工具进行自定义更改后
     await ctx.send_tool_list_changed()
     await ctx.send_resource_list_changed()
     await ctx.send_prompt_list_changed()
     return "Notifications sent"
 ```
 
-These methods are primarily used internally by FastMCP's automatic notification system and most users will not need to invoke them directly.
+这些方法主要由 FastMCP 的自动通知系统内部使用，大多数用户不需要直接调用它们。
 
-### FastMCP Server
+### FastMCP 服务器
 
-To access the underlying FastMCP server instance, you can use the `ctx.fastmcp` property:
+要访问底层 FastMCP 服务器实例，您可以使用 `ctx.fastmcp` 属性：
 
 ```python
 @mcp.tool
 async def my_tool(ctx: Context) -> None:
-    # Access the FastMCP server instance
+    # 访问 FastMCP 服务器实例
     server_name = ctx.fastmcp.name
     ...
 ```
 
-### MCP Request
+### MCP 请求
 
-Access metadata about the current request and client.
+访问当前请求和客户端的元数据。
 
 ```python
 @mcp.tool
 async def request_info(ctx: Context) -> dict:
-    """Return information about the current request."""
+    """返回当前请求的信息。"""
     return {
         "request_id": ctx.request_id,
         "client_id": ctx.client_id or "Unknown client"
     }
 ```
 
-**Available Properties:**
+**可用属性：**
 
-- **`ctx.request_id -> str`**: Get the unique ID for the current MCP request
-- **`ctx.client_id -> str | None`**: Get the ID of the client making the request, if provided during initialization
-- **`ctx.session_id -> str | None`**: Get the MCP session ID for session-based data sharing (HTTP transports only)
+- **`ctx.request_id -> str`**：获取当前 MCP 请求的唯一 ID
+- **`ctx.client_id -> str | None`**：获取发起请求的客户端 ID（如果在初始化期间提供）
+- **`ctx.session_id -> str | None`**：获取用于基于会话的数据共享的 MCP 会话 ID（仅限 HTTP 传输）
 
 <Warning>
-The MCP request is part of the low-level MCP SDK and intended for advanced use cases. Most users will not need to use it directly.
+MCP 请求是低级 MCP SDK 的一部分，用于高级用例。大多数用户不需要直接使用它。
 </Warning>
 
-## Runtime Dependencies
+## 运行时依赖
 
-### HTTP Requests
+### HTTP 请求
 
 <VersionBadge version="2.2.11" />
 
-The recommended way to access the current HTTP request is through the `get_http_request()` dependency function:
+访问当前 HTTP 请求的推荐方式是通过 `get_http_request()` 依赖函数：
 
 ```python {2, 3, 11}
 from fastmcp import FastMCP
@@ -304,11 +304,11 @@ mcp = FastMCP(name="HTTP Request Demo")
 
 @mcp.tool
 async def user_agent_info() -> dict:
-    """Return information about the user agent."""
-    # Get the HTTP request
+    """返回用户代理信息。"""
+    # 获取 HTTP 请求
     request: Request = get_http_request()
     
-    # Access request data
+    # 访问请求数据
     user_agent = request.headers.get("user-agent", "Unknown")
     client_ip = request.client.host if request.client else "Unknown"
     
@@ -319,16 +319,16 @@ async def user_agent_info() -> dict:
     }
 ```
 
-This approach works anywhere within a request's execution flow, not just within your MCP function. It's useful when:
+这种方法在请求执行流程中的任何位置都有效，不仅仅是在您的 MCP 函数中。在以下情况下很有用：
 
-1. You need access to HTTP information in helper functions
-2. You're calling nested functions that need HTTP request data
-3. You're working with middleware or other request processing code
+1. 您需要在辅助函数中访问 HTTP 信息
+2. 您正在调用需要 HTTP 请求数据的嵌套函数
+3. 您正在使用中间件或其他请求处理代码
 
-### HTTP Headers
+### HTTP 头
 <VersionBadge version="2.2.11" />
 
-If you only need request headers and want to avoid potential errors, you can use the `get_http_headers()` helper:
+如果您只需要请求头并希望避免潜在错误，可以使用 `get_http_headers()` 辅助函数：
 
 ```python {2, 10}
 from fastmcp import FastMCP
@@ -338,11 +338,11 @@ mcp = FastMCP(name="Headers Demo")
 
 @mcp.tool
 async def safe_header_info() -> dict:
-    """Safely get header information without raising errors."""
-    # Get headers (returns empty dict if no request context)
+    """安全地获取标头信息而不引发错误。"""
+    # 获取标头（如果没有请求上下文则返回空字典）
     headers = get_http_headers()
     
-    # Get authorization header
+    # 获取授权标头
     auth_header = headers.get("authorization", "")
     is_bearer = auth_header.startswith("Bearer ")
     
@@ -355,13 +355,13 @@ async def safe_header_info() -> dict:
     }
 ```
 
-By default, `get_http_headers()` excludes problematic headers like `host` and `content-length`. To include all headers, use `get_http_headers(include_all=True)`.
+默认情况下，`get_http_headers()` 排除诸如 `host` 和 `content-length` 等有问题的标头。要包含所有标头，请使用 `get_http_headers(include_all=True)`。
 
-### Access Tokens
+### 访问令牌
 
 <VersionBadge version="2.11.0" />
 
-When using authentication with your FastMCP server, you can access the authenticated user's access token information using the `get_access_token()` dependency function:
+在 FastMCP 服务器中使用身份验证时，您可以使用 `get_access_token()` 依赖函数访问已认证用户的访问令牌信息：
 
 ```python {2, 10}
 from fastmcp import FastMCP
@@ -371,8 +371,8 @@ mcp = FastMCP(name="Auth Token Demo")
 
 @mcp.tool
 async def get_user_info() -> dict:
-    """Get information about the authenticated user."""
-    # Get the access token (None if not authenticated)
+    """获取已认证用户的信息。"""
+    # 获取访问令牌（如果未认证则为 None）
     token: AccessToken | None = get_access_token()
     
     if token is None:
@@ -383,20 +383,20 @@ async def get_user_info() -> dict:
         "client_id": token.client_id,
         "scopes": token.scopes,
         "expires_at": token.expires_at,
-        "token_claims": token.claims,  # JWT claims or custom token data
+        "token_claims": token.claims,  # JWT 声明或自定义令牌数据
     }
 ```
 
-This is particularly useful when you need to:
+这在以下情况下特别有用：
 
-1. **Access user identification** - Get the `client_id` or subject from token claims
-2. **Check permissions** - Verify scopes or custom claims before performing operations
-3. **Multi-tenant applications** - Extract tenant information from token claims
-4. **Audit logging** - Track which user performed which actions
+1. **访问用户标识** - 从令牌声明中获取 `client_id` 或请求主体信息
+2. **检查权限** - 在执行操作之前验证范围或自定义声明
+3. **多租户应用程序** - 从令牌声明中提取租户信息
+4. **审计日志** - 跟踪哪个用户执行了哪些操作
 
-#### Working with Token Claims
+#### 使用令牌声明
 
-The `claims` field contains all the data from the original token (JWT claims for JWT tokens, or custom data for other token types):
+`claims` 字段包含来自原始令牌的所有数据（JWT 令牌的 JWT 声明，或其他令牌类型的自定义数据）：
 
 ```python {2, 3, 9, 12, 15}
 from fastmcp import FastMCP
@@ -406,16 +406,16 @@ mcp = FastMCP(name="Multi-tenant Demo")
 
 @mcp.tool
 async def get_tenant_data(resource_id: str) -> dict:
-    """Get tenant-specific data using token claims."""
+    """使用令牌声明获取特定租户的数据。"""
     token: AccessToken | None = get_access_token()
     
-    # Extract tenant ID from token claims
+    # 从令牌声明中提取租户 ID
     tenant_id = token.claims.get("tenant_id") if token else None
     
-    # Extract user ID from standard JWT subject claim
+    # 从标准 JWT 主题声明中提取用户 ID
     user_id = token.claims.get("sub") if token else None
     
-    # Use tenant and user info to authorize and filter data
+    # 使用租户和用户信息授权并过滤数据
     if not tenant_id:
         raise ValueError("No tenant information in token")
     

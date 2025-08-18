@@ -1,7 +1,7 @@
 ---
-title: Authentication
-sidebarTitle: Overview
-description: Secure your FastMCP server with flexible authentication patterns, from simple API keys to full OAuth 2.1 integration with external identity providers.
+title: 身份验证
+sidebarTitle: 概述
+description: 使用灵活的身份验证模式保护您的 FastMCP 服务器，从简单的 API 密钥到与外部身份提供商的完整 OAuth 2.1 集成。
 icon: user-shield
 tag: NEW
 ---
@@ -10,71 +10,71 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 <VersionBadge version="2.11.0" />
 
-Authentication in MCP presents unique challenges that differ from traditional web applications. MCP clients need to discover authentication requirements automatically, negotiate OAuth flows without user intervention, and work seamlessly across different identity providers. FastMCP addresses these challenges by providing authentication patterns that integrate with the MCP protocol while remaining simple to implement and deploy.
+MCP 中的身份验证提出了与传统 Web 应用程序不同的独特挑战。MCP 客户端需要自动发现身份验证要求，在无用户干预的情况下协商 OAuth 流，并在不同的身份提供商之间无缝工作。FastMCP 通过提供与 MCP 协议集成的身份验证模式来应对这些挑战，同时保持实现和部署的简单性。
 
 <Tip>
-Authentication applies only to FastMCP's HTTP-based transports (`http` and `sse`). The STDIO transport inherits security from its local execution environment.
+身份验证仅适用于 FastMCP 的基于 HTTP 的传输（`http` 和 `sse`）。STDIO 传输从其本地执行环境继承安全性。
 </Tip>
 
 <Warning>
-**Authentication is rapidly evolving in MCP.** The specification and best practices are changing quickly. FastMCP aims to provide stable, secure patterns that adapt to these changes while keeping your code simple and maintainable.
+**MCP 中的身份验证正在快速发展。**规范和最佳实践正在快速变化。FastMCP 旨在提供稳定、安全的模式，这些模式能够适应这些变化，同时保持您的代码简单且易于维护。
 </Warning>
 
-## MCP Authentication Challenges
+## MCP 身份验证挑战
 
-Traditional web authentication assumes a human user with a browser who can interact with login forms and consent screens. MCP clients are often automated systems that need to authenticate without human intervention. This creates several unique requirements:
+传统的 Web 身份验证假设有一个拥有浏览器的人类用户，可以与登录表单和同意屏幕交互。MCP 客户端通常是需要在无人干预的情况下进行身份验证的自动化系统。这创造了几个独特的要求：
 
-**Automatic Discovery**: MCP clients must discover authentication requirements by examining server metadata rather than encountering login redirects.
+**自动发现**：MCP 客户端必须通过检查服务器元数据来发现身份验证要求，而不是遇到登录重定向。
 
-**Programmatic OAuth**: OAuth flows must work without human interaction, relying on pre-configured credentials or Dynamic Client Registration.
+**编程式 OAuth**：OAuth 流必须在没有人类交互的情况下工作，依赖于预配置的凭据或动态客户端注册。
 
-**Token Management**: Clients need to obtain, refresh, and manage tokens automatically across multiple MCP servers.
+**令牌管理**：客户端需要在多个 MCP 服务器中自动获取、刷新和管理令牌。
 
-**Protocol Integration**: Authentication must integrate cleanly with MCP's transport mechanisms and error handling.
+**协议集成**：身份验证必须与 MCP 的传输机制和错误处理清晰地集成。
 
-These challenges mean that not all authentication approaches work well with MCP. The patterns that do work fall into three categories based on the level of authentication responsibility your server assumes.
+这些挑战意味着并不是所有的身份验证方法都适用于 MCP。可行的模式根据您的服务器承担的身份验证责任级别分为三类。
 
-## Understanding Authentication Responsibility
+## 理解身份验证责任
 
-Authentication responsibility exists on a spectrum. Your MCP server can validate tokens created elsewhere, coordinate with external identity providers, or handle the complete authentication lifecycle internally. Each approach involves different trade-offs between simplicity, security, and control.
+身份验证责任存在于一个谱系上。您的 MCP 服务器可以验证在其他地方创建的令牌，与外部身份提供商协调，或在内部处理完整的身份验证生命周期。每种方法在简单性、安全性和控制力之间都涉及不同的权衡。
 
-### Token Validation
+### 令牌验证
 
-Your server validates tokens but delegates their creation to external systems. This approach treats your MCP server as a pure resource server that trusts tokens signed by known issuers.
+您的服务器验证令牌，但将其创建委托给外部系统。这种方法将您的 MCP 服务器视为纯资源服务器，信任由已知发行商签名的令牌。
 
-Token validation works well when you already have authentication infrastructure that can issue structured tokens like JWTs. Your existing API gateway, microservices platform, or enterprise SSO system becomes the source of truth for user identity, while your MCP server focuses on its core functionality.
+令牌验证在您已经拥有可以发行结构化令牌（如 JWT）的身份验证基础设施时效果很好。您现有的 API 网关、微服务平台或企业 SSO 系统成为用户身份的信任源，而您的 MCP 服务器专注于其核心功能。
 
-The key insight is that token validation separates authentication (proving who you are) from authorization (determining what you can do). Your MCP server receives proof of identity in the form of a signed token and makes access decisions based on the claims within that token.
+关键洞察是令牌验证将身份验证（证明您是谁）与授权（决定您可以做什么）分离开来。您的 MCP 服务器以签名令牌的形式接收身份证明，并根据该令牌内的声明做出访问决定。
 
-This pattern excels in microservices architectures where multiple services need to validate the same tokens, or when integrating MCP servers into existing systems that already handle user authentication.
+这种模式在微服务架构中表现出色，其中多个服务需要验证相同的令牌，或者将 MCP 服务器集成到已经处理用户身份验证的现有系统中时。
 
-### External Identity Providers
+### 外部身份提供商
 
-Your server coordinates with established identity providers to create seamless authentication experiences for MCP clients. This approach leverages OAuth 2.0 and OpenID Connect protocols to delegate user authentication while maintaining control over authorization decisions.
+您的服务器与已建立的身份提供商协调，为 MCP 客户端创建无缝的身份验证体验。这种方法利用 OAuth 2.0 和 OpenID Connect 协议来委托用户身份验证，同时保持对授权决定的控制。
 
-External identity providers handle the complex aspects of authentication: user credential verification, multi-factor authentication, account recovery, and security monitoring. Your MCP server receives tokens from these trusted providers and validates them using the provider's public keys.
+外部身份提供商处理身份验证的复杂方面：用户凭据验证、多因素身份验证、账户恢复和安全监控。您的 MCP 服务器从这些可信提供商接收令牌，并使用提供商的公钥验证它们。
 
-The MCP protocol's support for Dynamic Client Registration makes this pattern particularly powerful. MCP clients can automatically discover your authentication requirements and register themselves with your identity provider without manual configuration.
+MCP 协议对动态客户端注册的支持使得这种模式特别强大。MCP 客户端可以自动发现您的身份验证要求，并在无需手动配置的情况下向您的身份提供商注册自己。
 
-This approach works best for production applications that need enterprise-grade authentication features without the complexity of building them from scratch. It scales well across multiple applications and provides consistent user experiences.
+这种方法最适合需要企业级身份验证功能而不希望从头开始构建复杂性的生产应用程序。它在多个应用程序中扩展性良好，并提供一致的用户体验。
 
-### Full OAuth Implementation
+### 完整 OAuth 实现
 
-Your server implements a complete OAuth 2.0 authorization server, handling everything from user credential verification to token lifecycle management. This approach provides maximum control at the cost of significant complexity.
+您的服务器实现完整的 OAuth 2.0 授权服务器，处理从用户凭据验证到令牌生命周期管理的一切。这种方法以显著的复杂性为代价提供最大的控制力。
 
-Full OAuth implementation means building user interfaces for login and consent, implementing secure credential storage, managing token lifecycles, and maintaining ongoing security updates. The complexity extends beyond initial implementation to include threat monitoring, compliance requirements, and keeping pace with evolving security best practices.
+完整的 OAuth 实现意味着构建用于登录和同意的用户界面，实现安全的凭据存储，管理令牌生命周期，并维护持续的安全更新。复杂性超出了初始实现，还包括威胁监控、合规要求和跟上不断发展的安全最佳实践。
 
-This pattern makes sense only when you need complete control over the authentication process, operate in air-gapped environments, or have specialized requirements that external providers cannot meet.
+这种模式仅在您需要对身份验证过程完全控制、在空隙环境中运行或有外部提供商无法满足的专门要求时才有意义。
 
-## FastMCP Implementation
+## FastMCP 实现
 
-FastMCP translates these authentication responsibility levels into three concrete classes that handle the complexities of MCP protocol integration.
+FastMCP 将这些身份验证责任级别转化为三个具体类，处理 MCP 协议集成的复杂性。
 
-### TokenVerifier
+### 令牌验证器(TokenVerifier)
 
-`TokenVerifier` provides pure token validation without OAuth metadata endpoints. This class focuses on the essential task of determining whether a token is valid and extracting authorization information from its claims.
+`TokenVerifier` 提供纯令牌验证，不包含 OAuth 元数据端点。此类专注于确定令牌是否有效并从其声明中提取授权信息的基本任务。
 
-The implementation handles JWT signature verification, expiration checking, and claim extraction. It validates tokens against known issuers and audiences, ensuring that tokens intended for your server are not accepted by other systems.
+实现处理 JWT 签名验证、过期检查和声明提取。它针对已知发行商和受众验证令牌，确保为您的服务器而设的令牌不会被其他系统接受。
 
 ```python
 from fastmcp import FastMCP
@@ -86,22 +86,22 @@ auth = JWTVerifier(
     audience="your-mcp-server"
 )
 
-mcp = FastMCP(name="Protected Server", auth=auth)
+mcp = FastMCP(name="受保护的服务器", auth=auth)
 ```
 
-This example configures token validation against a JWT issuer. The `JWTVerifier` will fetch public keys from the JWKS endpoint and validate incoming tokens against those keys. Only tokens with the correct issuer and audience claims will be accepted.
+此示例配置针对 JWT 发行商的令牌验证。`JWTVerifier` 将从 JWKS 端点获取公钥，并针对这些钥验证传入的令牌。只有具有正确发行商和受众声明的令牌才会被接受。
 
-`TokenVerifier` works well when you control both the token issuer and your MCP server, or when integrating with existing JWT-based infrastructure.
+`TokenVerifier` 在您控制令牌发行商和 MCP 服务器或与现有基于 JWT 的基础设施集成时效果很好。
 
-→ **Complete guide**: [Token Verification](/zh/servers/auth/token-verification)
+→ **完整指南**：[令牌验证](/zh/servers/auth/token-verification)
 
-### RemoteAuthProvider
+### 远程身份验证提供者(RemoteAuthProvider)
 
-`RemoteAuthProvider` combines token validation with OAuth discovery metadata, enabling MCP clients to automatically discover and authenticate with external identity providers.
+`RemoteAuthProvider` 将令牌验证与 OAuth 发现元数据相结合，使 MCP 客户端能够自动发现并与外部身份提供商进行身份验证。
 
-This class extends `TokenVerifier` functionality by adding OAuth 2.0 protected resource endpoints that advertise your authentication requirements. MCP clients can examine these endpoints to understand which identity providers you trust and how to obtain valid tokens.
+此类通过添加 OAuth 2.0 受保护资源端点来扩展 `TokenVerifier` 功能，这些端点可以宣传您的身份验证要求。MCP 客户端可以检查这些端点来了解您信任哪些身份提供商以及如何获取有效令牌。
 
-The implementation handles the OAuth metadata generation required by the MCP specification while delegating actual token validation to an underlying `TokenVerifier`. This separation allows you to use different token validation strategies while maintaining consistent OAuth discovery behavior.
+实现处理 MCP 规范所需的 OAuth 元数据生成，同时将实际令牌验证委托给底层的 `TokenVerifier`。这种分离允许您使用不同的令牌验证策略，同时保持一致的 OAuth 发现行为。
 
 ```python
 from fastmcp import FastMCP
@@ -112,20 +112,20 @@ auth = AuthKitProvider(
     base_url="https://your-fastmcp-server.com"
 )
 
-mcp = FastMCP(name="Enterprise Server", auth=auth)
+mcp = FastMCP(name="企业服务器", auth=auth)
 ```
 
-This example uses WorkOS AuthKit as the external identity provider. The `AuthKitProvider` automatically configures token validation against WorkOS and provides the OAuth metadata that MCP clients need for automatic authentication.
+此示例使用 WorkOS AuthKit 作为外部身份提供商。`AuthKitProvider` 自动配置针对 WorkOS 的令牌验证，并提供 MCP 客户端自动身份验证所需的 OAuth 元数据。
 
-`RemoteAuthProvider` excels for production applications that need professional identity management without implementation complexity.
+`RemoteAuthProvider` 在需要专业身份管理而不希望实现复杂性的生产应用程序中表现出色。
 
-→ **Complete guide**: [Remote OAuth](/zh/servers/auth/remote-oauth)
+→ **完整指南**：[远程 OAuth](/zh/servers/auth/remote-oauth)
 
-### OAuthProvider
+### OAuth提供者(OAuthProvider)
 
-`OAuthProvider` implements a complete OAuth 2.0 authorization server within your MCP server. This class handles the full authentication lifecycle from user credential verification to token management.
+`OAuthProvider` 在您的 MCP 服务器内实现完整的 OAuth 2.0 授权服务器。此类处理从用户凭据验证到令牌管理的完整身份验证生命周期。
 
-The implementation provides all required OAuth endpoints including authorization, token, and discovery endpoints. It manages client registration, user consent, and token lifecycle while integrating with your user storage and authentication logic.
+实现提供所有所需的 OAuth 端点，包括授权、令牌和发现端点。它管理客户端注册、用户同意和令牌生命周期，同时与您的用户存储和身份验证逻辑集成。
 
 ```python
 from fastmcp import FastMCP
@@ -134,33 +134,33 @@ from fastmcp.server.auth.providers.oauth import MyOAuthProvider
 auth = MyOAuthProvider(
     user_store=your_user_database,
     client_store=your_client_registry,
-    # Additional configuration...
+    # 额外配置...
 )
 
-mcp = FastMCP(name="Auth Server", auth=auth)
+mcp = FastMCP(name="身份验证服务器", auth=auth)
 ```
 
-This example shows the basic structure of a custom OAuth provider. The actual implementation requires significant additional configuration for user management, client registration, and security policies.
+此示例显示了自定义 OAuth 提供商的基本结构。实际实现需要在用户管理、客户端注册和安全策略方面进行大量额外配置。
 
-`OAuthProvider` should be used only when you have specific requirements that external providers cannot meet and the expertise to implement OAuth securely.
+`OAuthProvider` 仅应在您有外部提供商无法满足的特定要求并且具备安全实现 OAuth 的专业知识时使用。
 
-→ **Complete guide**: [Full OAuth Server](/zh/servers/auth/full-oauth-server)
+→ **完整指南**：[完整 OAuth 服务器](/zh/servers/auth/full-oauth-server)
 
-## Configuration Approaches
+## 配置方法
 
-FastMCP supports both programmatic configuration for maximum flexibility and environment-based configuration for deployment simplicity.
+FastMCP 支持编程式配置（以获得最大灵活性）和基于环境的配置（以简化部署）。
 
-### Programmatic Configuration
+### 编程式配置
 
-Programmatic configuration provides complete control over authentication settings and allows for complex initialization logic. This approach works well during development and when you need to customize authentication behavior based on runtime conditions.
+编程式配置提供对身份验证设置的完全控制，并允许复杂的初始化逻辑。这种方法在开发期间和需要根据运行时条件自定义身份验证行为时效果很好。
 
-Authentication providers are instantiated directly in your code with their required parameters. This makes dependencies explicit and allows your IDE to provide helpful autocompletion and type checking.
+身份验证提供商在您的代码中直接使用其所需参数进行实例化。这使依赖关系明确，并允许您的 IDE 提供有用的自动完成和类型检查。
 
-### Environment Configuration
+### 环境配置
 
-Environment-based configuration separates authentication settings from application code, enabling the same codebase to work across different deployment environments without modification.
+基于环境的配置将身份验证设置与应用程序代码分离，使得相同的代码库可以在不同的部署环境中无需修改即可工作。
 
-FastMCP automatically detects authentication configuration from environment variables when no explicit `auth` parameter is provided. The configuration system supports all authentication providers and their various options.
+当未提供显式的 `auth` 参数时，FastMCP 会自动从环境变量中检测身份验证配置。配置系统支持所有身份验证提供商及其各种选项。
 
 ```bash
 export FASTMCP_SERVER_AUTH=JWT
@@ -169,25 +169,25 @@ export FASTMCP_SERVER_AUTH_JWT_ISSUER="https://auth.example.com"
 export FASTMCP_SERVER_AUTH_JWT_AUDIENCE="mcp-server"
 ```
 
-With these environment variables set, creating an authenticated FastMCP server requires no additional configuration:
+设置这些环境变量后，创建身份验证的 FastMCP 服务器不需要额外配置：
 
 ```python
 from fastmcp import FastMCP
 
-# Authentication automatically configured from environment
-mcp = FastMCP(name="My Server")
+# 身份验证自动从环境中配置
+mcp = FastMCP(name="我的服务器")
 ```
 
-This approach simplifies deployment pipelines and follows twelve-factor app principles for configuration management.
+这种方法简化了部署流水线，并遵循配置管理的十二因子应用原则。
 
-## Choosing Your Implementation
+## 选择您的实现
 
-The authentication approach you choose depends on your existing infrastructure, security requirements, and operational constraints.
+您选择的身份验证方法取决于您现有的基础设施、安全要求和运营约束。
 
-**For most production applications, external identity providers offer the best balance of security, features, and simplicity.** This approach provides enterprise-grade authentication without implementation complexity and scales well as your application grows. The main trade-off is requiring users to sign up with your chosen identity provider, but this also brings benefits like professional user management, security monitoring, and compliance features.
+**对于大多数生产应用程序，外部身份提供商提供了安全性、功能和简单性的最佳平衡。**这种方法提供企业级身份验证，无需实现复杂性，并且随着应用程序的增长具有良好的扩展性。主要的权衡是需要用户在您选择的身份提供商处注册，但这也带来了专业用户管理、安全监控和合规功能等好处。
 
-**Token validation works well when you already have authentication infrastructure that issues structured tokens.** If your organization already uses JWT-based systems, API gateways, or enterprise SSO that can generate tokens, this approach integrates seamlessly while keeping your MCP server focused on its core functionality. The simplicity comes from leveraging existing investment in authentication infrastructure.
+**令牌验证在您已经拥有可发行结构化令牌的身份验证基础设施时效果很好。**如果您的组织已经使用基于 JWT 的系统、API 网关或可以生成令牌的企业 SSO，这种方法将无缝集成，同时让您的 MCP 服务器专注于其核心功能。简单性来自于利用现有的身份验证基础设施投资。
 
-**Full OAuth implementation should be avoided unless you have compelling reasons that external providers cannot address.** Air-gapped environments, specialized compliance requirements, or unique organizational constraints might justify this approach, but it requires significant security expertise and ongoing maintenance commitment. The complexity extends far beyond initial implementation to include threat monitoring, security updates, and keeping pace with evolving attack vectors.
+**除非您有外部提供商无法解决的令人信服的理由，否则应该避免完整的 OAuth 实现。**空隙环境、专门的合规要求或独特的组织约束可能会证明这种方法的合理性，但它需要显著的安全专业知识和持续的维护承诺。复杂性远超初始实现，还包括威胁监控、安全更新和跟上不断发展的攻击向量。
 
-FastMCP's architecture supports migration between these approaches as your requirements evolve. You can integrate with existing token systems initially and migrate to external identity providers as your application scales, or implement custom solutions when your requirements outgrow standard patterns.
+FastMCP 的架构支持随着您需求的发展在这些方法之间迁移。您可以初始与现有的令牌系统集成，并在应用程序扩展时迁移到外部身份提供商，或者在您的需求超出标准模式时实现自定义解决方案。

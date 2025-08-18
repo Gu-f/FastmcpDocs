@@ -1,7 +1,7 @@
 ---
-title: Full OAuth Server
-sidebarTitle: Full OAuth Server
-description: Build a self-contained authentication system where your FastMCP server manages users, issues tokens, and validates them.
+title: 完整 OAuth 服务器
+sidebarTitle: 完整 OAuth 服务器
+description: 构建一个自包含的身份验证系统，您的 FastMCP 服务器管理用户、颁发令牌并验证它们。
 icon: users-between-lines
 tag: NEW
 ---
@@ -11,219 +11,219 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 <VersionBadge version="2.11.0" />
 
 <Warning>
-**This is an extremely advanced pattern that most users should avoid.** Building a secure OAuth 2.1 server requires deep expertise in authentication protocols, cryptography, and security best practices. The complexity extends far beyond initial implementation to include ongoing security monitoring, threat response, and compliance maintenance.
+**这是一个大多数用户应该避免的极其高级的模式。**构建安全的 OAuth 2.1 服务器需要在身份验证协议、密码学和安全最佳实践方面具备深度专业知识。复杂性远超初始实现，还包括持续的安全监控、威胁响应和合规维护。
 
-**Use [Remote OAuth](/zh/servers/auth/remote-oauth) instead** unless you have compelling requirements that external identity providers cannot meet, such as air-gapped environments or specialized compliance needs.
+**请使用[远程 OAuth](/zh/servers/auth/remote-oauth)代替**，除非您有外部身份提供商无法满足的强制性要求，例如空隙环境或专门的合规需求。
 </Warning>
 
-The Full OAuth Server pattern exists to support the MCP protocol specification's requirements. Your FastMCP server becomes both an Authorization Server and Resource Server, handling the complete authentication lifecycle from user login to token validation.
+完整 OAuth 服务器模式的存在是为了支持 MCP 协议规范的要求。您的 FastMCP 服务器成为授权服务器和资源服务器，处理从用户登录到令牌验证的完整身份验证生命周期。
 
-This documentation exists for completeness - the vast majority of applications should use external identity providers instead.
+本文档的存在是为了完整性 - 绝大多数应用程序应该使用外部身份提供商代替。
 
-## OAuthProvider
+## OAuth提供者(OAuthProvider)
 
-FastMCP provides the `OAuthProvider` abstract class that implements the OAuth 2.1 specification. To use this pattern, you must subclass `OAuthProvider` and implement all required abstract methods.
+FastMCP 提供了实现 OAuth 2.1 规范的 `OAuthProvider` 抽象类。要使用这种模式，您必须子类化 `OAuthProvider` 并实现所有必需的抽象方法。
 
 <Note>
-`OAuthProvider` handles OAuth endpoints, protocol flows, and security requirements, but delegates all storage, user management, and business logic to your implementation of the abstract methods.
+`OAuthProvider` 处理 OAuth 端点、协议流和安全要求，但将所有存储、用户管理和业务逻辑委托给您对抽象方法的实现。
 </Note>
 
-## Required Implementation
+## 必需的实现
 
-You must implement these abstract methods to create a functioning OAuth server:
+您必须实现这些抽象方法来创建一个功能正常的 OAuth 服务器：
 
-### Client Management
+### 客户端管理
 
-<Card icon="code" title="Client Management Methods">
-<ParamField body="get_client" type="async method">
-  Retrieve client information by ID from your database.
+<Card icon="code" title="客户端管理方法">
+<ParamField body="get_client" type="异步方法">
+  从您的数据库中通过 ID 检索客户端信息。
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ParamField body="client_id" type="str">
-      Client identifier to look up
+      要查找的客户端标识符
     </ParamField>
   </Expandable>
   
-  <Expandable title="Returns">
-    <ParamField body="OAuthClientInformationFull | None" type="return type">
-      Client information object or `None` if client not found
+  <Expandable title="返回值">
+    <ParamField body="OAuthClientInformationFull | None" type="返回类型">
+      客户端信息对象，如果找不到客户端则返回 `None`
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="register_client" type="async method">
-  Store new client registration information in your database.
+<ParamField body="register_client" type="异步方法">
+  在您的数据库中存储新的客户端注册信息。
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ParamField body="client_info" type="OAuthClientInformationFull">
-      Complete client registration information to store
+      要存储的完整客户端注册信息
     </ParamField>
   </Expandable>
   
-  <Expandable title="Returns">
-    <ParamField body="None" type="return type">
-      No return value
+  <Expandable title="返回值">
+    <ParamField body="None" type="返回类型">
+      无返回值
     </ParamField>
   </Expandable>
 </ParamField>
 </Card>
 
-### Authorization Flow
+### 授权流程
 
-<Card icon="code" title="Authorization Flow Methods">
-<ParamField body="authorize" type="async method">
-  Handle authorization request and return redirect URL. Must implement user authentication and consent collection.
+<Card icon="code" title="授权流程方法">
+<ParamField body="authorize" type="异步方法">
+  处理授权请求并返回重定向 URL。必须实现用户身份验证和同意收集。
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ParamField body="client" type="OAuthClientInformationFull">
-      OAuth client making the authorization request
+      发出授权请求的 OAuth 客户端
     </ParamField>
     <ParamField body="params" type="AuthorizationParams">
-      Authorization request parameters from the client
+      来自客户端的授权请求参数
     </ParamField>
   </Expandable>
   
-  <Expandable title="Returns">
-    <ParamField body="str" type="return type">
-      Redirect URL to send the client to
+  <Expandable title="返回值">
+    <ParamField body="str" type="返回类型">
+      发送给客户端的重定向 URL
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="load_authorization_code" type="async method">
-  Load authorization code from storage by code string. Return `None` if code is invalid or expired.
+<ParamField body="load_authorization_code" type="异步方法">
+  通过代码字符串从存储中加载授权代码。如果代码无效或已过期则返回 `None`。
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ParamField body="client" type="OAuthClientInformationFull">
-      OAuth client attempting to use the authorization code
+      尝试使用授权代码的 OAuth 客户端
     </ParamField>
     <ParamField body="authorization_code" type="str">
-      Authorization code string to look up
+      要查找的授权代码字符串
     </ParamField>
   </Expandable>
   
-  <Expandable title="Returns">
-    <ParamField body="AuthorizationCode | None" type="return type">
-      Authorization code object or `None` if not found
+  <Expandable title="返回值">
+    <ParamField body="AuthorizationCode | None" type="返回类型">
+      授权代码对象，如果找不到则返回 `None`
     </ParamField>
   </Expandable>
 </ParamField>
 </Card>
 
-### Token Management
+### 令牌管理
 
-<Card icon="code" title="Token Management Methods">
-<ParamField body="exchange_authorization_code" type="async method">
-  Exchange authorization code for access and refresh tokens. Must validate code and create new tokens.
+<Card icon="code" title="令牌管理方法">
+<ParamField body="exchange_authorization_code" type="异步方法">
+  将授权代码交换为访问令牌和刷新令牌。必须验证代码并创建新令牌。
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ParamField body="client" type="OAuthClientInformationFull">
-      OAuth client exchanging the authorization code
+      交换授权代码的 OAuth 客户端
     </ParamField>
     <ParamField body="authorization_code" type="AuthorizationCode">
-      Valid authorization code object to exchange
+      要交换的有效授权代码对象
     </ParamField>
   </Expandable>
   
-  <Expandable title="Returns">
-    <ParamField body="OAuthToken" type="return type">
-      New OAuth token containing access and refresh tokens
+  <Expandable title="返回值">
+    <ParamField body="OAuthToken" type="返回类型">
+      包含访问令牌和刷新令牌的新 OAuth 令牌
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="load_refresh_token" type="async method">
-  Load refresh token from storage by token string. Return `None` if token is invalid or expired.
+<ParamField body="load_refresh_token" type="异步方法">
+  通过令牌字符串从存储中加载刷新令牌。如果令牌无效或已过期则返回 `None`。
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ParamField body="client" type="OAuthClientInformationFull">
-      OAuth client attempting to use the refresh token
+      尝试使用刷新令牌的 OAuth 客户端
     </ParamField>
     <ParamField body="refresh_token" type="str">
-      Refresh token string to look up
+      要查找的刷新令牌字符串
     </ParamField>
   </Expandable>
   
-  <Expandable title="Returns">
-    <ParamField body="RefreshToken | None" type="return type">
-      Refresh token object or `None` if not found
+  <Expandable title="返回值">
+    <ParamField body="RefreshToken | None" type="返回类型">
+      刷新令牌对象，如果找不到则返回 `None`
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="exchange_refresh_token" type="async method">
-  Exchange refresh token for new access/refresh token pair. Must validate scopes and token.
+<ParamField body="exchange_refresh_token" type="异步方法">
+  将刷新令牌交换为新的访问/刷新令牌对。必须验证范围和令牌。
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ParamField body="client" type="OAuthClientInformationFull">
-      OAuth client using the refresh token
+      使用刷新令牌的 OAuth 客户端
     </ParamField>
     <ParamField body="refresh_token" type="RefreshToken">
-      Valid refresh token object to exchange
+      要交换的有效刷新令牌对象
     </ParamField>
     <ParamField body="scopes" type="list[str]">
-      Requested scopes for the new access token
+      新访问令牌的请求范围
     </ParamField>
   </Expandable>
   
-  <Expandable title="Returns">
-    <ParamField body="OAuthToken" type="return type">
-      New OAuth token with updated access and refresh tokens
+  <Expandable title="返回值">
+    <ParamField body="OAuthToken" type="返回类型">
+      具有更新的访问令牌和刷新令牌的新 OAuth 令牌
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="load_access_token" type="async method">
-  Load an access token by its token string.
+<ParamField body="load_access_token" type="异步方法">
+  通过令牌字符串加载访问令牌。
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ParamField body="token" type="str">
-      The access token to verify
+      要验证的访问令牌
     </ParamField>
   </Expandable>
   
-  <Expandable title="Returns">
-    <ParamField body="AccessToken | None" type="return type">
-      The access token object, or `None` if the token is invalid
+  <Expandable title="返回值">
+    <ParamField body="AccessToken | None" type="返回类型">
+      访问令牌对象，如果令牌无效则返回 `None`
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="revoke_token" type="async method">
-  Revoke access or refresh token, marking it as invalid in storage.
+<ParamField body="revoke_token" type="异步方法">
+  撤销访问令牌或刷新令牌，在存储中将其标记为无效。
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ParamField body="token" type="AccessToken | RefreshToken">
-      Token object to revoke and mark invalid
+      要撤销并标记为无效的令牌对象
     </ParamField>
   </Expandable>
   
-  <Expandable title="Returns">
-    <ParamField body="None" type="return type">
-      No return value
+  <Expandable title="返回值">
+    <ParamField body="None" type="返回类型">
+      无返回值
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="verify_token" type="async method">
-  Verify bearer token for incoming requests. Return `AccessToken` if valid, `None` if invalid.
+<ParamField body="verify_token" type="异步方法">
+  验证传入请求的承载令牌。如果有效则返回 `AccessToken`，如果无效则返回 `None`。
   
-  <Expandable title="Parameters">
+  <Expandable title="参数">
     <ParamField body="token" type="str">
-      Bearer token string from incoming request
+      来自传入请求的承载令牌字符串
     </ParamField>
   </Expandable>
   
-  <Expandable title="Returns">
-    <ParamField body="AccessToken | None" type="return type">
-      Access token object if valid, `None` if invalid or expired
+  <Expandable title="返回值">
+    <ParamField body="AccessToken | None" type="返回类型">
+      如果有效则返回访问令牌对象，如果无效或已过期则返回 `None`
     </ParamField>
   </Expandable>
 </ParamField>
 </Card>
 
-Each method must handle storage, validation, security, and error cases according to the OAuth 2.1 specification. The implementation complexity is substantial and requires expertise in OAuth security considerations.
+每个方法都必须根据 OAuth 2.1 规范处理存储、验证、安全性和错误情况。实现复杂性相当大，需要在 OAuth 安全考虑方面具备专业知识。
 
 <Warning>
-**Security Notice:** OAuth server implementation involves numerous security considerations including PKCE, state parameters, redirect URI validation, token binding, replay attack prevention, and secure storage requirements. Mistakes can lead to serious security vulnerabilities.
+**安全通知：**OAuth 服务器实现涉及许多安全考虑，包括 PKCE、状态参数、重定向 URI 验证、令牌绑定、重放攻击防护和安全存储要求。错误可能导致严重的安全漏洞。
 </Warning>

@@ -1,317 +1,317 @@
 ---
-title: Server Composition
-sidebarTitle: Server Composition
-description: Combine multiple FastMCP servers into a single, larger application using mounting and importing.
+title: 服务器组合
+sidebarTitle: 服务器组合
+description: 使用挂载和导入将多个 FastMCP 服务器组合成一个更大的应用程序。
 icon: puzzle-piece
 ---
 import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <VersionBadge version="2.2.0" />
 
-As your MCP applications grow, you might want to organize your tools, resources, and prompts into logical modules or reuse existing server components. FastMCP supports composition through two methods:
+随着您的 MCP 应用程序的发展，您可能希望将工具、资源和提示组织成逻辑模块或重用现有的服务器组件。FastMCP 通过两种方法支持组合：
 
-- **`import_server`**: For a one-time copy of components with prefixing (static composition).
-- **`mount`**: For creating a live link where the main server delegates requests to the subserver (dynamic composition).
+- **`import_server`**：用于带前缀的组件一次性拷贝（静态组合）。
+- **`mount`**：用于创建一个实时链接，其中主服务器将请求委托给子服务器（动态组合）。
 
-## Why Compose Servers?
+## 为什么要组合服务器？
 
--   **Modularity**: Break down large applications into smaller, focused servers (e.g., a `WeatherServer`, a `DatabaseServer`, a `CalendarServer`).
--   **Reusability**: Create common utility servers (e.g., a `TextProcessingServer`) and mount them wherever needed.
--   **Teamwork**: Different teams can work on separate FastMCP servers that are later combined.
--   **Organization**: Keep related functionality grouped together logically.
+-   **模块化**：将大型应用程序分解为更小、更专注的服务器（例如，`WeatherServer`、`DatabaseServer`、`CalendarServer`）。
+-   **可重用性**：创建通用实用程序服务器（例如，`TextProcessingServer`）并在需要的地方挂载它们。
+-   **团队协作**：不同的团队可以在单独的 FastMCP 服务器上工作，稍后将它们组合起来。
+-   **组织性**：将相关功能逻辑地组合在一起。
 
-### Importing vs Mounting
+### 导入与挂载
 
-The choice of importing or mounting depends on your use case and requirements.
+导入或挂载的选择取决于您的用例和需求。
 
-| Feature | Importing | Mounting |
+| 特性 | 导入 | 挂载 |
 |---------|----------------|---------|
-| **Method** | `FastMCP.import_server(server, prefix=None)` | `FastMCP.mount(server, prefix=None)` |
-| **Composition Type** | One-time copy (static) | Live link (dynamic) |
-| **Updates** | Changes to subserver NOT reflected | Changes to subserver immediately reflected |
-| **Prefix** | Optional - omit for original names | Optional - omit for original names |
-| **Best For** | Bundling finalized components | Modular runtime composition |
+| **方法** | `FastMCP.import_server(server, prefix=None)` | `FastMCP.mount(server, prefix=None)` |
+| **组合类型** | 一次性拷贝（静态） | 实时链接（动态） |
+| **更新** | 子服务器的更改不会反映 | 子服务器的更改立即反映 |
+| **前缀** | 可选 - 省略保持原始名称 | 可选 - 省略保持原始名称 |
+| **最适合** | 打包最终组件 | 模块化运行时组合 |
 
-### Proxy Servers
+### 代理服务器
 
-FastMCP supports [MCP proxying](/zh/servers/proxy), which allows you to mirror a local or remote server in a local FastMCP instance. Proxies are fully compatible with both importing and mounting.
+FastMCP 支持 [MCP 代理](/zh/servers/proxy)，它允许您在本地 FastMCP 实例中镜像本地或远程服务器。代理与导入和挂载完全兼容。
 
 <VersionBadge version="2.4.0" />
 
-You can also create proxies from configuration dictionaries that follow the MCPConfig schema, which is useful for quickly connecting to one or more remote servers. See the [Proxy Servers documentation](/zh/servers/proxy#configuration-based-proxies) for details on configuration-based proxying. Note that MCPConfig follows an emerging standard and its format may evolve over time.
+您还可以从遵循 MCPConfig 架构的配置字典创建代理，这对于快速连接到一个或多个远程服务器很有用。有关基于配置的代理的详细信息，请参阅[代理服务器文档](/zh/servers/proxy#configuration-based-proxies)。请注意，MCPConfig 遵循新兴标准，其格式可能会随时间演进。
 
-## Importing (Static Composition)
+## 导入（静态组合）
 
-The `import_server()` method copies all components (tools, resources, templates, prompts) from one `FastMCP` instance (the *subserver*) into another (the *main server*). An optional `prefix` can be provided to avoid naming conflicts. If no prefix is provided, components are imported without modification. When multiple servers are imported with the same prefix (or no prefix), the most recently imported server's components take precedence.
+`import_server()` 方法将所有组件（工具、资源、模板、提示）从一个 `FastMCP` 实例（*子服务器*）复制到另一个（*主服务器*）。可以提供可选的 `prefix` 来避免命名冲突。如果未提供前缀，组件将不经修改地导入。当使用相同前缀（或无前缀）导入多个服务器时，最近导入的服务器的组件优先。
 
 ```python
 from fastmcp import FastMCP
 import asyncio
 
-# Define subservers
+# 定义子服务器
 weather_mcp = FastMCP(name="WeatherService")
 
 @weather_mcp.tool
 def get_forecast(city: str) -> dict:
-    """Get weather forecast."""
+    """获取天气预报。"""
     return {"city": city, "forecast": "Sunny"}
 
 @weather_mcp.resource("data://cities/supported")
 def list_supported_cities() -> list[str]:
-    """List cities with weather support."""
+    """列出支持天气的城市。"""
     return ["London", "Paris", "Tokyo"]
 
-# Define main server
+# 定义主服务器
 main_mcp = FastMCP(name="MainApp")
 
-# Import subserver
+# 导入子服务器
 async def setup():
     await main_mcp.import_server(weather_mcp, prefix="weather")
 
-# Result: main_mcp now contains prefixed components:
-# - Tool: "weather_get_forecast"
-# - Resource: "data://weather/cities/supported" 
+# 结果：main_mcp 现在包含带前缀的组件：
+# - 工具："weather_get_forecast"
+# - 资源："data://weather/cities/supported" 
 
 if __name__ == "__main__":
     asyncio.run(setup())
     main_mcp.run()
 ```
 
-### How Importing Works
+### 导入的工作原理
 
-When you call `await main_mcp.import_server(subserver, prefix={whatever})`:
+当您调用 `await main_mcp.import_server(subserver, prefix={whatever})` 时：
 
-1.  **Tools**: All tools from `subserver` are added to `main_mcp` with names prefixed using `{prefix}_`.
-    -   `subserver.tool(name="my_tool")` becomes `main_mcp.tool(name="{prefix}_my_tool")`.
-2.  **Resources**: All resources are added with both URIs and names prefixed.
-    -   URI: `subserver.resource(uri="data://info")` becomes `main_mcp.resource(uri="data://{prefix}/info")`.
-    -   Name: `resource.name` becomes `"{prefix}_{resource.name}"`.
-3.  **Resource Templates**: Templates are prefixed similarly to resources.
-    -   URI: `subserver.resource(uri="data://{id}")` becomes `main_mcp.resource(uri="data://{prefix}/{id}")`.
-    -   Name: `template.name` becomes `"{prefix}_{template.name}"`.
-4.  **Prompts**: All prompts are added with names prefixed using `{prefix}_`.
-    -   `subserver.prompt(name="my_prompt")` becomes `main_mcp.prompt(name="{prefix}_my_prompt")`.
+1.  **工具**：来自 `subserver` 的所有工具都被添加到 `main_mcp`，名称使用 `{prefix}_` 前缀。
+    -   `subserver.tool(name="my_tool")` 变成 `main_mcp.tool(name="{prefix}_my_tool")`。
+2.  **资源**：所有资源都会添加 URI 和名称前缀。
+    -   URI：`subserver.resource(uri="data://info")` 变成 `main_mcp.resource(uri="data://{prefix}/info")`。
+    -   名称：`resource.name` 变成 `"{prefix}_{resource.name}"`。
+3.  **资源模板**：模板的前缀与资源类似。
+    -   URI：`subserver.resource(uri="data://{id}")` 变成 `main_mcp.resource(uri="data://{prefix}/{id}")`。
+    -   名称：`template.name` 变成 `"{prefix}_{template.name}"`。
+4.  **提示**：所有提示都会添加使用 `{prefix}_` 的名称前缀。
+    -   `subserver.prompt(name="my_prompt")` 变成 `main_mcp.prompt(name="{prefix}_my_prompt")`。
 
-Note that `import_server` performs a **one-time copy** of components. Changes made to the `subserver` *after* importing **will not** be reflected in `main_mcp`. The `subserver`'s `lifespan` context is also **not** executed by the main server.
+请注意，`import_server` 执行组件的**一次性拷贝**。在导入*之后*对 `subserver` 所做的更改**不会**反映在 `main_mcp` 中。主服务器也**不会**执行 `subserver` 的 `lifespan` 上下文。
 
 <Tip>
-The `prefix` parameter is optional. If omitted, components are imported without modification.
+`prefix` 参数是可选的。如果省略，组件将不经修改地导入。
 </Tip>
 
-#### Importing Without Prefixes
+#### 无前缀导入
 
 <VersionBadge version="2.9.0" />
 
-You can also import servers without specifying a prefix, which copies components using their original names:
+您还可以在不指定前缀的情况下导入服务器，这将使用原始名称复制组件：
 
 ```python
 
 from fastmcp import FastMCP
 import asyncio
 
-# Define subservers
+# 定义子服务器
 weather_mcp = FastMCP(name="WeatherService")
 
 @weather_mcp.tool
 def get_forecast(city: str) -> dict:
-    """Get weather forecast."""
+    """获取天气预报。"""
     return {"city": city, "forecast": "Sunny"}
 
 @weather_mcp.resource("data://cities/supported")
 def list_supported_cities() -> list[str]:
-    """List cities with weather support."""
+    """列出支持天气的城市。"""
     return ["London", "Paris", "Tokyo"]
 
-# Define main server
+# 定义主服务器
 main_mcp = FastMCP(name="MainApp")
 
-# Import subserver
+# 导入子服务器
 async def setup():
-    # Import without prefix - components keep original names
+    # 无前缀导入 - 组件保持原始名称
     await main_mcp.import_server(weather_mcp)
 
-# Result: main_mcp now contains:
-# - Tool: "get_forecast" (original name preserved)
-# - Resource: "data://cities/supported" (original URI preserved)
+# 结果：main_mcp 现在包含：
+# - 工具："get_forecast"（保留原始名称）
+# - 资源："data://cities/supported"（保留原始 URI）
 
 if __name__ == "__main__":
     asyncio.run(setup())
     main_mcp.run()
 ```
 
-#### Conflict Resolution
+#### 冲突解决
 
 <VersionBadge version="2.9.0" />
 
-When importing multiple servers with the same prefix, or no prefix, components from the **most recently imported** server take precedence.
+当使用相同前缀或无前缀导入多个服务器时，**最近导入**的服务器的组件优先。
 
 
 
 
-## Mounting (Live Linking)
+## 挂载（实时链接）
 
-The `mount()` method creates a **live link** between the `main_mcp` server and the `subserver`. Instead of copying components, requests for components matching the optional `prefix` are **delegated** to the `subserver` at runtime. If no prefix is provided, the subserver's components are accessible without prefixing. When multiple servers are mounted with the same prefix (or no prefix), the most recently mounted server takes precedence for conflicting component names.
+`mount()` 方法在 `main_mcp` 服务器和 `subserver` 之间创建**实时链接**。不是复制组件，而是在运行时将匹配可选 `prefix` 的组件请求**委托**给 `subserver`。如果未提供前缀，子服务器的组件可以在不使用前缀的情况下访问。当使用相同前缀（或无前缀）挂载多个服务器时，最近挂载的服务器对于冲突的组件名称优先。
 
 ```python
 import asyncio
 from fastmcp import FastMCP, Client
 
-# Define subserver
+# 定义子服务器
 dynamic_mcp = FastMCP(name="DynamicService")
 
 @dynamic_mcp.tool
 def initial_tool():
-    """Initial tool demonstration."""
+    """初始工具演示。"""
     return "Initial Tool Exists"
 
-# Mount subserver (synchronous operation)
+# 挂载子服务器（同步操作）
 main_mcp = FastMCP(name="MainAppLive")
 main_mcp.mount(dynamic_mcp, prefix="dynamic")
 
-# Add a tool AFTER mounting - it will be accessible through main_mcp
+# 在挂载之后添加工具 - 它将通过 main_mcp 可访问
 @dynamic_mcp.tool
 def added_later():
-    """Tool added after mounting."""
+    """挂载后添加的工具。"""
     return "Tool Added Dynamically!"
 
-# Testing access to mounted tools
+# 测试访问挂载的工具
 async def test_dynamic_mount():
     tools = await main_mcp.get_tools()
     print("Available tools:", list(tools.keys()))
-    # Shows: ['dynamic_initial_tool', 'dynamic_added_later']
+    # 显示：['dynamic_initial_tool', 'dynamic_added_later']
     
     async with Client(main_mcp) as client:
         result = await client.call_tool("dynamic_added_later")
         print("Result:", result.data)
-        # Shows: "Tool Added Dynamically!"
+        # 显示："Tool Added Dynamically!"
 
 if __name__ == "__main__":
     asyncio.run(test_dynamic_mount())
 ```
 
-### How Mounting Works
+### 挂载的工作原理
 
-When mounting is configured:
+当配置挂载时：
 
-1. **Live Link**: The parent server establishes a connection to the mounted server.
-2. **Dynamic Updates**: Changes to the mounted server are immediately reflected when accessed through the parent.
-3. **Prefixed Access**: The parent server uses prefixes to route requests to the mounted server.
-4. **Delegation**: Requests for components matching the prefix are delegated to the mounted server at runtime.
+1. **实时链接**：父服务器建立到挂载服务器的连接。
+2. **动态更新**：对挂载服务器的更改在通过父服务器访问时立即反映。
+3. **前缀访问**：父服务器使用前缀将请求路由到挂载的服务器。
+4. **委托**：匹配前缀的组件请求在运行时委托给挂载的服务器。
 
-The same prefixing rules apply as with `import_server` for naming tools, resources, templates, and prompts. This includes prefixing both the URIs/keys and the names of resources and templates for better identification in multi-server configurations.
+与 `import_server` 相同的前缀规则适用于命名工具、资源、模板和提示。这包括为资源和模板的 URI/键和名称都添加前缀，以便在多服务器配置中更好地识别。
 
 <Tip>
-    The `prefix` parameter is optional. If omitted, components are mounted without modification.
+    `prefix` 参数是可选的。如果省略，组件将不经修改地挂载。
 </Tip>
 
 
-#### Mounting Without Prefixes
+#### 无前缀挂载
 
 <VersionBadge version="2.9.0" />
 
-You can also mount servers without specifying a prefix, which makes components accessible without prefixing. This works identically to [importing without prefixes](#importing-without-prefixes), including [conflict resolution](#conflict-resolution).
+您还可以在不指定前缀的情况下挂载服务器，这使得组件可以在不使用前缀的情况下访问。这与[无前缀导入](#importing-without-prefixes)完全相同，包括[冲突解决](#conflict-resolution)。
 
 
 
 
-### Direct vs. Proxy Mounting
+### 直接挂载 vs. 代理挂载
 
 <VersionBadge version="2.2.7" />
 
-FastMCP supports two mounting modes:
+FastMCP 支持两种挂载模式：
 
-1. **Direct Mounting** (default): The parent server directly accesses the mounted server's objects in memory.
-   - No client lifecycle events occur on the mounted server
-   - The mounted server's lifespan context is not executed
-   - Communication is handled through direct method calls
+1. **直接挂载**（默认）：父服务器直接访问挂载服务器在内存中的对象。
+   - 挂载的服务器上不会发生客户端生命周期事件
+   - 挂载服务器的生命周期上下文不会被执行
+   - 通信通过直接方法调用处理
    
-2. **Proxy Mounting**: The parent server treats the mounted server as a separate entity and communicates with it through a client interface.
-   - Full client lifecycle events occur on the mounted server
-   - The mounted server's lifespan is executed when a client connects
-   - Communication happens via an in-memory Client transport
+2. **代理挂载**：父服务器将挂载的服务器视为单独的实体，并通过客户端接口与其通信。
+   - 挂载的服务器上会发生完整的客户端生命周期事件
+   - 当客户端连接时，挂载服务器的生命周期会被执行
+   - 通信通过内存中的客户端传输进行
 
 ```python
-# Direct mounting (default when no custom lifespan)
+# 直接挂载（没有自定义生命周期时的默认行为）
 main_mcp.mount(api_server, prefix="api")
 
-# Proxy mounting (preserves full client lifecycle)
+# 代理挂载（保留完整的客户端生命周期）
 main_mcp.mount(api_server, prefix="api", as_proxy=True)
 
-# Mounting without a prefix (components accessible without prefixing)
+# 无前缀挂载（组件可以在不使用前缀的情况下访问）
 main_mcp.mount(api_server)
 ```
 
-FastMCP automatically uses proxy mounting when the mounted server has a custom lifespan, but you can override this behavior with the `as_proxy` parameter.
+当挂载的服务器有自定义生命周期时，FastMCP 会自动使用代理挂载，但您可以使用 `as_proxy` 参数覆盖此行为。
 
-#### Interaction with Proxy Servers
+#### 与代理服务器的交互
 
-When using `FastMCP.as_proxy()` to create a proxy server, mounting that server will always use proxy mounting:
+当使用 `FastMCP.as_proxy()` 创建代理服务器时，挂载该服务器将始终使用代理挂载：
 
 ```python
-# Create a proxy for a remote server
+# 为远程服务器创建代理
 remote_proxy = FastMCP.as_proxy(Client("http://example.com/mcp"))
 
-# Mount the proxy (always uses proxy mounting)
+# 挂载代理（始终使用代理挂载）
 main_server.mount(remote_proxy, prefix="remote")
 ```
 
 
 
-## Resource Prefix Formats
+## 资源前缀格式
 
 <VersionBadge version="2.4.0" />
 
-When mounting or importing servers, resource URIs are usually prefixed to avoid naming conflicts. FastMCP supports two different formats for resource prefixes:
+当挂载或导入服务器时，资源 URI 通常会添加前缀以避免命名冲突。FastMCP 支持两种不同的资源前缀格式：
 
-### Path Format (Default)
+### 路径格式（默认）
 
-In path format, prefixes are added to the path component of the URI:
+在路径格式中，前缀被添加到 URI 的路径组件：
 
 ```
 resource://prefix/path/to/resource
 ```
 
-This is the default format since FastMCP 2.4. This format is recommended because it avoids issues with URI protocol restrictions (like underscores not being allowed in protocol names).
+这是 FastMCP 2.4 以来的默认格式。推荐使用此格式，因为它避免了 URI 协议限制的问题（例如协议名称中不允许使用下划线）。
 
-### Protocol Format (Legacy)
+### 协议格式（传统）
 
-In protocol format, prefixes are added as part of the protocol:
+在协议格式中，前缀作为协议的一部分添加：
 
 ```
 prefix+resource://path/to/resource
 ```
 
-This was the default format in FastMCP before 2.4. While still supported, it's not recommended for new code as it can cause problems with prefix names that aren't valid in URI protocols.
+这是 FastMCP 2.4 之前的默认格式。虽然仍然支持，但不建议在新代码中使用，因为它可能会导致在 URI 协议中无效的前缀名称出现问题。
 
-### Configuring the Prefix Format
+### 配置前缀格式
 
-You can configure the prefix format globally in code:
+您可以在代码中全局配置前缀格式：
 
 ```python
 import fastmcp
 fastmcp.settings.resource_prefix_format = "protocol" 
 ```
 
-Or via environment variable:
+或通过环境变量：
 
 ```bash
 FASTMCP_RESOURCE_PREFIX_FORMAT=protocol
 ```
 
-Or per-server:
+或按服务器配置：
 
 ```python
 from fastmcp import FastMCP
 
-# Create a server that uses legacy protocol format
+# 创建使用传统协议格式的服务器
 server = FastMCP("LegacyServer", resource_prefix_format="protocol")
 
-# Create a server that uses new path format
+# 创建使用新路径格式的服务器
 server = FastMCP("NewServer", resource_prefix_format="path")
 ```
 
-When mounting or importing servers, the prefix format of the parent server is used.
+当挂载或导入服务器时，使用父服务器的前缀格式。
 
 <Note>
-When mounting servers, custom HTTP routes defined with `@server.custom_route()` are also forwarded to the parent server, making them accessible through the parent's HTTP application.
+挂载服务器时，使用 `@server.custom_route()` 定义的自定义 HTTP 路由也会转发到父服务器，使它们可以通过父服务器的 HTTP 应用程序访问。
 </Note>

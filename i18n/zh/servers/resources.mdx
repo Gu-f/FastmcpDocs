@@ -1,31 +1,31 @@
 ---
-title: Resources & Templates
-sidebarTitle: Resources
-description: Expose data sources and dynamic content generators to your MCP client.
+title: 资源和模板
+sidebarTitle: 资源
+description: 向您的 MCP 客户端暴露数据源和动态内容的生成器。
 icon: folder-open
 ---
 
 import { VersionBadge } from "/snippets/version-badge.mdx"
 
-Resources represent data or files that an MCP client can read, and resource templates extend this concept by allowing clients to request dynamically generated resources based on parameters passed in the URI.
+资源代表 MCP 客户端可以读取的数据或文件，资源模板扩展了这个概念，允许客户端根据 URI 中传递的参数请求动态生成的资源。
 
-FastMCP simplifies defining both static and dynamic resources, primarily using the `@mcp.resource` decorator.
+FastMCP 简化了静态和动态资源的定义，主要使用 `@mcp.resource` 装饰器。
 
-## What Are Resources?
+## 什么是资源？
 
-Resources provide read-only access to data for the LLM or client application. When a client requests a resource URI:
+资源为 LLM 或客户端应用程序提供对数据的只读访问。当客户端请求资源 URI 时：
 
-1.  FastMCP finds the corresponding resource definition.
-2.  If it's dynamic (defined by a function), the function is executed.
-3.  The content (text, JSON, binary data) is returned to the client.
+1.  FastMCP 找到相应的资源定义。
+2.  如果它是动态的（由函数定义），则执行该函数。
+3.  内容（文本、JSON、二进制数据）返回给客户端。
 
-This allows LLMs to access files, database content, configuration, or dynamically generated information relevant to the conversation.
+这允许 LLM 访问文件、数据库内容、配置或与对话相关的动态生成的信息。
 
-## Resources
+## 资源
 
-### The `@resource` Decorator
+### `@resource` 装饰器
 
-The most common way to define a resource is by decorating a Python function. The decorator requires the resource's unique URI.
+定义资源最常见的方法是装饰 Python 函数。装饰器需要资源的唯一 URI。
 
 ```python
 import json
@@ -33,16 +33,16 @@ from fastmcp import FastMCP
 
 mcp = FastMCP(name="DataServer")
 
-# Basic dynamic resource returning a string
+# 返回字符串的基本动态资源
 @mcp.resource("resource://greeting")
 def get_greeting() -> str:
-    """Provides a simple greeting message."""
+    """提供简单的问候消息。"""
     return "Hello from FastMCP Resources!"
 
-# Resource returning JSON data (dict is auto-serialized)
+# 返回 JSON 数据的资源（字典会自动序列化）
 @mcp.resource("data://config")
 def get_config() -> dict:
-    """Provides application configuration as JSON."""
+    """以 JSON 形式提供应用程序配置。"""
     return {
         "theme": "dark",
         "version": "1.2.0",
@@ -50,70 +50,70 @@ def get_config() -> dict:
     }
 ```
 
-**Key Concepts:**
+**核心概念：**
 
-*   **URI:** The first argument to `@resource` is the unique URI (e.g., `"resource://greeting"`) clients use to request this data.
-*   **Lazy Loading:** The decorated function (`get_greeting`, `get_config`) is only executed when a client specifically requests that resource URI via `resources/read`.
-*   **Inferred Metadata:** By default:
-    *   Resource Name: Taken from the function name (`get_greeting`).
-    *   Resource Description: Taken from the function's docstring.
+*   **URI：** `@resource` 的第一个参数是唯一的 URI（例如，`"resource://greeting"`），客户端使用它来请求这些数据。
+*   **延迟加载：** 装饰的函数（`get_greeting`、`get_config`）只有在客户端通过 `resources/read` 定向请求该资源 URI 时才会执行。
+*   **推断的元数据：** 默认情况下：
+    *   资源名称：取自函数名称（`get_greeting`）。
+    *   资源描述：取自函数的文档字符串。
 
-#### Decorator Arguments
+#### 装饰器参数
 
-You can customize the resource's properties using arguments in the `@mcp.resource` decorator:
+您可以在 `@mcp.resource` 装饰器中使用参数来自定义资源的属性：
 
 ```python
 from fastmcp import FastMCP
 
 mcp = FastMCP(name="DataServer")
 
-# Example specifying metadata
+# 指定元数据的示例
 @mcp.resource(
-    uri="data://app-status",      # Explicit URI (required)
-    name="ApplicationStatus",     # Custom name
-    description="Provides the current status of the application.", # Custom description
-    mime_type="application/json", # Explicit MIME type
-    tags={"monitoring", "status"}, # Categorization tags
-    meta={"version": "2.1", "team": "infrastructure"}  # Custom metadata
+    uri="data://app-status",      # 显式 URI（必需）
+    name="ApplicationStatus",     # 自定义名称
+    description="提供应用程序的当前状态。", # 自定义描述
+    mime_type="application/json", # 显式 MIME 类型
+    tags={"monitoring", "status"}, # 分类标签
+    meta={"version": "2.1", "team": "infrastructure"}  # 自定义元数据
 )
 def get_application_status() -> dict:
-    """Internal function description (ignored if description is provided above)."""
-    return {"status": "ok", "uptime": 12345, "version": mcp.settings.version} # Example usage
+    """内部函数描述（如果上面提供了描述则忽略）。"""
+    return {"status": "ok", "uptime": 12345, "version": mcp.settings.version} # 示例用法
 ```
 
-<Card icon="code" title="@resource Decorator Arguments">
+<Card icon="code" title="@resource 装饰器参数">
 <ParamField body="uri" type="str" required>
-  The unique identifier for the resource
+  资源的唯一标识符
 </ParamField>
 
 <ParamField body="name" type="str | None">
-  A human-readable name. If not provided, defaults to function name
+  人类可读的名称。如果未提供，默认为函数名称
 </ParamField>
 
 <ParamField body="description" type="str | None">
-  Explanation of the resource. If not provided, defaults to docstring
+  资源的说明。如果未提供，默认为文档字符串
 </ParamField>
 
 <ParamField body="mime_type" type="str | None">
-  Specifies the content type. FastMCP often infers a default like `text/plain` or `application/json`, but explicit is better for non-text types
+  指定内容类型。FastMCP 通常推断默认值如 `text/plain` 或 `application/json`，但对于非文本类型明确指定更好
 </ParamField>
 
 <ParamField body="tags" type="set[str] | None">
-  A set of strings used to categorize the resource. These can be used by the server and, in some cases, by clients to filter or group available resources.
+  用于对资源进行分类的字符串集合。服务器和在某些情况下客户端可以使用这些来过滤或分组可用资源。
 </ParamField>
 
 <ParamField body="enabled" type="bool" default="True">
-  A boolean to enable or disable the resource. See [Disabling Resources](#disabling-resources) for more information
+  启用或禁用资源的布尔值。更多信息请参阅[禁用资源](#disabling-resources)
 </ParamField>
 
 <ParamField body="annotations" type="Annotations | dict | None">
-    An optional `Annotations` object or dictionary to add additional metadata about the resource.
-  <Expandable title="Annotations attributes">
+    可选的 `Annotations` 对象或字典，用于添加关于资源的额外元数据。
+  <Expandable title="注解属性">
     <ParamField body="readOnlyHint" type="bool | None">
-      If true, the resource is read-only and does not modify its environment.
+      如果为 true，资源是只读的，不会修改其环境。
     </ParamField>
     <ParamField body="idempotentHint" type="bool | None">
-      If true, reading the resource repeatedly will have no additional effect on its environment.
+      如果为 true，重复读取资源对其环境不会产生额外影响。
     </ParamField>
   </Expandable>
 </ParamField>
@@ -121,51 +121,51 @@ def get_application_status() -> dict:
 <ParamField body="meta" type="dict[str, Any] | None">
   <VersionBadge version="2.11.0" />
   
-  Optional meta information about the resource. This data is passed through to the MCP client as the `_meta` field of the client-side resource object and can be used for custom metadata, versioning, or other application-specific purposes.
+  关于资源的可选元信息。此数据作为客户端资源对象的 `_meta` 字段传递给 MCP 客户端，可用于自定义元数据、版本控制或其他应用程序特定目的。
 </ParamField>
 </Card>
 
-### Return Values
+### 返回值
 
-FastMCP automatically converts your function's return value into the appropriate MCP resource content:
+FastMCP 自动将您函数的返回值转换为适当的 MCP 资源内容：
 
--   **`str`**: Sent as `TextResourceContents` (with `mime_type="text/plain"` by default).
--   **`dict`, `list`, `pydantic.BaseModel`**: Automatically serialized to a JSON string and sent as `TextResourceContents` (with `mime_type="application/json"` by default).
--   **`bytes`**: Base64 encoded and sent as `BlobResourceContents`. You should specify an appropriate `mime_type` (e.g., `"image/png"`, `"application/octet-stream"`).
--   **`None`**: Results in an empty resource content list being returned.
+-   **`str`**：作为 `TextResourceContents` 发送（默认 `mime_type="text/plain"`）。
+-   **`dict`、`list`、`pydantic.BaseModel`**：自动序列化为 JSON 字符串并作为 `TextResourceContents` 发送（默认 `mime_type="application/json"`）。
+-   **`bytes`**：Base64 编码并作为 `BlobResourceContents` 发送。您应该指定适当的 `mime_type`（例如，`"image/png"`、`"application/octet-stream"`）。
+-   **`None`**：返回空的资源内容列表。
 
-### Disabling Resources
+### 禁用资源
 
 <VersionBadge version="2.8.0" />
 
-You can control the visibility and availability of resources and templates by enabling or disabling them. Disabled resources will not appear in the list of available resources or templates, and attempting to read a disabled resource will result in an "Unknown resource" error.
+您可以通过启用或禁用资源和模板来控制它们的可见性和可用性。禁用的资源不会出现在可用资源或模板列表中，尝试读取禁用的资源将导致"未知资源"错误。
 
-By default, all resources are enabled. You can disable a resource upon creation using the `enabled` parameter in the decorator:
+默认情况下，所有资源都是启用的。您可以在创建时使用装饰器中的 `enabled` 参数禁用资源：
 
 ```python
 @mcp.resource("data://secret", enabled=False)
 def get_secret_data():
-    """This resource is currently disabled."""
+    """此资源当前已禁用。"""
     return "Secret data"
 ```
 
-You can also toggle a resource's state programmatically after it has been created:
+您也可以在创建资源后以编程方式切换资源的状态：
 
 ```python
 @mcp.resource("data://config")
 def get_config(): return {"version": 1}
 
-# Disable and re-enable the resource
+# 禁用和重新启用资源
 get_config.disable()
 get_config.enable()
 ```
 
 
-### Accessing MCP Context
+### 访问 MCP 上下文
 
 <VersionBadge version="2.2.5" />
 
-Resources and resource templates can access additional MCP information and features through the `Context` object. To access it, add a parameter to your resource function with a type annotation of `Context`:
+资源和资源模板可以通过 `Context` 对象访问额外的 MCP 信息和功能。要访问它，请在资源函数中添加一个类型注解为 `Context` 的参数：
 
 ```python {6, 14}
 from fastmcp import FastMCP, Context
@@ -174,7 +174,7 @@ mcp = FastMCP(name="DataServer")
 
 @mcp.resource("resource://system-status")
 async def get_system_status(ctx: Context) -> dict:
-    """Provides system status information."""
+    """提供系统状态信息。"""
     return {
         "status": "operational",
         "request_id": ctx.request_id
@@ -182,19 +182,19 @@ async def get_system_status(ctx: Context) -> dict:
 
 @mcp.resource("resource://{name}/details")
 async def get_details(name: str, ctx: Context) -> dict:
-    """Get details for a specific name."""
+    """获取特定名称的详细信息。"""
     return {
         "name": name,
         "accessed_at": ctx.request_id
     }
 ```
 
-For full documentation on the Context object and all its capabilities, see the [Context documentation](/zh/servers/context).
+有关 Context 对象及其所有功能的完整文档，请参阅[上下文文档](/zh/servers/context)。
 
 
-### Async Resources
+### 异步资源
 
-Use `async def` for resource functions that perform I/O operations (e.g., reading from a database or network) to avoid blocking the server.
+对于执行 I/O 操作（例如，从数据库或网络读取）的资源函数，使用 `async def` 以避免阻塞服务器。
 
 ```python
 import aiofiles
@@ -204,19 +204,19 @@ mcp = FastMCP(name="DataServer")
 
 @mcp.resource("file:///app/data/important_log.txt", mime_type="text/plain")
 async def read_important_log() -> str:
-    """Reads content from a specific log file asynchronously."""
+    """异步读取特定日志文件的内容。"""
     try:
         async with aiofiles.open("/app/data/important_log.txt", mode="r") as f:
             content = await f.read()
         return content
     except FileNotFoundError:
-        return "Log file not found."
+        return "未找到日志文件。"
 ```
 
 
-### Resource Classes
+### 资源类
 
-While `@mcp.resource` is ideal for dynamic content, you can directly register pre-defined resources (like static files or simple text) using `mcp.add_resource()` and concrete `Resource` subclasses.
+虽然 `@mcp.resource` 非常适合动态内容，但您可以使用 `mcp.add_resource()` 和具体的 `Resource` 子类直接注册预定义的资源（如静态文件或简单文本）。
 
 ```python
 from pathlib import Path
@@ -225,21 +225,21 @@ from fastmcp.resources import FileResource, TextResource, DirectoryResource
 
 mcp = FastMCP(name="DataServer")
 
-# 1. Exposing a static file directly
+# 1. 直接暴露静态文件
 readme_path = Path("./README.md").resolve()
 if readme_path.exists():
-    # Use a file:// URI scheme
+    # 使用 file:// URI 方案
     readme_resource = FileResource(
         uri=f"file://{readme_path.as_posix()}",
-        path=readme_path, # Path to the actual file
+        path=readme_path, # 实际文件的路径
         name="README File",
-        description="The project's README.",
+        description="项目的 README。",
         mime_type="text/markdown",
         tags={"documentation"}
     )
     mcp.add_resource(readme_resource)
 
-# 2. Exposing simple, predefined text
+# 2. 暴露简单的预定义文本
 notice_resource = TextResource(
     uri="resource://notice",
     name="Important Notice",
@@ -248,7 +248,7 @@ notice_resource = TextResource(
 )
 mcp.add_resource(notice_resource)
 
-# 3. Using a custom key different from the URI
+# 3. 使用与 URI 不同的自定义键
 special_resource = TextResource(
     uri="resource://common-notice",
     name="Special Notice",
@@ -256,81 +256,81 @@ special_resource = TextResource(
 )
 mcp.add_resource(special_resource, key="resource://custom-key")
 
-# 4. Exposing a directory listing
+# 4. 暴露目录列表
 data_dir_path = Path("./app_data").resolve()
 if data_dir_path.is_dir():
     data_listing_resource = DirectoryResource(
         uri="resource://data-files",
-        path=data_dir_path, # Path to the directory
+        path=data_dir_path, # 目录的路径
         name="Data Directory Listing",
-        description="Lists files available in the data directory.",
-        recursive=False # Set to True to list subdirectories
+        description="列出数据目录中可用的文件。",
+        recursive=False # 设置为 True 以列出子目录
     )
-    mcp.add_resource(data_listing_resource) # Returns JSON list of files
+    mcp.add_resource(data_listing_resource) # 返回文件的 JSON 列表
 ```
 
-**Common Resource Classes:**
+**常见资源类：**
 
--   `TextResource`: For simple string content.
--   `BinaryResource`: For raw `bytes` content.
--   `FileResource`: Reads content from a local file path. Handles text/binary modes and lazy reading.
--   `HttpResource`: Fetches content from an HTTP(S) URL (requires `httpx`).
--   `DirectoryResource`: Lists files in a local directory (returns JSON).
--   (`FunctionResource`: Internal class used by `@mcp.resource`).
+-   `TextResource`：用于简单的字符串内容。
+-   `BinaryResource`：用于原始 `bytes` 内容。
+-   `FileResource`：从本地文件路径读取内容。处理文本/二进制模式和延迟读取。
+-   `HttpResource`：从 HTTP(S) URL 获取内容（需要 `httpx`）。
+-   `DirectoryResource`：列出本地目录中的文件（返回 JSON）。
+-   （`FunctionResource`：`@mcp.resource` 使用的内部类）。
 
-Use these when the content is static or sourced directly from a file/URL, bypassing the need for a dedicated Python function.
+当内容是静态的或直接来自文件/URL 时使用这些，无需专用的 Python 函数。
 
-#### Custom Resource Keys
+#### 自定义资源键
 
 <VersionBadge version="2.2.0" />
 
-When adding resources directly with `mcp.add_resource()`, you can optionally provide a custom storage key:
+在使用 `mcp.add_resource()` 直接添加资源时，您可以可选地提供自定义存储键：
 
 ```python
-# Creating a resource with standard URI as the key
+# 使用标准 URI 作为键创建资源
 resource = TextResource(uri="resource://data")
-mcp.add_resource(resource)  # Will be stored and accessed using "resource://data"
+mcp.add_resource(resource)  # 将使用 "resource://data" 存储和访问
 
-# Creating a resource with a custom key
+# 使用自定义键创建资源
 special_resource = TextResource(uri="resource://special-data")
-mcp.add_resource(special_resource, key="internal://data-v2")  # Will be stored and accessed using "internal://data-v2"
+mcp.add_resource(special_resource, key="internal://data-v2")  # 将使用 "internal://data-v2" 存储和访问
 ```
 
-Note that this parameter is only available when using `add_resource()` directly and not through the `@resource` decorator, as URIs are provided explicitly when using the decorator.
+请注意，此参数仅在直接使用 `add_resource()` 时可用，而不通过 `@resource` 装饰器，因为在使用装饰器时会显式提供 URI。
 
-### Notifications
+### 通知
 
 <VersionBadge version="2.9.1" />
 
-FastMCP automatically sends `notifications/resources/list_changed` notifications to connected clients when resources or templates are added, enabled, or disabled. This allows clients to stay up-to-date with the current resource set without manually polling for changes.
+当资源或模板被添加、启用或禁用时，FastMCP 会自动向连接的客户端发送 `notifications/resources/list_changed` 通知。这允许客户端保持最新的资源集，而无需手动轮询更改。
 
 ```python
 @mcp.resource("data://example")
 def example_resource() -> str:
     return "Hello!"
 
-# These operations trigger notifications:
-mcp.add_resource(example_resource)  # Sends resources/list_changed notification
-example_resource.disable()          # Sends resources/list_changed notification  
-example_resource.enable()           # Sends resources/list_changed notification
+# 这些操作会触发通知：
+mcp.add_resource(example_resource)  # 发送 resources/list_changed 通知
+example_resource.disable()          # 发送 resources/list_changed 通知  
+example_resource.enable()           # 发送 resources/list_changed 通知
 ```
 
-Notifications are only sent when these operations occur within an active MCP request context (e.g., when called from within a tool or other MCP operation). Operations performed during server initialization do not trigger notifications.
+仅在这些操作在活动的 MCP 请求上下文中发生时（例如，从工具内或其他 MCP 操作中调用时）才会发送通知。在服务器初始化期间执行的操作不会触发通知。
 
-Clients can handle these notifications using a [message handler](/zh/clients/messages) to automatically refresh their resource lists or update their interfaces.
+客户端可以使用[消息处理程序](/zh/clients/messages)处理这些通知，以自动刷新其资源列表或更新其界面。
 
-### Annotations
+### 注解
 
 <VersionBadge version="2.11.0" />
 
-FastMCP allows you to add specialized metadata to your resources through annotations. These annotations communicate how resources behave to client applications without consuming token context in LLM prompts.
+FastMCP 允许您通过注解向资源添加专门的元数据。这些注解向客户端应用程序传达资源的行为方式，而不会在 LLM 提示中消耗令牌上下文。
 
-Annotations serve several purposes in client applications:
-- Indicating whether resources are read-only or may have side effects
-- Describing the safety profile of resources (idempotent vs. non-idempotent)
-- Helping clients optimize caching and access patterns
+注解在客户端应用程序中有几个用途：
+- 指示资源是否为只读或可能产生副作用
+- 描述资源的安全配置文件（幂等 vs. 非幂等）
+- 帮助客户端优化缓存和访问模式
 
-You can add annotations to a resource using the `annotations` parameter in the `@mcp.resource` decorator:
+您可以在 `@mcp.resource` 装饰器中使用 `annotations` 参数向资源添加注解：
 
 ```python
 @mcp.resource(
@@ -341,44 +341,44 @@ You can add annotations to a resource using the `annotations` parameter in the `
     }
 )
 def get_config() -> dict:
-    """Get application configuration."""
+    """获取应用程序配置。"""
     return {"version": "1.0", "debug": False}
 ```
 
-FastMCP supports these standard annotations:
+FastMCP 支持这些标准注解：
 
-| Annotation | Type | Default | Purpose |
+| 注解 | 类型 | 默认值 | 用途 |
 | :--------- | :--- | :------ | :------ |
-| `readOnlyHint` | boolean | true | Indicates if the resource only provides data without side effects |
-| `idempotentHint` | boolean | true | Indicates if repeated reads have the same effect as a single read |
+| `readOnlyHint` | boolean | true | 指示资源是否仅提供数据而不产生副作用 |
+| `idempotentHint` | boolean | true | 指示重复读取是否与单次读取具有相同效果 |
 
-Remember that annotations help make better user experiences but should be treated as advisory hints. They help client applications present appropriate UI elements and optimize access patterns, but won't enforce behavior on their own. Always focus on making your annotations accurately represent what your resource actually does.
+请记住，注解有助于提供更好的用户体验，但应被视为建议性提示。它们帮助客户端应用程序呈现适当的 UI 元素并优化访问模式，但不会自行强制执行行为。始终专注于让您的注解准确代表您的资源实际做的事情。
 
-## Resource Templates
+## 资源模板
 
-Resource Templates allow clients to request resources whose content depends on parameters embedded in the URI. Define a template using the **same `@mcp.resource` decorator**, but include `{parameter_name}` placeholders in the URI string and add corresponding arguments to your function signature.
+资源模板允许客户端请求其内容依赖于 URI 中嵌入的参数的资源。使用**相同的 `@mcp.resource` 装饰器**定义模板，但在 URI 字符串中包含 `{parameter_name}` 占位符，并在函数签名中添加相应的参数。
 
-Resource templates share most configuration options with regular resources (name, description, mime_type, tags, annotations), but add the ability to define URI parameters that map to function parameters.
+资源模板与常规资源共享大多数配置选项（名称、描述、mime_type、标签、注解），但添加了定义映射到函数参数的 URI 参数的能力。
 
-Resource templates generate a new resource for each unique set of parameters, which means that resources can be dynamically created on-demand. For example, if the resource template `"user://profile/{name}"` is registered, MCP clients could request `"user://profile/ford"` or `"user://profile/marvin"` to retrieve either of those two user profiles as resources, without having to register each resource individually.
+资源模板为每个唯一的参数集生成一个新资源，这意味着资源可以按需动态创建。例如，如果注册了资源模板 `"user://profile/{name}"`，MCP 客户端可以请求 `"user://profile/ford"` 或 `"user://profile/marvin"` 来检索这两个用户配置文件中的任一个作为资源，而无需单独注册每个资源。
 
 <Tip>
-Functions with `*args` are not supported as resource templates. However, unlike tools and prompts, resource templates do support `**kwargs` because the URI template defines specific parameter names that will be collected and passed as keyword arguments.
+具有 `*args` 的函数不支持作为资源模板。然而，与工具和提示不同，资源模板支持 `**kwargs`，因为 URI 模板定义了将被收集并作为关键字参数传递的特定参数名称。
 </Tip>
 
-Here is a complete example that shows how to define two resource templates:
+以下是完整的示例，显示如何定义两个资源模板：
 
 ```python
 from fastmcp import FastMCP
 
 mcp = FastMCP(name="DataServer")
 
-# Template URI includes {city} placeholder
+# 模板 URI 包含 {city} 占位符
 @mcp.resource("weather://{city}/current")
 def get_weather(city: str) -> dict:
-    """Provides weather information for a specific city."""
-    # In a real implementation, this would call a weather API
-    # Here we're using simplified logic for example purposes
+    """为特定城市提供天气信息。"""
+    # 在实际实现中，这将调用天气 API
+    # 这里我们使用简化的逻辑作为示例
     return {
         "city": city.capitalize(),
         "temperature": 22,
@@ -386,7 +386,7 @@ def get_weather(city: str) -> dict:
         "unit": "celsius"
     }
 
-# Template with multiple parameters and annotations
+# 具有多个参数和注解的模板
 @mcp.resource(
     "repos://{owner}/{repo}/info",
     annotations={
@@ -395,8 +395,8 @@ def get_weather(city: str) -> dict:
     }
 )
 def get_repo_info(owner: str, repo: str) -> dict:
-    """Retrieves information about a GitHub repository."""
-    # In a real implementation, this would call the GitHub API
+    """检索有关 GitHub 仓库的信息。"""
+    # 在实际实现中，这将调用 GitHub API
     return {
         "owner": owner,
         "name": repo,
@@ -406,22 +406,22 @@ def get_repo_info(owner: str, repo: str) -> dict:
     }
 ```
 
-With these two templates defined, clients can request a variety of resources:
-- `weather://london/current` → Returns weather for London
-- `weather://paris/current` → Returns weather for Paris
-- `repos://jlowin/fastmcp/info` → Returns info about the jlowin/fastmcp repository
-- `repos://prefecthq/prefect/info` → Returns info about the prefecthq/prefect repository
+定义了这两个模板后，客户端可以请求各种资源：
+- `weather://london/current` → 返回伦敦的天气
+- `weather://paris/current` → 返回巴黎的天气
+- `repos://jlowin/fastmcp/info` → 返回有关 jlowin/fastmcp 仓库的信息
+- `repos://prefecthq/prefect/info` → 返回有关 prefecthq/prefect 仓库的信息
 
-### Wildcard Parameters
+### 通配符参数
 
 <VersionBadge version="2.2.4" />
 
 <Tip>
-Please note: FastMCP's support for wildcard parameters is an **extension** of the Model Context Protocol standard, which otherwise follows RFC 6570. Since all template processing happens in the FastMCP server, this should not cause any compatibility issues with other MCP implementations.
+请注意：FastMCP 对通配符参数的支持是模型上下文协议标准的**扩展**，该标准在其他方面遵循 RFC 6570。由于所有模板处理都在 FastMCP 服务器中进行，这不应该与其他 MCP 实现产生任何兼容性问题。
 </Tip>
 
 
-Resource templates support wildcard parameters that can match multiple path segments. While standard parameters (`{param}`) only match a single path segment and don't cross "/" boundaries, wildcard parameters (`{param*}`) can capture multiple segments including slashes. Wildcards capture all subsequent path segments *up until* the defined part of the URI template (whether literal or another parameter). This allows you to have multiple wildcard parameters in a single URI template.
+资源模板支持可以匹配多个路径段的通配符参数。然而标准参数（`{param}`）只匹配单个路径段并不跨越"/"边界，通配符参数（`{param*}`）可以捕获包括斜杠在内的多个段。通配符捕获所有后续路径段，*直到* URI 模板的定义部分（无论是字面量还是另一个参数）。这允许您在单个 URI 模板中拥有多个通配符参数。
 
 ```python {15, 23}
 from fastmcp import FastMCP
@@ -429,28 +429,28 @@ from fastmcp import FastMCP
 mcp = FastMCP(name="DataServer")
 
 
-# Standard parameter only matches one segment
+# 标准参数仅匹配一个段
 @mcp.resource("files://{filename}")
 def get_file(filename: str) -> str:
-    """Retrieves a file by name."""
-    # Will only match files://<single-segment>
+    """按名称检索文件。"""
+    # 将仅匹配 files://<single-segment>
     return f"File content for: {filename}"
 
 
-# Wildcard parameter can match multiple segments
+# 通配符参数可以匹配多个段
 @mcp.resource("path://{filepath*}")
 def get_path_content(filepath: str) -> str:
-    """Retrieves content at a specific path."""
-    # Can match path://docs/server/resources.mdx
+    """检索特定路径的内容。"""
+    # 可以匹配 path://docs/server/resources.mdx
     return f"Content at path: {filepath}"
 
 
-# Mixing standard and wildcard parameters
+# 混合标准和通配符参数
 @mcp.resource("repo://{owner}/{path*}/template.py")
 def get_template_file(owner: str, path: str) -> dict:
-    """Retrieves a file from a specific repository and path, but 
-    only if the resource ends with `template.py`"""
-    # Can match repo://jlowin/fastmcp/src/resources/template.py
+    """从特定仓库和路径检索文件，但
+    仅当资源以 `template.py` 结尾时"""
+    # 可以匹配 repo://jlowin/fastmcp/src/resources/template.py
     return {
         "owner": owner,
         "path": path + "/template.py",
@@ -458,29 +458,29 @@ def get_template_file(owner: str, path: str) -> dict:
     }
 ```
 
-Wildcard parameters are useful when:
+通配符参数在以下情况下很有用：
 
-- Working with file paths or hierarchical data
-- Creating APIs that need to capture variable-length path segments
-- Building URL-like patterns similar to REST APIs
+- 处理文件路径或分层数据
+- 创建需要捕获可变长度路径段的 API
+- 构建类似于 REST API 的 URL 模式
 
-Note that like regular parameters, each wildcard parameter must still be a named parameter in your function signature, and all required function parameters must appear in the URI template.
+请注意，与常规参数一样，每个通配符参数仍必须是函数签名中的命名参数，并且所有必需的函数参数都必须出现在 URI 模板中。
 
-### Default Values
+### 默认值
 
 <VersionBadge version="2.2.0" />
 
-When creating resource templates, FastMCP enforces two rules for the relationship between URI template parameters and function parameters:
+在创建资源模板时，FastMCP 对 URI 模板参数和函数参数之间的关系强制执行两个规则：
 
-1. **Required Function Parameters:** All function parameters without default values (required parameters) must appear in the URI template.
-2. **URI Parameters:** All URI template parameters must exist as function parameters.
+1. **必需的函数参数：** 所有没有默认值的函数参数（必需参数）都必须出现在 URI 模板中。
+2. **URI 参数：** 所有 URI 模板参数都必须作为函数参数存在。
 
-However, function parameters with default values don't need to be included in the URI template. When a client requests a resource, FastMCP will:
+然而，具有默认值的函数参数不需要包含在 URI 模板中。当客户端请求资源时，FastMCP 将：
 
-- Extract parameter values from the URI for parameters included in the template
-- Use default values for any function parameters not in the URI template
+- 从 URI 中提取模板中包含的参数值
+- 为不在 URI 模板中的任何函数参数使用默认值
 
-This allows for flexible API designs. For example, a simple search template with optional parameters:
+这允许灵活的 API 设计。例如，一个具有可选参数的简单搜索模板：
 
 ```python
 from fastmcp import FastMCP
@@ -489,8 +489,8 @@ mcp = FastMCP(name="DataServer")
 
 @mcp.resource("search://{query}")
 def search_resources(query: str, max_results: int = 10, include_archived: bool = False) -> dict:
-    """Search for resources matching the query string."""
-    # Only 'query' is required in the URI, the other parameters use their defaults
+    """搜索与查询字符串匹配的资源。"""
+    # 只有 'query' 在 URI 中是必需的，其他参数使用它们的默认值
     results = perform_search(query, limit=max_results, archived=include_archived)
     return {
         "query": query,
@@ -500,54 +500,54 @@ def search_resources(query: str, max_results: int = 10, include_archived: bool =
     }
 ```
 
-With this template, clients can request `search://python` and the function will be called with `query="python", max_results=10, include_archived=False`. MCP Developers can still call the underlying `search_resources` function directly with more specific parameters.
+使用此模板，客户端可以请求 `search://python`，函数将以 `query="python", max_results=10, include_archived=False` 被调用。MCP 开发人员仍可以使用更具体的参数直接调用底层的 `search_resources` 函数。
 
-You can also create multiple resource templates that provide different ways to access the same underlying data by manually applying decorators to a single function:
+您还可以通过手动将装饰器应用于单个函数来创建多个资源模板，以提供访问相同底层数据的不同方式：
 
 ```python
 from fastmcp import FastMCP
 
 mcp = FastMCP(name="DataServer")
 
-# Define a user lookup function that can be accessed by different identifiers
+# 定义可以通过不同标识符访问的用户查找函数
 def lookup_user(name: str | None = None, email: str | None = None) -> dict:
-    """Look up a user by either name or email."""
+    """通过名称或电子邮件查找用户。"""
     if email:
-        return find_user_by_email(email)  # pseudocode
+        return find_user_by_email(email)  # 伪代码
     elif name:
-        return find_user_by_name(name)  # pseudocode
+        return find_user_by_name(name)  # 伪代码
     else:
         return {"error": "No lookup parameters provided"}
 
-# Manually apply multiple decorators to the same function
+# 手动将多个装饰器应用于同一函数
 mcp.resource("users://email/{email}")(lookup_user)
 mcp.resource("users://name/{name}")(lookup_user)
 ```
 
-Now an LLM or client can retrieve user information in two different ways:
-- `users://email/alice@example.com` → Looks up user by email (with name=None)
-- `users://name/Bob` → Looks up user by name (with email=None)
+现在 LLM 或客户端可以以两种不同的方式检索用户信息：
+- `users://email/alice@example.com` → 通过电子邮件查找用户（使用 name=None）
+- `users://name/Bob` → 通过名称查找用户（使用 email=None）
 
-This approach allows a single function to be registered with multiple URI patterns while keeping the implementation clean and straightforward.
+这种方法允许将单个函数注册为多个 URI 模式，同时保持实现的简洁和直接。
 
-Templates provide a powerful way to expose parameterized data access points following REST-like principles.
+模板提供了遵循类 REST 原则暴露参数化数据访问点的强大方式。
 
-## Error Handling
+## 错误处理
 
 <VersionBadge version="2.4.1" />
 
-If your resource function encounters an error, you can raise a standard Python exception (`ValueError`, `TypeError`, `FileNotFoundError`, custom exceptions, etc.) or a FastMCP `ResourceError`.
+如果您的资源函数遇到错误，您可以引发标准 Python 异常（`ValueError`、`TypeError`、`FileNotFoundError`、自定义异常等）或 FastMCP `ResourceError`。
 
-By default, all exceptions (including their details) are logged and converted into an MCP error response to be sent back to the client LLM. This helps the LLM understand failures and react appropriately.
+默认情况下，所有异常（包括它们的详细信息）都会被记录并转换为 MCP 错误响应发送回客户端 LLM。这有助于 LLM 理解失败并做出适当反应。
 
-If you want to mask internal error details for security reasons, you can:
+如果您出于安全原因想要隐藏内部错误详细信息，您可以：
 
-1. Use the `mask_error_details=True` parameter when creating your `FastMCP` instance:
+1. 在创建 `FastMCP` 实例时使用 `mask_error_details=True` 参数：
 ```python
 mcp = FastMCP(name="SecureServer", mask_error_details=True)
 ```
 
-2. Or use `ResourceError` to explicitly control what error information is sent to clients:
+2. 或使用 `ResourceError` 显式控制发送给客户端的错误信息：
 ```python
 from fastmcp import FastMCP
 from fastmcp.exceptions import ResourceError
@@ -556,20 +556,20 @@ mcp = FastMCP(name="DataServer")
 
 @mcp.resource("resource://safe-error")
 def fail_with_details() -> str:
-    """This resource provides detailed error information."""
-    # ResourceError contents are always sent back to clients,
-    # regardless of mask_error_details setting
+    """此资源提供详细的错误信息。"""
+    # ResourceError 的内容始终发送回客户端，
+    # 无论 mask_error_details 设置如何
     raise ResourceError("Unable to retrieve data: file not found")
 
 @mcp.resource("resource://masked-error")
 def fail_with_masked_details() -> str:
-    """This resource masks internal error details when mask_error_details=True."""
-    # This message would be masked if mask_error_details=True
+    """当 mask_error_details=True 时，此资源隐藏内部错误详细信息。"""
+    # 如果 mask_error_details=True，此消息将被隐藏
     raise ValueError("Sensitive internal file path: /etc/secrets.conf")
 
 @mcp.resource("data://{id}")
 def get_data_by_id(id: str) -> dict:
-    """Template resources also support the same error handling pattern."""
+    """模板资源也支持相同的错误处理模式。"""
     if id == "secure":
         raise ValueError("Cannot access secure data")
     elif id == "missing":
@@ -577,36 +577,36 @@ def get_data_by_id(id: str) -> dict:
     return {"id": id, "value": "data"}
 ```
 
-When `mask_error_details=True`, only error messages from `ResourceError` will include details, other exceptions will be converted to a generic message.
+当 `mask_error_details=True` 时，只有来自 `ResourceError` 的错误消息会包含详细信息，其他异常将被转换为通用消息。
 
-## Server Behavior
+## 服务器行为
 
-### Duplicate Resources
+### 重复资源
 
 <VersionBadge version="2.1.0" />
 
-You can configure how the FastMCP server handles attempts to register multiple resources or templates with the same URI. Use the `on_duplicate_resources` setting during `FastMCP` initialization.
+您可以配置 FastMCP 服务器如何处理尝试注册具有相同 URI 的多个资源或模板。在 `FastMCP` 初始化期间使用 `on_duplicate_resources` 设置。
 
 ```python
 from fastmcp import FastMCP
 
 mcp = FastMCP(
     name="ResourceServer",
-    on_duplicate_resources="error" # Raise error on duplicates
+    on_duplicate_resources="error" # 在重复时引发错误
 )
 
 @mcp.resource("data://config")
 def get_config_v1(): return {"version": 1}
 
-# This registration attempt will raise a ValueError because
-# "data://config" is already registered and the behavior is "error".
+# 此注册尝试将引发 ValueError，因为
+# "data://config" 已经注册且行为是 "error"。
 # @mcp.resource("data://config")
 # def get_config_v2(): return {"version": 2}
 ```
 
-The duplicate behavior options are:
+重复行为选项包括：
 
--   `"warn"` (default): Logs a warning, and the new resource/template replaces the old one.
--   `"error"`: Raises a `ValueError`, preventing the duplicate registration.
--   `"replace"`: Silently replaces the existing resource/template with the new one.
--   `"ignore"`: Keeps the original resource/template and ignores the new registration attempt.
+-   `"warn"`（默认）：记录警告，新资源/模板替换旧的。
+-   `"error"`：引发 `ValueError`，阻止重复注册。
+-   `"replace"`：静默地用新的替换现有资源/模板。
+-   `"ignore"`：保留原始资源/模板并忽略新的注册尝试。
