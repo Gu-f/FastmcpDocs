@@ -362,48 +362,48 @@ FastMCP 工具可以以两种互补格式返回数据：**传统内容块**（�
 
 以下部分详细解释每个概念。
 
-#### Content Blocks
+#### 内容块
 
-FastMCP automatically converts tool return values into appropriate MCP content blocks:
+FastMCP 自动将工具返回值转换为适当的 MCP 内容块：
 
-- **`str`**: Sent as `TextContent`
-- **`bytes`**: Base64 encoded and sent as `BlobResourceContents` (within an `EmbeddedResource`)
-- **`fastmcp.utilities.types.Image`**: Sent as `ImageContent`
-- **`fastmcp.utilities.types.Audio`**: Sent as `AudioContent`
-- **`fastmcp.utilities.types.File`**: Sent as base64-encoded `EmbeddedResource`
-- **A list of any of the above**: Converts each item appropriately
-- **`None`**: Results in an empty response
+- **`str`**: 作为 `TextContent` 发送
+- **`bytes`**: Base64 编码并作为 `BlobResourceContents` 发送（在 `EmbeddedResource` 内）
+- **`fastmcp.utilities.types.Image`**: 作为 `ImageContent` 发送
+- **`fastmcp.utilities.types.Audio`**: 作为 `AudioContent` 发送
+- **`fastmcp.utilities.types.File`**: 作为 base64 编码的 `EmbeddedResource` 发送
+- **以上任何类型的列表**: 自动转换每个项
+- **`None`**: 结果为空响应
 
-#### Structured Output
+#### 结构化输出
 
 <VersionBadge version="2.10.0" />
 
-The 6/18/2025 MCP spec update [introduced](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#structured-content) structured content, which is a new way to return data from tools. Structured content is a JSON object that is sent alongside traditional content. FastMCP automatically creates structured outputs alongside traditional content when your tool returns data that has a JSON object representation. This provides machine-readable JSON data that clients can deserialize back to Python objects.
+2025年6月18日的 MCP 规范更新[引入了](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#structured-content)结构化内容，这是一种从工具返回数据的新方式。结构化内容是与传统内容一起发送的 JSON 对象。当您的工具返回具有 JSON 对象表示的数据时，FastMCP 会自动在传统内容旁边创建结构化输出。这提供了客户端可以反序列化回 Python 对象的机器可读 JSON 数据。
 
-**Automatic Structured Content Rules:**
-- **Object-like results** (`dict`, Pydantic models, dataclasses) → Always become structured content (even without output schema)  
-- **Non-object results** (`int`, `str`, `list`) → Only become structured content if there's an output schema to validate/serialize them
-- **All results** → Always become traditional content blocks for backward compatibility
+**自动结构化内容规则：**
+- **类对象结果**（`dict`、Pydantic 模型、dataclasses 数据类）→ 始终成为结构化内容（即使没有输出Schema）
+- **非对象结果**（`int`、`str`、`list`）→ 只有在有输出架构来验证/序列化它们时才成为结构化内容
+- **所有结果** → 为了向后兼容，始终成为传统内容块
 
 <Note>
-This automatic behavior enables clients to receive machine-readable data alongside human-readable content without requiring explicit output schemas for object-like returns.
+这种自动行为使客户端能够接收机器可读数据和人类可读内容，而无需为类对象返回明确的输出Schema。
 </Note>
 
-##### Object-like Results (Automatic Structured Content)
+##### 类对象结果（自动结构化内容）
 
 <CodeGroup>
-```python Dict Return (No Schema Needed)
+```python 字典返回（无需Schema）
 @mcp.tool
 def get_user_data(user_id: str) -> dict:
-    """Get user data without type annotation."""
+    """获取用户数据，无类型注解。"""
     return {"name": "Alice", "age": 30, "active": True}
 ```
 
-```json Traditional Content
+```json 传统内容
 "{\n  \"name\": \"Alice\",\n  \"age\": 30,\n  \"active\": true\n}"
 ```
 
-```json Structured Content (Automatic)
+```json 结构化内容（自动）
 {
   "name": "Alice", 
   "age": 30,
@@ -412,42 +412,42 @@ def get_user_data(user_id: str) -> dict:
 ```
 </CodeGroup>
 
-##### Non-object Results (Schema Required)
+##### 非对象结果（需要定义Schema）
 
 <CodeGroup>
-```python Integer Return (No Schema)
+```python 整数返回（无需Schema）
 @mcp.tool  
 def calculate_sum(a: int, b: int):
-    """Calculate sum without return annotation."""
-    return a + b  # Returns 8
+    """计算总和，无返回注解。"""
+    return a + b  # 返回 8
 ```
 
-```json Traditional Content Only
+```json 仅传统内容
 "8"
 ```
 
-```python Integer Return (With Schema)
+```python 整数返回（有Schema）
 @mcp.tool
 def calculate_sum(a: int, b: int) -> int:
-    """Calculate sum with return annotation."""  
-    return a + b  # Returns 8
+    """计算总和，有返回注解。"""  
+    return a + b  # 返回 8
 ```
 
-```json Traditional Content
+```json 传统内容
 "8"
 ```
 
-```json Structured Content (From Schema)
+```json 结构化内容（来自Schema）
 {
   "result": 8
 }
 ```
 </CodeGroup>
 
-##### Complex Type Example
+##### 复杂类型示例
 
 <CodeGroup>
-```python Tool Definition
+```python 工具定义
 from dataclasses import dataclass
 from fastmcp import FastMCP
 
@@ -461,11 +461,11 @@ class Person:
 
 @mcp.tool
 def get_user_profile(user_id: str) -> Person:
-    """Get a user's profile information."""
+    """获取用户的配置文件信息。"""
     return Person(name="Alice", age=30, email="alice@example.com")
 ```
 
-```json Generated Output Schema
+```json 生成的输出结构
 {
   "properties": {
     "name": {"title": "Name", "type": "string"},
@@ -478,7 +478,7 @@ def get_user_profile(user_id: str) -> Person:
 }
 ```
 
-```json Structured Output
+```json 结构化输出
 {
   "name": "Alice",
   "age": 30,
@@ -487,27 +487,27 @@ def get_user_profile(user_id: str) -> Person:
 ```
 </CodeGroup>
 
-#### Output Schemas
+#### 输出Schema
 
 <VersionBadge version="2.10.0" />
 
-The 6/18/2025 MCP spec update [introduced](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#output-schema) output schemas, which are a new way to describe the expected output format of a tool. When an output schema is provided, the tool *must* return structured output that matches the schema.
+2025年6月18日的 MCP 规范更新[引入了](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#output-schema)输出架构，这是一种描述工具预期输出格式的新方式。当提供输出架构时，工具*必须*返回与架构匹配的结构化输出。
 
-When you add return type annotations to your functions, FastMCP automatically generates JSON schemas that describe the expected output format. These schemas help MCP clients understand and validate the structured data they receive.
+当您向函数添加返回类型注解时，FastMCP 会自动生成描述预期输出格式的 JSON 架构。这些架构帮助 MCP 客户端理解和验证它们接收到的结构化数据。
 
-##### Primitive Type Wrapping
+##### 原始类型包装
 
-For primitive return types (like `int`, `str`, `bool`), FastMCP automatically wraps the result under a `"result"` key to create valid structured output:
+对于原始返回类型（如 `int`、`str`、`bool`），FastMCP 会自动将结果包装在 `"result"` 键下以创建有效的结构化输出：
 
 <CodeGroup>
-```python Primitive Return Type
+```python 原始返回类型
 @mcp.tool
 def calculate_sum(a: int, b: int) -> int:
-    """Add two numbers together."""
+    """将两个数字相加。"""
     return a + b
 ```
 
-```json Generated Schema (Wrapped)
+```json 生成的Schema（包装）
 {
   "type": "object",
   "properties": {
@@ -517,16 +517,16 @@ def calculate_sum(a: int, b: int) -> int:
 }
 ```
 
-```json Structured Output
+```json 结构化输出
 {
   "result": 8
 }
 ```
 </CodeGroup>
 
-##### Manual Schema Control
+##### 手动Schema控制
 
-You can override the automatically generated schema by providing a custom `output_schema`:
+您可以通过提供自定义 `output_schema` 来覆盖自动生成的架构：
 
 ```python
 @mcp.tool(output_schema={
@@ -537,146 +537,146 @@ You can override the automatically generated schema by providing a custom `outpu
     }
 })
 def custom_schema_tool() -> dict:
-    """Tool with custom output schema."""
+    """具有自定义输出架构的工具。"""
     return {"data": "Hello", "metadata": {"version": "1.0"}}
 ```
 
-Schema generation works for most common types including basic types, collections, union types, Pydantic models, TypedDict structures, and dataclasses.
+架构生成适用于大多数常见类型，包括基本类型、集合、联合类型、Pydantic 模型、TypedDict 结构和dataclasses 数据类。
 
 <Warning>
-**Important Constraints**: 
-- Output schemas must be object types (`"type": "object"`)
-- If you provide an output schema, your tool **must** return structured output that matches it
-- However, you can provide structured output without an output schema (using `ToolResult`)
+**重要约束**：
+- 输出架构必须是对象类型（`"type": "object"`）
+- 如果您提供输出Schema，您的工具**必须**返回与其匹配的结构化输出
+- 但是，您可以在没有输出Schema的情况下提供结构化输出（使用 `ToolResult`）
 </Warning>
 
-#### Full Control with ToolResult
+#### 使用 ToolResult 完全控制
 
-For complete control over both traditional content and structured output, return a `ToolResult` object:
+要完全控制传统内容和结构化输出，请返回 `ToolResult` 对象：
 
 ```python
 from fastmcp.tools.tool import ToolResult
 
 @mcp.tool
 def advanced_tool() -> ToolResult:
-    """Tool with full control over output."""
+    """完全控制输出的工具。"""
     return ToolResult(
-        content=[TextContent(text="Human-readable summary")],
+        content=[TextContent(text="人类可读摘要")],
         structured_content={"data": "value", "count": 42}
     )
 ```
 
-When returning `ToolResult`:
-- You control exactly what content and structured data is sent
-- Output schemas are optional - structured content can be provided without a schema
-- Clients receive both traditional content blocks and structured data
+当返回 `ToolResult` 时：
+- 您可以准确控制发送什么内容和结构化数据
+- 输出Schemas是可选的 - 结构化内容可以在没有Schema的情况下提供
+- 客户端接收传统内容块和结构化数据
 
 <Note>
-If your return type annotation cannot be converted to a JSON schema (e.g., complex custom classes without Pydantic support), the output schema will be omitted but the tool will still function normally with traditional content.
+如果您的返回类型注解不能转换为 JSON Schema（例如，没有 Pydantic 支持的复杂自定义类），输出Schema将被省略，但工具仍将正常工作，使用传统内容。
 </Note>
 
-### Error Handling
+### 错误处理
 
 <VersionBadge version="2.4.1" />
 
-If your tool encounters an error, you can raise a standard Python exception (`ValueError`, `TypeError`, `FileNotFoundError`, custom exceptions, etc.) or a FastMCP `ToolError`.
+如果您的工具遇到错误，您可以引发标准 Python 异常（`ValueError`、`TypeError`、`FileNotFoundError`、自定义异常等）或 FastMCP `ToolError`。
 
-By default, all exceptions (including their details) are logged and converted into an MCP error response to be sent back to the client LLM. This helps the LLM understand failures and react appropriately.
+默认情况下，所有异常（包括它们的详细信息）都会被记录并转换为 MCP 错误响应发送回客户端 LLM。这有助于 LLM 理解失败并做出适当反应。
 
-If you want to mask internal error details for security reasons, you can:
+如果您出于安全原因想要掩盖内部错误详细信息，您可以：
 
-1. Use the `mask_error_details=True` parameter when creating your `FastMCP` instance:
+1. 在创建 `FastMCP` 实例时使用 `mask_error_details=True` 参数：
 ```python
 mcp = FastMCP(name="SecureServer", mask_error_details=True)
 ```
 
-2. Or use `ToolError` to explicitly control what error information is sent to clients:
+2. 或使用 `ToolError` 显式控制发送给客户端的错误信息：
 ```python
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 @mcp.tool
 def divide(a: float, b: float) -> float:
-    """Divide a by b."""
+    """将 a 除以 b。"""
 
     if b == 0:
-        # Error messages from ToolError are always sent to clients,
-        # regardless of mask_error_details setting
-        raise ToolError("Division by zero is not allowed.")
+        # 来自 ToolError 的错误消息始终发送给客户端，
+        # 无论 mask_error_details 设置如何
+        raise ToolError("不允许除以零。")
     
-    # If mask_error_details=True, this message would be masked
+    # 如果 mask_error_details=True，此消息将被掩盖
     if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
-        raise TypeError("Both arguments must be numbers.")
+        raise TypeError("两个参数都必须是数字。")
         
     return a / b
 ```
 
-When `mask_error_details=True`, only error messages from `ToolError` will include details, other exceptions will be converted to a generic message.
+当 `mask_error_details=True` 时，只有来自 `ToolError` 的错误消息会包含详细信息，其他异常将被转换为通用消息。
 
-### Annotations
+### 注解
 
 <VersionBadge version="2.2.7" />
 
-FastMCP allows you to add specialized metadata to your tools through annotations. These annotations communicate how tools behave to client applications without consuming token context in LLM prompts.
+FastMCP 允许您通过注解向工具添加专用元数据。这些注解向客户端应用程序传达工具的行为方式，而不会在 LLM 提示中消耗令牌上下文。
 
-Annotations serve several purposes in client applications:
-- Adding user-friendly titles for display purposes
-- Indicating whether tools modify data or systems
-- Describing the safety profile of tools (destructive vs. non-destructive)
-- Signaling if tools interact with external systems
+注解在客户端应用程序中有几个用途：
+- 为显示目的添加用户友好的标题
+- 指示工具是否修改数据或系统
+- 描述工具的安全配置文件（破坏性 vs. 非破坏性）
+- 表明工具是否与外部系统交互
 
-You can add annotations to a tool using the `annotations` parameter in the `@mcp.tool` decorator:
+您可以在 `@mcp.tool` 装饰器中使用 `annotations` 参数向工具添加注解：
 
 ```python
 @mcp.tool(
     annotations={
-        "title": "Calculate Sum",
+        "title": "计算总和",
         "readOnlyHint": True,
         "openWorldHint": False
     }
 )
 def calculate_sum(a: float, b: float) -> float:
-    """Add two numbers together."""
+    """将两个数字相加。"""
     return a + b
 ```
 
-FastMCP supports these standard annotations:
+FastMCP 支持这些标准注解：
 
-| Annotation | Type | Default | Purpose |
+| 注解 | 类型 | 默认值 | 用途 |
 | :--------- | :--- | :------ | :------ |
-| `title` | string | - | Display name for user interfaces |
-| `readOnlyHint` | boolean | false | Indicates if the tool only reads without making changes |
-| `destructiveHint` | boolean | true | For non-readonly tools, signals if changes are destructive |
-| `idempotentHint` | boolean | false | Indicates if repeated identical calls have the same effect as a single call |
-| `openWorldHint` | boolean | true | Specifies if the tool interacts with external systems |
+| `title` | string | - | 用户界面的显示名称 |
+| `readOnlyHint` | boolean | false | 指示工具是否只读取而不做更改 |
+| `destructiveHint` | boolean | true | 对于非只读工具，表示更改是否具有破坏性 |
+| `idempotentHint` | boolean | false | 指示重复的相同调用是否与单个调用具有相同效果 |
+| `openWorldHint` | boolean | true | 指定工具是否与外部系统交互 |
 
-Remember that annotations help make better user experiences but should be treated as advisory hints. They help client applications present appropriate UI elements and safety controls, but won't enforce security boundaries on their own. Always focus on making your annotations accurately represent what your tool actually does.
+请记住，注解有助于提供更好的用户体验，但应被视为建议性提示。它们帮助客户端应用程序提供适当的 UI 元素和安全控制，但不会自己强制执行安全边界。始终专注于使您的注解准确地代表您的工具实际所做的事情。
 
-### Notifications
+### 通知
 
 <VersionBadge version="2.9.1" />
 
-FastMCP automatically sends `notifications/tools/list_changed` notifications to connected clients when tools are added, removed, enabled, or disabled. This allows clients to stay up-to-date with the current tool set without manually polling for changes.
+当工具被添加、移除、启用或禁用时，FastMCP 会自动向连接的客户端发送 `notifications/tools/list_changed` 通知。这允许客户端保持最新的工具集，而无需手动轮询更改。
 
 ```python
 @mcp.tool
 def example_tool() -> str:
     return "Hello!"
 
-# These operations trigger notifications:
-mcp.add_tool(example_tool)     # Sends tools/list_changed notification
-example_tool.disable()         # Sends tools/list_changed notification  
-example_tool.enable()          # Sends tools/list_changed notification
-mcp.remove_tool("example_tool") # Sends tools/list_changed notification
+# 这些操作会触发通知：
+mcp.add_tool(example_tool)     # 发送 tools/list_changed 通知
+example_tool.disable()         # 发送 tools/list_changed 通知  
+example_tool.enable()          # 发送 tools/list_changed 通知
+mcp.remove_tool("example_tool") # 发送 tools/list_changed 通知
 ```
 
-Notifications are only sent when these operations occur within an active MCP request context (e.g., when called from within a tool or other MCP operation). Operations performed during server initialization do not trigger notifications.
+只有当这些操作在活动的 MCP 请求上下文中发生时（例如，从工具内或其他 MCP 操作中调用时），才会发送通知。在服务器初始化期间执行的操作不会触发通知。
 
-Clients can handle these notifications using a [message handler](/zh/clients/messages) to automatically refresh their tool lists or update their interfaces.
+客户端可以使用[消息处理程序](/zh/clients/messages)处理这些通知，以自动刷新其工具列表或更新其界面。
 
-## MCP Context
+## MCP 上下文
 
-Tools can access MCP features like logging, reading resources, or reporting progress through the `Context` object. To use it, add a parameter to your tool function with the type hint `Context`.
+工具可以通过 `Context` 对象访问 MCP 功能，如记录日志、读取资源或报告进度。要使用它，请在工具函数中添加一个带有类型提示的 `Context` 参数。
 
 ```python
 from fastmcp import FastMCP, Context
@@ -685,18 +685,18 @@ mcp = FastMCP(name="ContextDemo")
 
 @mcp.tool
 async def process_data(data_uri: str, ctx: Context) -> dict:
-    """Process data from a resource with progress reporting."""
-    await ctx.info(f"Processing data from {data_uri}")
+    """从资源处理数据并报告进度。"""
+    await ctx.info(f"正在处理来自 {data_uri} 的数据")
     
-    # Read a resource
+    # 读取资源
     resource = await ctx.read_resource(data_uri)
     data = resource[0].content if resource else ""
     
-    # Report progress
+    # 报告进度
     await ctx.report_progress(progress=50, total=100)
     
-    # Example request to the client's LLM for help
-    summary = await ctx.sample(f"Summarize this in 10 words: {data[:200]}")
+    # 向客户端的 LLM 请求帮助的示例
+    summary = await ctx.sample(f"用10个词总结这个：{data[:200]}")
     
     await ctx.report_progress(progress=100, total=100)
     return {
@@ -705,117 +705,117 @@ async def process_data(data_uri: str, ctx: Context) -> dict:
     }
 ```
 
-The Context object provides access to:
+Context 对象提供对以下功能的访问：
 
-- **Logging**: `ctx.debug()`, `ctx.info()`, `ctx.warning()`, `ctx.error()`
-- **Progress Reporting**: `ctx.report_progress(progress, total)`
-- **Resource Access**: `ctx.read_resource(uri)`
-- **LLM Sampling**: `ctx.sample(...)`
-- **Request Information**: `ctx.request_id`, `ctx.client_id`
+- **日志记录**：`ctx.debug()`、`ctx.info()`、`ctx.warning()`、`ctx.error()`
+- **进度报告**：`ctx.report_progress(progress, total)`
+- **资源访问**：`ctx.read_resource(uri)`
+- **LLM 采样**：`ctx.sample(...)`
+- **请求信息**：`ctx.request_id`、`ctx.client_id`
 
-For full documentation on the Context object and all its capabilities, see the [Context documentation](/zh/servers/context).
+有关 Context 对象及其所有功能的完整文档，请参阅[上下文文档](/zh/servers/context)。
 
-## Parameter Types
+## 参数类型
 
-FastMCP supports a wide variety of parameter types to give you flexibility when designing your tools.
+FastMCP 支持多种参数类型，为您设计工具时提供灵活性。
 
-FastMCP generally supports all types that Pydantic supports as fields, including all Pydantic custom types. This means you can use any type that can be validated and parsed by Pydantic in your tool parameters.
+FastMCP 通常支持 Pydantic 作为字段支持的所有类型，包括所有 Pydantic 自定义类型。这意味着您可以在工具参数中使用任何可以由 Pydantic 验证和解析的类型。
 
-FastMCP supports **type coercion** when possible. This means that if a client sends data that doesn't match the expected type, FastMCP will attempt to convert it to the appropriate type. For example, if a client sends a string for a parameter annotated as `int`, FastMCP will attempt to convert it to an integer. If the conversion is not possible, FastMCP will return a validation error.
+FastMCP 在可能的情况下支持**类型强制转换**。这意味着如果客户端发送的数据不匹配预期类型，FastMCP 将尝试将其转换为适当的类型。例如，如果客户端为注解为 `int` 的参数发送字符串，FastMCP 将尝试将其转换为整数。如果转换失败，FastMCP 将返回验证错误。
 
-### Built-in Types
+### 内置类型
 
-The most common parameter types are Python's built-in scalar types:
+最常见的参数类型是 Python 的内置标准类型：
 
 ```python
 @mcp.tool
 def process_values(
-    name: str,             # Text data
-    count: int,            # Integer numbers
-    amount: float,         # Floating point numbers
-    enabled: bool          # Boolean values (True/False)
+    name: str,             # 文本数据
+    count: int,            # 整数
+    amount: float,         # 浮点数
+    enabled: bool          # 布尔值（True/False）
 ):
-    """Process various value types."""
-    # Implementation...
+    """处理各种值类型。"""
+    # 具体实现...
 ```
 
-These types provide clear expectations to the LLM about what values are acceptable and allow FastMCP to validate inputs properly. Even if a client provides a string like "42", it will be coerced to an integer for parameters annotated as `int`.
+这些类型向 LLM 提供关于什么值是期望的并且可接受的，并允许 FastMCP 正确验证输入。即使客户端提供像"42"这样的字符串，对于注解为 `int` 的参数，它也会被强制转换为整数。
 
-### Date and Time Types
+### 日期和时间类型
 
-FastMCP supports various date and time types from the `datetime` module:
+FastMCP 支持来自 `datetime` 模块的各种日期和时间类型：
 
 ```python
 from datetime import datetime, date, timedelta
 
 @mcp.tool
 def process_date_time(
-    event_date: date,             # ISO format date string or date object
-    event_time: datetime,         # ISO format datetime string or datetime object
-    duration: timedelta = timedelta(hours=1)  # Integer seconds or timedelta
+    event_date: date,             # ISO 格式日期字符串或 date 对象
+    event_time: datetime,         # ISO 格式日期时间字符串或 datetime 对象
+    duration: timedelta = timedelta(hours=1)  # 整数秒或 timedelta 对象
 ) -> str:
-    """Process date and time information."""
-    # Types are automatically converted from strings
+    """处理日期和时间信息。"""
+    # 类型会自动从字符串转换
     assert isinstance(event_date, date)  
     assert isinstance(event_time, datetime)
     assert isinstance(duration, timedelta)
     
-    return f"Event on {event_date} at {event_time} for {duration}"
+    return f"事件在 {event_date} 的 {event_time} 持续 {duration}"
 ```
 
-- `datetime` - Accepts ISO format strings (e.g., "2023-04-15T14:30:00")
-- `date` - Accepts ISO format date strings (e.g., "2023-04-15")
-- `timedelta` - Accepts integer seconds or timedelta objects
+- `datetime` - 接受 ISO 格式字符串（例如，"2023-04-15T14:30:00"）
+- `date` - 接受 ISO 格式日期字符串（例如，"2023-04-15"）
+- `timedelta` - 接受整数秒或 timedelta 对象
 
-### Collection Types
+### 集合类型
 
-FastMCP supports all standard Python collection types:
+FastMCP 支持所有标准 Python 集合类型：
 
 ```python
 @mcp.tool
 def analyze_data(
-    values: list[float],           # List of numbers
-    properties: dict[str, str],    # Dictionary with string keys and values
-    unique_ids: set[int],          # Set of unique integers
-    coordinates: tuple[float, float],  # Tuple with fixed structure
-    mixed_data: dict[str, list[int]] # Nested collections
+    values: list[float],           # 数字列表
+    properties: dict[str, str],    # 具有字符串键和值的字典
+    unique_ids: set[int],          # 唯一整数集合
+    coordinates: tuple[float, float],  # 具有固定结构的元组
+    mixed_data: dict[str, list[int]] # 嵌套集合
 ):
-    """Analyze collections of data."""
-    # Implementation...
+    """分析数据集合。"""
+    # 具体实现...
 ```
 
-All collection types can be used as parameter annotations:
-- `list[T]` - Ordered sequence of items
-- `dict[K, V]` - Key-value mapping
-- `set[T]` - Unordered collection of unique items
-- `tuple[T1, T2, ...]` - Fixed-length sequence with potentially different types
+所有集合类型都可以用作参数注解：
+- `list[T]` - 有序项目序列
+- `dict[K, V]` - 键值映射
+- `set[T]` - 唯一项目的无序集合
+- `tuple[T1, T2, ...]` - 可能具有不同类型的固定长度序列
 
-Collection types can be nested and combined to represent complex data structures. JSON strings that match the expected structure will be automatically parsed and converted to the appropriate Python collection type.
+集合类型可以嵌套和组合以表示复杂的数据结构。符合预期结构的 JSON 字符串将自动解析并转换为适当的 Python 集合类型。
 
-### Union and Optional Types
+### 联合(Union)和可选(Optional)类型
 
-For parameters that can accept multiple types or may be omitted:
+对于可以接受多种类型或可能被省略的参数：
 
 ```python
 @mcp.tool
 def flexible_search(
-    query: str | int,              # Can be either string or integer
-    filters: dict[str, str] | None = None,  # Optional dictionary
-    sort_field: str | None = None  # Optional string
+    query: str | int,              # 可以是字符串或整数
+    filters: dict[str, str] | None = None,  # 可选字典
+    sort_field: str | None = None  # 可选字符串
 ):
-    """Search with flexible parameter types."""
-    # Implementation...
+    """使用灵活参数类型进行搜索。"""
+    # 具体实现...
 ```
 
-Modern Python syntax (`str | int`) is preferred over older `Union[str, int]` forms. Similarly, `str | None` is preferred over `Optional[str]`.
+现代 Python 语法（`str | int`）优于较旧的 `Union[str, int]` 形式。同样，`str | None` 优于 `Optional[str]`。
 
-### Constrained Types
+### 约束类型
 
-When a parameter must be one of a predefined set of values, you can use either Literal types or Enums:
+当参数必须是预定义值集合中的一个时，您可以使用 Literal 类型或 Enums：
 
-#### Literals
+#### 字面量(Literal)
 
-Literals constrain parameters to a specific set of values:
+字面量将参数限制为特定值集合：
 
 ```python
 from typing import Literal
@@ -826,19 +826,19 @@ def sort_data(
     order: Literal["ascending", "descending"] = "ascending",
     algorithm: Literal["quicksort", "mergesort", "heapsort"] = "quicksort"
 ):
-    """Sort data using specific options."""
-    # Implementation...
+    """使用特定选项对数据进行排序。"""
+    # 实现...
 ```
 
-Literal types:
-- Specify exact allowable values directly in the type annotation
-- Help LLMs understand exactly which values are acceptable
-- Provide input validation (errors for invalid values)
-- Create clear schemas for clients
+字面量类型：
+- 直接在类型注解中指定确切的允许值
+- 帮助 LLM 准确理解哪些值是可接受的
+- 提供输入验证（对无效值产生错误）
+- 为客户端创建清晰的数据结构
 
-#### Enums
+#### 枚举(Enums)
 
-For more structured sets of constrained values, use Python's Enum class:
+对于更结构化的约束值集合，使用 Python 的 Enum 类：
 
 ```python
 from enum import Enum
@@ -853,43 +853,42 @@ def process_image(
     image_path: str, 
     color_filter: Color = Color.RED
 ):
-    """Process an image with a color filter."""
-    # Implementation...
-    # color_filter will be a Color enum member
+    """使用颜色滤镜处理图像。"""
+    # 实现...
+    # color_filter 将是一个 Color 枚举成员
 ```
 
-When using Enum types:
-- Clients should provide the enum's value (e.g., "red"), not the enum member name (e.g., "RED")
-- FastMCP automatically coerces the string value into the appropriate Enum object
-- Your function receives the actual Enum member (e.g., `Color.RED`)
-- Validation errors are raised for values not in the enum
+使用枚举类型时：
+- 客户端应提供枚举的值（例如，"red"），而不是枚举成员名称（例如，"RED"）
+- FastMCP 自动将字符串值强制转换为适当的枚举对象
+- 您的函数接收实际的枚举成员（例如，`Color.RED`）
+- 对于不在枚举中的值将引发验证错误
 
-### Binary Data
+### 二进制数据
 
-There are two approaches to handling binary data in tool parameters:
+在工具参数中处理二进制数据有两种方法：
 
-#### Bytes
+#### 字节(Bytes)
 
 ```python
 @mcp.tool
 def process_binary(data: bytes):
-    """Process binary data directly.
+    """直接处理二进制数据。
     
-    The client can send a binary string, which will be 
-    converted directly to bytes.
+    客户端可以发送二进制字符串，它将直接转换为字节。
     """
-    # Implementation using binary data
+    # 使用二进制数据的实现
     data_length = len(data)
     # ...
 ```
 
-When you annotate a parameter as `bytes`, FastMCP will:
-- Convert raw strings directly to bytes
-- Validate that the input can be properly represented as bytes
+当您将参数注解为 `bytes` 时，FastMCP 将：
+- 直接将原始字符串转换为字节
+- 验证输入可以正确表示为字节
 
-FastMCP does not automatically decode base64-encoded strings for bytes parameters. If you need to accept base64-encoded data, you should handle the decoding manually as shown below.
+FastMCP 不会自动为字节参数解码 base64 编码的字符串。如果您需要接受 base64 编码的数据，应如下所示手动处理解码。
 
-#### Base64-encoded strings
+#### Base64 编码字符串
 
 ```python
 from typing import Annotated
@@ -897,58 +896,58 @@ from pydantic import Field
 
 @mcp.tool
 def process_image_data(
-    image_data: Annotated[str, Field(description="Base64-encoded image data")]
+    image_data: Annotated[str, Field(description="Base64编码的图像数据")]
 ):
-    """Process an image from base64-encoded string.
+    """从 base64 编码字符串处理图像。
     
-    The client is expected to provide base64-encoded data as a string.
-    You'll need to decode it manually.
+    期望客户端以字符串形式提供 base64 编码的数据。
+    您需要手动解码它。
     """
-    # Manual base64 decoding
+    # 手动 base64 解码
     import base64
     binary_data = base64.b64decode(image_data)
-    # Process binary_data...
+    # 处理 binary_data...
 ```
 
-This approach is recommended when you expect to receive base64-encoded binary data from clients.
+当您期望从客户端接收 base64 编码的二进制数据时，建议使用这种方法。
 
-### Paths
+### 路径
 
-The `Path` type from the `pathlib` module can be used for file system paths:
+来自 `pathlib` 模块的 `Path` 类型可用于文件系统路径：
 
 ```python
 from pathlib import Path
 
 @mcp.tool
 def process_file(path: Path) -> str:
-    """Process a file at the given path."""
-    assert isinstance(path, Path)  # Path is properly converted
-    return f"Processing file at {path}"
+    """处理给定路径的文件。"""
+    assert isinstance(path, Path)  # Path 已正确转换
+    return f"正在处理文件：{path}"
 ```
 
-When a client sends a string path, FastMCP automatically converts it to a `Path` object.
+当客户端发送字符串路径时，FastMCP 会自动将其转换为 `Path` 对象。
 
 ### UUIDs
 
-The `UUID` type from the `uuid` module can be used for unique identifiers:
+来自 `uuid` 模块的 `UUID` 类型可用于唯一标识符：
 
 ```python
 import uuid
 
 @mcp.tool
 def process_item(
-    item_id: uuid.UUID  # String UUID or UUID object
+    item_id: uuid.UUID  # 字符串 UUID 或 UUID 对象
 ) -> str:
-    """Process an item with the given UUID."""
-    assert isinstance(item_id, uuid.UUID)  # Properly converted to UUID
-    return f"Processing item {item_id}"
+    """处理具有给定 UUID 的项目。"""
+    assert isinstance(item_id, uuid.UUID)  # 已正确转换为 UUID
+    return f"正在处理项目 {item_id}"
 ```
 
-When a client sends a string UUID (e.g., "123e4567-e89b-12d3-a456-426614174000"), FastMCP automatically converts it to a `UUID` object.
+当客户端发送字符串 UUID（例如，"123e4567-e89b-12d3-a456-426614174000"）时，FastMCP 会自动将其转换为 `UUID` 对象。
 
-### Pydantic Models
+### Pydantic 模型
 
-For complex, structured data with nested fields and validation, use Pydantic models:
+对于具有嵌套字段和验证的复杂结构化数据，使用 Pydantic 模型：
 
 ```python
 from pydantic import BaseModel, Field
@@ -956,34 +955,34 @@ from typing import Optional
 
 class User(BaseModel):
     username: str
-    email: str = Field(description="User's email address")
+    email: str = Field(description="用户的电子邮件地址")
     age: int | None = None
     is_active: bool = True
 
 @mcp.tool
 def create_user(user: User):
-    """Create a new user in the system."""
-    # The input is automatically validated against the User model
-    # Even if provided as a JSON string or dict
-    # Implementation...
+    """在系统中创建新用户。"""
+    # 输入会自动根据 User 模型进行验证
+    # 即使以 JSON 字符串或字典形式提供
+    # 实现...
 ```
 
-Using Pydantic models provides:
-- Clear, self-documenting structure for complex inputs
-- Built-in data validation
-- Automatic generation of detailed JSON schemas for the LLM
-- Automatic conversion from dict/JSON input
+使用 Pydantic 模型提供：
+- 复杂输入的清晰、自文档化结构
+- 内置数据验证
+- 为 LLM 自动生成详细的 JSON 架构
+- 从 dict/JSON 输入自动转换
 
-Clients can provide data for Pydantic model parameters as either:
-- A JSON object (string)
-- A dictionary with the appropriate structure
-- Nested parameters in the appropriate format
+客户端可以为 Pydantic 模型参数提供以下任一形式的数据：
+- JSON 对象（字符串）
+- 具有适当结构的字典
+- 适当格式的嵌套参数
 
 ### Pydantic Fields
 
-FastMCP supports robust parameter validation through Pydantic's `Field` class. This is especially useful to ensure that input values meet specific requirements beyond just their type.
+FastMCP 通过 Pydantic 的 `Field` 类支持强大的参数验证。这对于确保输入值满足除类型之外的特定要求特别有用。
 
-Note that fields can be used *outside* Pydantic models to provide metadata and validation constraints. The preferred approach is using `Annotated` with `Field`:
+注意，字段可以在 Pydantic 模型*之外*使用，以提供元数据和验证约束。首选方法是将 `Annotated` 与 `Field` 一起使用：
 
 ```python
 from typing import Annotated
@@ -991,95 +990,95 @@ from pydantic import Field
 
 @mcp.tool
 def analyze_metrics(
-    # Numbers with range constraints
+    # 具有范围约束的数字
     count: Annotated[int, Field(ge=0, le=100)],         # 0 <= count <= 100
     ratio: Annotated[float, Field(gt=0, lt=1.0)],       # 0 < ratio < 1.0
     
-    # String with pattern and length constraints
+    # 具有模式和长度约束的字符串
     user_id: Annotated[str, Field(
-        pattern=r"^[A-Z]{2}\d{4}$",                     # Must match regex pattern
-        description="User ID in format XX0000"
+        pattern=r"^[A-Z]{2}\d{4}$",                     # 必须匹配正则表达式模式
+        description="格式为 XX0000 的用户 ID"
     )],
     
-    # String with length constraints
+    # 具有长度约束的字符串
     comment: Annotated[str, Field(min_length=3, max_length=500)] = "",
     
-    # Numeric constraints
-    factor: Annotated[int, Field(multiple_of=5)] = 10,  # Must be multiple of 5
+    # 数字约束
+    factor: Annotated[int, Field(multiple_of=5)] = 10,  # 必须是 5 的倍数
 ):
-    """Analyze metrics with validated parameters."""
-    # Implementation...
+    """使用验证参数分析指标。"""
+    # 实现...
 ```
 
-You can also use `Field` as a default value, though the `Annotated` approach is preferred:
+您也可以将 `Field` 用作默认值，尽管首选 `Annotated` 方法：
 
 ```python
 @mcp.tool
 def validate_data(
-    # Value constraints
+    # 值约束
     age: int = Field(ge=0, lt=120),                     # 0 <= age < 120
     
-    # String constraints
-    email: str = Field(pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$"),  # Email pattern
+    # 字符串约束
+    email: str = Field(pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$"),  # 电子邮件模式
     
-    # Collection constraints
-    tags: list[str] = Field(min_length=1, max_length=10)  # 1-10 tags
+    # 集合约束
+    tags: list[str] = Field(min_length=1, max_length=10)  # 1-10 个标签
 ):
-    """Process data with field validations."""
-    # Implementation...
+    """使用字段验证处理数据。"""
+    # 实现...
 ```
 
-Common validation options include:
+常见的验证选项包括：
 
-| Validation | Type | Description |
+| 验证 | 类型 | 描述 |
 | :--------- | :--- | :---------- |
-| `ge`, `gt` | Number | Greater than (or equal) constraint |
-| `le`, `lt` | Number | Less than (or equal) constraint |
-| `multiple_of` | Number | Value must be a multiple of this number |
-| `min_length`, `max_length` | String, List, etc. | Length constraints |
-| `pattern` | String | Regular expression pattern constraint |
-| `description` | Any | Human-readable description (appears in schema) |
+| `ge`, `gt` | 数字 | 大于（或等于）约束 |
+| `le`, `lt` | 数字 | 小于（或等于）约束 |
+| `multiple_of` | 数字 | 值必须是此数字的倍数 |
+| `min_length`, `max_length` | 字符串、列表等 | 长度约束 |
+| `pattern` | 字符串 | 正则表达式模式约束 |
+| `description` | 任何 | 人类可读的描述（出现在Schema中） |
 
-When a client sends invalid data, FastMCP will return a validation error explaining why the parameter failed validation.
+当客户端发送无效数据时，FastMCP 将返回验证错误，并解释参数验证失败的原因。
 
-## Server Behavior
+## Server行为
 
-### Duplicate Tools
+### 重复工具
 
 <VersionBadge version="2.1.0" />
 
-You can control how the FastMCP server behaves if you try to register multiple tools with the same name. This is configured using the `on_duplicate_tools` argument when creating the `FastMCP` instance.
+您可以控制当您尝试注册具有相同名称的多个工具时 FastMCP 服务的行为。这是在创建 `FastMCP` 实例时使用 `on_duplicate_tools` 参数配置的。
 
 ```python
 from fastmcp import FastMCP
 
 mcp = FastMCP(
     name="StrictServer",
-    # Configure behavior for duplicate tool names
+    # 配置重复工具名称的行为
     on_duplicate_tools="error"
 )
 
 @mcp.tool
 def my_tool(): return "Version 1"
 
-# This will now raise a ValueError because 'my_tool' already exists
-# and on_duplicate_tools is set to "error".
+# 这现在会引发 ValueError，因为 'my_tool' 已经存在
+# 并且 on_duplicate_tools 设置为 "error"。
 # @mcp.tool
 # def my_tool(): return "Version 2"
 ```
 
-The duplicate behavior options are:
+重复行为选项包括：
 
--   `"warn"` (default): Logs a warning and the new tool replaces the old one.
--   `"error"`: Raises a `ValueError`, preventing the duplicate registration.
--   `"replace"`: Silently replaces the existing tool with the new one.
--   `"ignore"`: Keeps the original tool and ignores the new registration attempt.
+-   `"warn"`（默认）：记录警告，新工具替换旧工具。
+-   `"error"`：引发 `ValueError`，阻止重复注册。
+-   `"replace"`：静默替换现有工具为新工具。
+-   `"ignore"`：保留原始工具并忽略新的注册尝试。
 
-### Removing Tools
+### 移除工具
 
 <VersionBadge version="2.3.4" />
 
-You can dynamically remove tools from a server using the `remove_tool` method:
+您可以使用 `remove_tool` 方法从服务端动态移除工具：
 
 ```python
 from fastmcp import FastMCP
@@ -1088,7 +1087,7 @@ mcp = FastMCP(name="DynamicToolServer")
 
 @mcp.tool
 def calculate_sum(a: int, b: int) -> int:
-    """Add two numbers together."""
+    """将两个数字相加。"""
     return a + b
 
 mcp.remove_tool("calculate_sum")
