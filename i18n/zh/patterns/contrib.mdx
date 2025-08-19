@@ -1,6 +1,6 @@
 ---
-title: "Contrib Modules"
-description: "Community-contributed modules extending FastMCP"
+title: "Contrib 模块"
+description: "社区贡献的扩展 FastMCP 的模块"
 icon: "cubes"
 ---
 
@@ -8,38 +8,38 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 <VersionBadge version="2.2.1" />
 
-FastMCP includes a `contrib` package that holds community-contributed modules. These modules extend FastMCP's functionality but aren't officially maintained by the core team.
+FastMCP 包含一个 `contrib` 包，用于存放社区贡献的模块。这些模块扩展了 FastMCP 的功能，但不由核心团队正式维护。
 
-Contrib modules provide additional features, integrations, or patterns that complement the core FastMCP library. They offer a way for the community to share useful extensions while keeping the core library focused and maintainable.
+Contrib 模块提供了补充核心 FastMCP 库的附加功能、集成或模式。它们为社区提供了一种分享有用扩展的方式，同时保持核心库的专注性和可维护性。
 
-The available modules can be viewed in the [contrib directory](https://github.com/jlowin/fastmcp/tree/main/src/fastmcp/contrib).
+可用的模块可以在 [contrib 目录](https://github.com/jlowin/fastmcp/tree/main/src/fastmcp/contrib) 中查看。
 
-## Usage
+## 使用方法
 
-To use a contrib module, import it from the `fastmcp.contrib` package:
+要使用 contrib 模块，请从 `fastmcp.contrib` 包中导入：
 
 ```python
 from fastmcp.contrib import my_module
 ```
 
-## Important Considerations
+## 重要注意事项
 
-- **Stability**: Modules in `contrib` may have different testing requirements or stability guarantees compared to the core library.
-- **Compatibility**: Changes to core FastMCP might break modules in `contrib` without explicit warnings in the main changelog.
-- **Dependencies**: Contrib modules may have additional dependencies not required by the core library. These dependencies are typically documented in the module's README or separate requirements files.
+- **稳定性**：`contrib` 中的模块与核心库相比可能具有不同的测试要求或稳定性保证。
+- **兼容性**：对核心 FastMCP 的更改可能会破坏 `contrib` 中的模块，而主更新日志中可能不会明确警告。
+- **依赖项**：Contrib 模块可能具有核心库不需要的附加依赖项。这些依赖项通常记录在模块的 README 或单独的需求文件中。
 
-## Contributing
+## 贡献
 
-We welcome contributions to the `contrib` package! If you have a module that extends FastMCP in a useful way, consider contributing it:
+我们欢迎对 `contrib` 包的贡献！如果您有一个以有用方式扩展 FastMCP 的模块，请考虑贡献它：
 
-1. Create a new directory in `src/fastmcp/contrib/` for your module
-3. Add proper tests for your module in `tests/contrib/`
-2. Include comprehensive documentation in a README.md file, including usage and examples, as well as any additional dependencies or installation instructions
-5. Submit a pull request
+1. 在 `src/fastmcp/contrib/` 中为您的模块创建新目录
+2. 在 `tests/contrib/` 中为您的模块添加适当的测试
+3. 在 README.md 文件中包含全面的文档，包括使用方法和示例，以及任何附加依赖或安装说明
+4. 提交拉取请求
 
-The ideal contrib module:
-- Solves a specific use case or integration need
-- Follows FastMCP coding standards
-- Includes thorough documentation and examples
-- Has comprehensive tests
-- Specifies any additional dependencies
+理想的 contrib 模块：
+- 解决特定的用例或集成需求
+- 遵循 FastMCP 编码标准
+- 包含详细的文档和示例
+- 具有全面的测试
+- 指定任何附加依赖项

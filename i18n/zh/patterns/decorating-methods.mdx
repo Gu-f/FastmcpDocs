@@ -1,27 +1,27 @@
 ---
-title: Decorating Methods
-sidebarTitle: Decorating Methods
-description: Properly use instance methods, class methods, and static methods with FastMCP decorators.
+title: 装饰方法
+sidebarTitle: 装饰方法
+description: 正确使用实例方法、类方法和静态方法与 FastMCP 装饰器。
 icon: at
 ---
 
-FastMCP's decorator system is designed to work with functions, but you may see unexpected behavior if you try to decorate an instance or class method. This guide explains the correct approach for using methods with all FastMCP decorators (`@tool`, `@resource`, and `@prompt`).
+FastMCP 的装饰器系统旨在与函数配合工作，但如果您尝试装饰实例方法或类方法，可能会遇到意外行为。本指南解释了在所有 FastMCP 装饰器（`@tool`、`@resource` 和 `@prompt`）中正确使用方法的方法。
 
-## Why Are Methods Hard?
+## 为什么方法很困难？
 
-When you apply a FastMCP decorator like `@tool`, `@resource`, or `@prompt` to a method, the decorator captures the function at decoration time. For instance methods and class methods, this poses a challenge because:
+当您将 FastMCP 装饰器（如 `@tool`、`@resource` 或 `@prompt`）应用于方法时，装饰器会在装饰时捕获函数。对于实例方法和类方法，这带来了挑战，因为：
 
-1. For instance methods: The decorator gets the unbound method before any instance exists
-2. For class methods: The decorator gets the function before it's bound to the class
+1. 对于实例方法：装饰器在任何实例存在之前获取未绑定的方法
+2. 对于类方法：装饰器在绑定到类之前获取函数
 
-This means directly decorating these methods doesn't work as expected. In practice, the LLM would see parameters like `self` or `cls` that it cannot provide values for.
+这意味着直接装饰这些方法不会按预期工作。实际上，LLM 会看到像 `self` 或 `cls` 这样的参数，它无法为其提供值。
 
-Additionally, **FastMCP decorators return objects (Tool, Resource, or Prompt instances) rather than the original function**. This means that when you decorate a method directly, the method becomes the returned object and is no longer callable by your code:
+此外，**FastMCP 装饰器返回对象（Tool、Resource 或 Prompt 实例）而不是原始函数**。这意味着当您直接装饰方法时，该方法变成了返回的对象，不再可被您的代码调用：
 
 <Warning>
-**Don't do this!**
+**不要这样做！**
 
-The method will no longer be callable from Python, and the tool won't be callable by LLMs.
+该方法将不再可从 Python 调用，并且工具也不能被 LLM 调用。
 
 ```python
 
@@ -34,18 +34,18 @@ class MyClass:
         return x * 2
 
 obj = MyClass()
-obj.my_method(5)  # Fails - my_method is a Tool, not a function
+obj.my_method(5)  # 失败 - my_method 是一个 Tool，不是函数
 ```
 </Warning>
 
-This is another important reason to register methods functionally after defining the class.
+这是在定义类后以函数式注册方法的另一个重要原因。
 
-## Recommended Patterns
+## 推荐模式
 
-### Instance Methods
+### 实例方法
 
 <Warning>
-**Don't do this!**
+**不要这样做！**
 
 ```python
 from fastmcp import FastMCP
@@ -53,15 +53,15 @@ from fastmcp import FastMCP
 mcp = FastMCP()
 
 class MyClass:
-    @mcp.tool  # This won't work correctly
+    @mcp.tool  # 这不会正确工作
     def add(self, x, y):
         return x + y
 ```
 </Warning>
-When the decorator is applied this way, it captures the unbound method. When the LLM later tries to use this component, it will see `self` as a required parameter, but it won't know what to provide for it, causing errors or unexpected behavior.
+当装饰器以这种方式应用时，它会捕获未绑定的方法。当 LLM 后续尝试使用此组件时，它会看到 `self` 作为必需参数，但不知道为其提供什么，从而导致错误或意外行为。
 
 <Check>
-**Do this instead**:
+**改为这样做**：
 
 ```python
 from fastmcp import FastMCP
@@ -72,26 +72,26 @@ class MyClass:
     def add(self, x, y):
         return x + y
 
-# Create an instance first, then register the bound methods
+# 首先创建实例，然后注册绑定的方法
 obj = MyClass()
 mcp.tool(obj.add)
 
-# Now you can call it without 'self' showing up as a parameter
-await mcp._mcp_call_tool('add', {'x': 1, 'y': 2})  # Returns 3
+# 现在您可以调用它而不会出现 'self' 作为参数
+await mcp._mcp_call_tool('add', {'x': 1, 'y': 2})  # 返回 3
 ```
 </Check>
 
-This approach works because:
-1. You first create an instance of the class (`obj`)
-2. When you access the method through the instance (`obj.add`), Python creates a bound method where `self` is already set to that instance
-3. When you register this bound method, the system sees a callable that only expects the appropriate parameters, not `self`
+这种方法有效，因为：
+1. 您首先创建类的实例（`obj`）
+2. 当您通过实例访问方法（`obj.add`）时，Python 创建一个绑定方法，其中 `self` 已经设置为该实例
+3. 当您注册此绑定方法时，系统看到的是一个仅期望适当参数而不是 `self` 的可调用对象
 
-### Class Methods
+### 类方法
 
-The behavior of decorating class methods depends on the order of decorators:
+装饰类方法的行为取决于装饰器的顺序：
 
 <Warning>
-**Don't do this** (decorator order matters):
+**不要这样做**（装饰器顺序很重要）：
 
 ```python
 from fastmcp import FastMCP
@@ -100,22 +100,22 @@ mcp = FastMCP()
 
 class MyClass:
     @classmethod
-    @mcp.tool  # This won't work but won't raise an error
+    @mcp.tool  # 这不会正常工作但不会引发错误
     def from_string_v1(cls, s):
         return cls(s)
     
     @mcp.tool
-    @classmethod  # This will raise a helpful ValueError
+    @classmethod  # 这将引发有用的 ValueError
     def from_string_v2(cls, s):
         return cls(s)
 ```
 </Warning>
 
-- If `@classmethod` comes first, then `@mcp.tool`: No error is raised, but it won't work correctly
-- If `@mcp.tool` comes first, then `@classmethod`: FastMCP will detect this and raise a helpful `ValueError` with guidance
+- 如果 `@classmethod` 先来，然后 `@mcp.tool`：不会引发错误，但不会正确工作
+- 如果 `@mcp.tool` 先来，然后 `@classmethod`：FastMCP 会检测到这一点并引发有用的 `ValueError` 并提供指导
 
 <Check>
-**Do this instead**:
+**改为这样做**：
 
 ```python
 from fastmcp import FastMCP
@@ -127,22 +127,22 @@ class MyClass:
     def from_string(cls, s):
         return cls(s)
 
-# Register the class method after the class is defined
+# 在定义类后注册类方法
 mcp.tool(MyClass.from_string)
 ```
 </Check>
 
-This works because:
-1. The `@classmethod` decorator is applied properly during class definition
-2. When you access `MyClass.from_string`, Python provides a special method object that automatically binds the class to the `cls` parameter
-3. When registered, only the appropriate parameters are exposed to the LLM, hiding the implementation detail of the `cls` parameter
+这有效，因为：
+1. `@classmethod` 装饰器在类定义期间被正确应用
+2. 当您访问 `MyClass.from_string` 时，Python 提供一个特殊的方法对象，它自动将类绑定到 `cls` 参数
+3. 注册时，仅向 LLM 暴露适当的参数，隐藏 `cls` 参数的实现细节
 
-### Static Methods
+### 静态方法
 
-Static methods "work" with FastMCP decorators, but this is not recommended because the FastMCP decorator will not return a callable method. Therefore, you should register static methods the same way as other methods.
+静态方法可以与 FastMCP 装饰器“配合”，但不推荐这样做，因为 FastMCP 装饰器不会返回可调用的方法。因此，您应该像其他方法一样注册静态方法。
 
 <Warning>
-**This is not recommended, though it will work.**
+**不推荐这样做，尽管它可以工作。**
 
 ```python
 from fastmcp import FastMCP
@@ -157,10 +157,10 @@ class MyClass:
 ```
 </Warning>
 
-This works because `@staticmethod` converts the method to a regular function, which the FastMCP decorator can then properly process. However, this is not recommended because the FastMCP decorator will not return a callable staticmethod. Therefore, you should register static methods the same way as other methods.
+这能工作是因为 `@staticmethod` 将方法转换为常规函数，FastMCP 装饰器然后可以正确处理它。但是，不推荐这样做，因为 FastMCP 装饰器不会返回可调用的 staticmethod。因此，您应该像其他方法一样注册静态方法。
 
 <Check>
-**Prefer this pattern:**
+**首选此模式：**
 
 ```python
 from fastmcp import FastMCP
@@ -172,16 +172,16 @@ class MyClass:
     def utility(x, y):
         return x + y
 
-# This also works
+# 这也可以工作
 mcp.tool(MyClass.utility)
 ```
 </Check>
 
-## Additional Patterns
+## 附加模式
 
-### Creating Components at Class Initialization
+### 在类初始化时创建组件
 
-You can automatically register instance methods when creating an object:
+您可以在创建对象时自动注册实例方法：
 
 ```python
 from fastmcp import FastMCP
@@ -190,7 +190,7 @@ mcp = FastMCP()
 
 class ComponentProvider:
     def __init__(self, mcp_instance):
-        # Register methods
+        # 注册方法
         mcp_instance.tool(self.tool_method)
         mcp_instance.resource("resource://data")(self.resource_method)
     
@@ -200,26 +200,26 @@ class ComponentProvider:
     def resource_method(self):
         return "Resource data"
 
-# The methods are automatically registered when creating the instance
+# 创建实例时方法会自动注册
 provider = ComponentProvider(mcp)
 ```
 
-This pattern is useful when:
-- You want to encapsulate registration logic within the class itself
-- You have multiple related components that should be registered together
-- You want to ensure that methods are always properly registered when creating an instance
+此模式在以下情况下很有用：
+- 您希望在类内部封装注册逻辑
+- 您有多个相关组件应该一起注册
+- 您希望确保在创建实例时方法始终被正确注册
 
-The class automatically registers its methods during initialization, ensuring they're properly bound to the instance before registration.
+该类在初始化期间自动注册其方法，确保它们在注册之前被正确绑定到实例。
 
-## Summary
+## 总结
 
-The current behavior of FastMCP decorators with methods is:
+FastMCP 装饰器与方法的当前行为是：
 
-- **Static methods**: Can be decorated directly and work perfectly with all FastMCP decorators
-- **Class methods**: Cannot be decorated directly and will raise a helpful `ValueError` with guidance
-- **Instance methods**: Should be registered after creating an instance using the decorator calls
+- **静态方法**：可以直接装饰，并与所有 FastMCP 装饰器完美配合
+- **类方法**：不能直接装饰，将引发有用的 `ValueError` 并提供指导
+- **实例方法**：应在创建实例后使用装饰器调用注册
 
-For class and instance methods, you should register them after creating the instance or class to ensure proper method binding. This ensures that the methods are properly bound before being registered.
+对于类方法和实例方法，您应该在创建实例或类后注册它们，以确保适当的方法绑定。这确保方法在注册之前被正确绑定。
 
 
-Understanding these patterns allows you to effectively organize your components into classes while maintaining proper method binding, giving you the benefits of object-oriented design without sacrificing the simplicity of FastMCP's decorator system.
+理解这些模式使您能够有效地将组件组织到类中，同时保持适当的方法绑定，让您获得面向对象设计的好处，而不牺牲 FastMCP 装饰器系统的简单性。
