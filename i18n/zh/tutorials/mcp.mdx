@@ -1,96 +1,96 @@
 ---
-title: "What is the Model Context Protocol (MCP)?"
-sidebarTitle: "What is MCP?"
-description: "An introduction to the core concepts of the Model Context Protocol (MCP), explaining what it is, why it's useful, and how it works."
+title: "什么是模型上下文协议（MCP）？"
+sidebarTitle: "什么是 MCP？"
+description: "介绍模型上下文协议（MCP）的核心概念，解释它是什么、为什么有用以及如何工作。"
 icon: "diagram-project"
 ---
 
-The Model Context Protocol (MCP) is an open standard designed to solve a fundamental problem in AI development: how can Large Language Models (LLMs) reliably and securely interact with external tools, data, and services?
+模型上下文协议（MCP）是一个开放标准，旨在解决 AI 开发中的一个基本问题：大型语言模型（LLM）如何可靠安全地与外部工具、数据和服务进行交互？
 
-It's the **bridge between the probabilistic, non-deterministic world of AI and the deterministic, reliable world of your code and data.**
+它是**概率性、非确定性的 AI 世界与确定性、可靠的代码和数据世界之间的桥梁。**
 
-While you could build a custom REST API for your LLM, MCP provides a specialized, standardized "port" for AI-native communication. Think of it as **USB-C for AI**: a single, well-defined interface for connecting any compliant LLM to any compliant tool or data source.
+虽然您可以为您的 LLM 构建自定义的 REST API，但 MCP 为 AI 原生通信提供了一个专门化、标准化的“端口”。将它想象为 **AI 的 USB-C**：一个单一、明确定义的接口，用于连接任何兼容的 LLM 到任何兼容的工具或数据源。
 
-This guide provides a high-level overview of the protocol itself. We'll use **FastMCP**, the leading Python framework for MCP, to illustrate the concepts with simple code examples.
+本指南提供了协议本身的高级概览。我们将使用 **FastMCP**（MCP 的领先 Python 框架）来通过简单的代码示例说明概念。
 
-## Why Do We Need a Protocol?
+## 为什么我们需要一个协议？
 
-With countless APIs already in existence, the most common question is: "Why do we need another one?"
+在已经存在无数 API 的情况下，最常见的问题是：“为什么我们需要另一个 API？”
 
-The answer lies in **standardization**. The AI ecosystem is fragmented. Every model provider has its own way of defining and calling tools. MCP's goal is to create a common language that offers several key advantages:
+答案在于**标准化**。AI 生态系统是片段化的。每个模型提供商都有自己的定义和调用工具的方式。MCP 的目标是创建一种通用语言，提供几个关键优势：
 
-1.  **Interoperability:** Build one MCP server, and it can be used by any MCP-compliant client (Claude, Gemini, OpenAI, custom agents, etc.) without custom integration code. This is the protocol's most important promise.
-2.  **Discoverability:** Clients can dynamically ask a server what it's capable of at runtime. They receive a structured, machine-readable "menu" of tools and resources.
-3.  **Security & Safety:** MCP provides a clear, sandboxed boundary. An LLM can't execute arbitrary code on your server; it can only *request* to run the specific, typed, and validated functions you explicitly expose.
-4.  **Composability:** You can build small, specialized MCP servers and combine them to create powerful, complex applications.
+1.  **互操作性：**构建一个 MCP 服务器，它可以被任何兼容 MCP 的客户端（Claude、Gemini、OpenAI、自定义代理等）使用，无需自定义集成代码。这是协议最重要的承诺。
+2.  **可发现性：**客户端可以在运行时动态询问服务器的功能。它们会收到一个结构化、机器可读的工具和资源“菜单”。
+3.  **安全性：**MCP 提供了明确的沙盒边界。LLM 不能在您的服务器上执行任意代码；它只能*请求*运行您明确暴露的特定、类型化和验证过的函数。
+4.  **可组合性：**您可以构建小型、专门化的 MCP 服务器，并将它们组合起来创建强大、复杂的应用程序。
 
-## Core MCP Components 
+## MCP 核心组件
 
-An MCP server exposes its capabilities through three primary components: Tools, Resources, and Prompts.
+MCP 服务器通过三个主要组件暴露其功能：工具、资源和提示。
 
-### Tools: Executable Actions
+### 工具：可执行操作
 
-Tools are functions that the LLM can ask the server to execute. They are the action-oriented part of MCP.
+工具是 LLM 可以要求服务器执行的函数。它们是 MCP 的面向操作部分。
 
-In the spirit of a REST API, you can think of **Tools as being like `POST` requests.** They are used to *perform an action*, *change state*, or *trigger a side effect*, like sending an email, adding a user to a database, or making a calculation.
+秉承 REST API 的精神，您可以将**工具想象为类似 `POST` 请求**。它们用于*执行操作*、*更改状态*或*触发副作用*，如发送电子邮件、将用户添加到数据库或进行计算。
 
-With FastMCP, creating a tool is as simple as decorating a Python function.
+使用 FastMCP，创建工具就像装饰 Python 函数一样简单。
 
 ```python
 from fastmcp import FastMCP
 
 mcp = FastMCP()
 
-# This function is now an MCP tool named "get_weather"
+# 这个函数现在是一个名为 "get_weather" 的 MCP 工具
 @mcp.tool
 def get_weather(city: str) -> dict:
-    """Gets the current weather for a specific city."""
-    # In a real app, this would call a weather API
+    """获取特定城市的当前天气。"""
+    # 在实际应用中，这将调用天气 API
     return {"city": city, "temperature": "72F", "forecast": "Sunny"}
 ```
 
-[**Learn more about Tools →**](/zh/servers/tools)
+[**了解更多关于工具 →**](/zh/servers/tools)
 
-### Resources: Read-Only Data
+### 资源：只读数据
 
-Resources are data sources that the LLM can read. They are used to load information into the LLM's context, providing it with knowledge it doesn't have from its training data.
+资源是 LLM 可以读取的数据源。它们用于将信息加载到 LLM 的上下文中，为其提供其训练数据中没有的知识。
 
-Following the REST API analogy, **Resources are like `GET` requests.** Their purpose is to *retrieve information* idempotently, ideally without causing side effects. A resource can be anything from a static text file to a dynamic piece of data from a database. Each resource is identified by a unique URI.
+按照 REST API 的类比，**资源就像 `GET` 请求**。它们的目的是*检索信息*且不产生副作用，理想情况下不会引起副作用。资源可以是任何东西，从静态文本文件到数据库中的动态数据片段。每个资源都由唯一的 URI 标识。
 
 ```python
 from fastmcp import FastMCP
 
 mcp = FastMCP()
 
-# This function provides a resource at the URI "system://status"
+# 这个函数在 URI "system://status" 提供资源
 @mcp.resource("system://status")
 def get_system_status() -> dict:
-    """Returns the current operational status of the service."""
-    return {"status": "all systems normal"}
+    """返回服务的当前运行状态。"""
+    return {"status": "所有系统正常"}
 ```
 
-#### Resource Templates
+#### 资源模板
 
-You can also create **Resource Templates** for dynamic data. A client could request `users://42/profile` to get the profile for a specific user.
+您还可以为动态数据创建**资源模板**。客户端可以请求 `users://42/profile` 来获取特定用户的资料。
 
 ```python
 from fastmcp import FastMCP
 
 mcp = FastMCP()
 
-# This template provides user data for any given user ID
+# 这个模板为任何给定的用户 ID 提供用户数据
 @mcp.resource("users://{user_id}/profile")
 def get_user_profile(user_id: str) -> dict:
-    """Returns the profile for a specific user."""
-    # Fetch user from a database...
+    """返回特定用户的资料。"""
+    # 从数据库获取用户...
     return {"id": user_id, "name": "Zaphod Beeblebrox"}
 ```
 
-[**Learn more about Resources & Templates →**](/zh/servers/resources)
+[**了解更多关于资源和模板 →**](/zh/servers/resources)
 
-### Prompts: Reusable Instructions
+### 提示：可重用指令
 
-Prompts are reusable, parameterized message templates. They provide a way to define consistent, structured instructions that a client can request to guide the LLM's behavior for a specific task.
+提示是可重用的参数化消息模板。它们提供了一种定义一致、结构化指令的方法，客户端可以请求这些指令来指导 LLM 在特定任务中的行为。
 
 ```python
 from fastmcp import FastMCP
@@ -99,22 +99,22 @@ mcp = FastMCP()
 
 @mcp.prompt
 def summarize_text(text_to_summarize: str) -> str:
-    """Creates a prompt asking the LLM to summarize a piece of text."""
+    """创建一个要求 LLM 总结一段文本的提示。"""
     return f"""
-        Please provide a concise, one-paragraph summary of the following text:
+        请提供下列文本的简洁、一段式总结：
         
         {text_to_summarize}
         """
 ```
 
-[**Learn more about Prompts →**](/zh/servers/prompts)
+[**了解更多关于提示 →**](/zh/servers/prompts)
 
-## Advanced Capabilities
+## 高级功能
 
-Beyond the core components, MCP also supports more advanced interaction patterns, such as a server requesting that the *client's* LLM generate a completion (known as **sampling**), or a server sending asynchronous **notifications** to a client. These features enable more complex, bidirectional workflows and are fully supported by FastMCP.
+除了核心组件外，MCP 还支持更高级的交互模式，例如服务器请求*客户端的* LLM 生成完成（称为**采样**），或服务器向客户端发送异步**通知**。这些功能支持更复杂的双向工作流，并得到 FastMCP 的完全支持。
 
-## Next Steps
+## 后续步骤
 
-Now that you understand the core concepts of the Model Context Protocol, you're ready to start building. The best place to begin is our step-by-step tutorial.
+现在您已经了解了模型上下文协议的核心概念，您可以开始构建了。最佳的起点是我们的分步教程。
 
-[**Tutorial: How to Create an MCP Server in Python →**](/zh/tutorials/create-mcp-server)
+[**教程：如何使用 Python 创建 MCP 服务器 →**](/zh/tutorials/create-mcp-server)

@@ -1,153 +1,153 @@
 ---
-title: "How to Connect an LLM to a REST API"
-sidebarTitle: "Connect LLMs to REST APIs"
-description: "A step-by-step guide to making any REST API with an OpenAPI spec available to LLMs using FastMCP."
+title: "如何将 LLM 连接到 REST API"
+sidebarTitle: "将 LLM 连接到 REST API"
+description: "使用 FastMCP 将具有 OpenAPI 规范的任何 REST API 提供给 LLM 的分步指南。"
 icon: "plug"
 ---
 
-You've built a powerful REST API, and now you want your LLM to be able to use it. Manually writing a wrapper function for every single endpoint is tedious, error-prone, and hard to maintain.
+您已经构建了一个强大的 REST API，现在您希望您的 LLM 能够使用它。为每个端点手动编写包装器函数既繁琐、容易出错，又难以维护。
 
-This is where **FastMCP** shines. If your API has an OpenAPI (or Swagger) specification, FastMCP can automatically convert your entire API into a fully-featured MCP server, making every endpoint available as a secure, typed tool for your AI model.
+这就是 **FastMCP** 发挥作用的地方。如果您的 API 具有 OpenAPI（或 Swagger）规范，FastMCP 可以自动将您的整个 API 转换为功能齐全的 MCP 服务器，使每个端点都可以作为安全、类型化的工具供您的 AI 模型使用。
 
-This guide will walk you through converting a public REST API into an MCP server in just a few lines of code.
+本指南将引导您仅用几行代码将公共 REST API 转换为 MCP 服务器。
 
 <Tip>
-Every code block in this tutorial is a complete, runnable example. You can copy and paste it into a file and run it, or paste it directly into a Python REPL like IPython to try it out.
+本教程中的每个代码块都是完整的、可运行的示例。您可以将其复制并粘贴到文件中运行，或直接粘贴到 Python REPL（如 IPython）中试用。
 </Tip>
 
-### Prerequisites
+### 前提条件
 
-Make sure you have FastMCP installed. If not, follow the [installation guide](/zh/getting-started/installation).
+确保您已安装 FastMCP。如果没有，请按照[安装指南](/zh/getting-started/installation)进行操作。
 
 ```bash
 pip install fastmcp
 ```
 
-## Step 1: Choose a Target API
+## 步骤 1：选择目标 API
 
-For this tutorial, we'll use the [JSONPlaceholder API](https://jsonplaceholder.typicode.com/), a free, fake online REST API for testing and prototyping. It's perfect because it's simple and has a public OpenAPI specification.
+对于本教程，我们将使用 [JSONPlaceholder API](https://jsonplaceholder.typicode.com/)，这是一个免费的虚拟在线 REST API，用于测试和原型设计。它非常适合是因为它简单且具有公共的 OpenAPI 规范。
 
--   **API Base URL:** `https://jsonplaceholder.typicode.com`
--   **OpenAPI Spec URL:** We'll use a community-provided spec for it.
+-   **API 基础 URL：** `https://jsonplaceholder.typicode.com`
+-   **OpenAPI 规范 URL：** 我们将使用社区提供的规范。
 
-## Step 2: Create the MCP Server
+## 步骤 2：创建 MCP 服务器
 
-Now for the magic. We'll use `FastMCP.from_openapi`. This method takes an `httpx.AsyncClient` configured for your API and its OpenAPI specification, and automatically converts **every endpoint** into a callable MCP `Tool`.
+现在到了神奇的部分。我们将使用 `FastMCP.from_openapi`。此方法接受为您的 API 配置的 `httpx.AsyncClient` 和其 OpenAPI 规范，并自动将**每个端点**转换为可调用的 MCP `Tool`。
 
 <Tip>
-Learn more about working with OpenAPI specs in the [OpenAPI integration docs](/zh/integrations/openapi).
+在 [OpenAPI 集成文档](/zh/integrations/openapi) 中了解更多关于使用 OpenAPI 规范的信息。
 </Tip>
 
 <Note>
-For this tutorial, we'll use a simplified OpenAPI spec directly in the code. In a real project, you would typically load the spec from a URL or local file.
+对于本教程，我们将直接在代码中使用简化的 OpenAPI 规范。在实际项目中，您通常会从 URL 或本地文件加载规范。
 </Note>
 
-Create a file named `api_server.py`:
+创建一个名为 `api_server.py` 的文件：
 
 ```python api_server.py {31-35}
 import httpx
 from fastmcp import FastMCP
 
-# Create an HTTP client for the target API
+# 为目标 API 创建 HTTP 客户端
 client = httpx.AsyncClient(base_url="https://jsonplaceholder.typicode.com")
 
-# Define a simplified OpenAPI spec for JSONPlaceholder
+# 为 JSONPlaceholder 定义简化的 OpenAPI 规范
 openapi_spec = {
     "openapi": "3.0.0",
     "info": {"title": "JSONPlaceholder API", "version": "1.0"},
     "paths": {
         "/users": {
             "get": {
-                "summary": "Get all users",
+                "summary": "获取所有用户",
                 "operationId": "get_users",
-                "responses": {"200": {"description": "A list of users."}}
+                "responses": {"200": {"description": "用户列表。"}}
             }
         },
         "/users/{id}": {
             "get": {
-                "summary": "Get a user by ID",
+                "summary": "根据 ID 获取用户",
                 "operationId": "get_user_by_id",
                 "parameters": [{"name": "id", "in": "path", "required": True, "schema": {"type": "integer"}}],
-                "responses": {"200": {"description": "A single user."}}
+                "responses": {"200": {"description": "单个用户。"}}
             }
         }
     }
 }
 
-# Create the MCP server from the OpenAPI spec
+# 从 OpenAPI 规范创建 MCP 服务器
 mcp = FastMCP.from_openapi(
     openapi_spec=openapi_spec,
     client=client,
-    name="JSONPlaceholder MCP Server"
+    name="JSONPlaceholder MCP 服务器"
 )
 
 if __name__ == "__main__":
     mcp.run(transport="http", port=8000)
 ```
 
-And that's it! With just a few lines of code, you've created an MCP server that exposes the entire JSONPlaceholder API as a collection of tools.
+就是这样！仅用几行代码，您就创建了一个 MCP 服务器，它将整个 JSONPlaceholder API 暴露为一组工具。
 
-## Step 3: Test the Generated Server
+## 步骤 3：测试生成的服务器
 
-Let's verify that our new MCP server works. We can use the `fastmcp.Client` to connect to it and inspect its tools.
+让我们验证我们的新 MCP 服务器是否有效。我们可以使用 `fastmcp.Client` 连接到它并检查其工具。
 
 <Tip>
-Learn more about the FastMCP client in the [client docs](/zh/clients/client).
+在[客户端文档](/zh/clients/client)中了解更多关于 FastMCP 客户端的信息。
 </Tip>
 
-Create a separate file, `api_client.py`:
+创建一个单独的文件 `api_client.py`：
 
 ```python api_client.py {2, 6, 9, 16}
 import asyncio
 from fastmcp import Client
 
 async def main():
-    # Connect to the MCP server we just created
+    # 连接到我们刚刚创建的 MCP 服务器
     async with Client("http://127.0.0.1:8000/mcp/") as client:
         
-        # List the tools that were automatically generated
+        # 列出自动生成的工具
         tools = await client.list_tools()
-        print("Generated Tools:")
+        print("生成的工具：")
         for tool in tools:
             print(f"- {tool.name}")
             
-        # Call one of the generated tools
-        print("\n\nCalling tool 'get_user_by_id'...")
+        # 调用其中一个生成的工具
+        print("\n\n调用工具 'get_user_by_id'...")
         user = await client.call_tool("get_user_by_id", {"id": 1})
-        print(f"Result:\n{user.data}")
+        print(f"结果：\n{user.data}")
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-First, run your server:
+首先，运行您的服务器：
 ```bash
 python api_server.py
 ```
 
-Then, in another terminal, run the client:
+然后，在另一个终端中，运行客户端：
 ```bash
 python api_client.py
 ```
 
-You should see a list of generated tools (`get_users`, `get_user_by_id`) and the result of calling the `get_user_by_id` tool, which fetches data from the live JSONPlaceholder API.
+您应该看到生成的工具列表（`get_users`、`get_user_by_id`）以及调用 `get_user_by_id` 工具的结果，该工具从实时 JSONPlaceholder API 获取数据。
 
 ![](/assets/images/tutorial-rest-api-result.png)
 
 
-## Step 4: Customizing Route Maps
+## 步骤 4：自定义路由映射
 
-By default, FastMCP converts every API endpoint into an MCP `Tool`. This ensures maximum compatibility with contemporary LLM clients, many of which **only support the `tools` part of the MCP specification.**
+默认情况下，FastMCP 将每个 API 端点转换为 MCP `Tool`。这确保了与当代 LLM 客户端的最大兼容性，其中许多客户端**仅支持 MCP 规范的 `tools` 部分**。
 
-However, for clients that support the full MCP spec, representing `GET` requests as `Resources` can be more semantically correct and efficient.
+然而，对于支持完整 MCP 规范的客户端，将 `GET` 请求表示为 `Resources` 可能在语义上更正确且更高效。
 
-FastMCP allows users to customize this behavior using the concept of "route maps". A `RouteMap` is a mapping of an API route to an MCP type. FastMCP checks each API route against your custom maps in order. If a route matches a map, it's converted to the specified `mcp_type`. Any route that doesn't match your custom maps will fall back to the default behavior (becoming a `Tool`).
+FastMCP 允许用户使用"路由映射"的概念自定义此行为。`RouteMap` 是 API 路由到 MCP 类型的映射。FastMCP 按顺序检查每个 API 路由与您的自定义映射。如果路由与映射匹配，则将其转换为指定的 `mcp_type`。任何与您的自定义映射不匹配的路由将退回到默认行为（成为 `Tool`）。
 
 <Tip>
-Learn more about route maps in the [OpenAPI integration docs](/zh/integrations/openapi#route-mapping).
+在 [OpenAPI 集成文档](/zh/integrations/openapi#route-mapping) 中了解更多关于路由映射的信息。
 </Tip>
 
-Here’s how you can add custom route maps to turn `GET` requests into `Resources` and `ResourceTemplates` (if they have path parameters):
+以下是如何添加自定义路由映射将 `GET` 请求转换为 `Resources` 和 `ResourceTemplates`（如果它们具有路径参数）：
 
 ```python api_server_with_resources.py {3, 37-42}
 import httpx
@@ -155,41 +155,41 @@ from fastmcp import FastMCP
 from fastmcp.server.openapi import RouteMap, MCPType
 
 
-# Create an HTTP client for the target API
+# 为目标 API 创建 HTTP 客户端
 client = httpx.AsyncClient(base_url="https://jsonplaceholder.typicode.com")
 
-# Define a simplified OpenAPI spec for JSONPlaceholder
+# 为 JSONPlaceholder 定义简化的 OpenAPI 规范
 openapi_spec = {
     "openapi": "3.0.0",
     "info": {"title": "JSONPlaceholder API", "version": "1.0"},
     "paths": {
         "/users": {
             "get": {
-                "summary": "Get all users",
+                "summary": "获取所有用户",
                 "operationId": "get_users",
-                "responses": {"200": {"description": "A list of users."}}
+                "responses": {"200": {"description": "用户列表。"}}
             }
         },
         "/users/{id}": {
             "get": {
-                "summary": "Get a user by ID",
+                "summary": "根据 ID 获取用户",
                 "operationId": "get_user_by_id",
                 "parameters": [{"name": "id", "in": "path", "required": True, "schema": {"type": "integer"}}],
-                "responses": {"200": {"description": "A single user."}}
+                "responses": {"200": {"description": "单个用户。"}}
             }
         }
     }
 }
 
-# Create the MCP server with custom route mapping
+# 使用自定义路由映射创建 MCP 服务器
 mcp = FastMCP.from_openapi(
     openapi_spec=openapi_spec,
     client=client,
-    name="JSONPlaceholder MCP Server",
+    name="JSONPlaceholder MCP 服务器",
     route_maps=[
-        # Map GET requests with path parameters (e.g., /users/{id}) to ResourceTemplate
+        # 将具有路径参数的 GET 请求（例如 /users/{id}）映射到 ResourceTemplate
         RouteMap(methods=["GET"], pattern=r".*\{.*\}.*", mcp_type=MCPType.RESOURCE_TEMPLATE),
-        # Map all other GET requests to Resource
+        # 将所有其他 GET 请求映射到 Resource
         RouteMap(methods=["GET"], mcp_type=MCPType.RESOURCE),
     ]
 )
@@ -197,7 +197,7 @@ mcp = FastMCP.from_openapi(
 if __name__ == "__main__":
     mcp.run(transport="http", port=8000)
 ```
-With this configuration:
-- `GET /users/{id}` becomes a `ResourceTemplate`.
-- `GET /users` becomes a `Resource`.
-- Any `POST`, `PUT`, etc. endpoints would still become `Tools` by default.
+使用此配置：
+- `GET /users/{id}` 成为 `ResourceTemplate`。
+- `GET /users` 成为 `Resource`。
+- 任何 `POST`、`PUT` 等端点仍将默认成为 `Tools`。

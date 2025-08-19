@@ -1,198 +1,198 @@
 ---
-title: "How to Create an MCP Server in Python"
-sidebarTitle: "Creating an MCP Server"
-description: "A step-by-step guide to building a Model Context Protocol (MCP) server using Python and FastMCP, from basic tools to dynamic resources."
+title: "如何使用 Python 创建 MCP 服务器"
+sidebarTitle: "创建 MCP 服务器"
+description: "使用 Python 和 FastMCP 构建模型上下文协议（MCP）服务器的分步指南，从基本工具到动态资源。"
 icon: server
 ---
 
-So you want to build a Model Context Protocol (MCP) server in Python. The goal is to create a service that can provide tools and data to AI models like Claude, Gemini, or others that support the protocol. While the [MCP specification](https://modelcontextprotocol.io/specification/) is powerful, implementing it from scratch involves a lot of boilerplate: handling JSON-RPC, managing session state, and correctly formatting requests and responses.
+您想要使用 Python 构建一个模型上下文协议（MCP）服务器。目标是创建一个能够为 Claude、Gemini 或其他支持该协议的 AI 模型提供工具和数据的服务。虽然 [MCP 规范](https://modelcontextprotocol.io/specification/)很强大，但从头开始实现它涉及大量样板代码：处理 JSON-RPC、管理会话状态以及正确格式化请求和响应。
 
-This is where **FastMCP** comes in. It's a high-level framework that handles all the protocol complexities for you, letting you focus on what matters: writing the Python functions that power your server.
+这就是 **FastMCP** 发挥作用的地方。它是一个高级框架，为您处理所有协议复杂性，让您专注于重要的事情：编写驱动服务器的 Python 函数。
 
-This guide will walk you through creating a fully-featured MCP server from scratch using FastMCP.
+本指南将引导您使用 FastMCP 从头创建一个功能齐全的 MCP 服务器。
 
 <Tip>
-Every code block in this tutorial is a complete, runnable example. You can copy and paste it into a file and run it, or paste it directly into a Python REPL like IPython to try it out.
+本教程中的每个代码块都是完整的、可运行的示例。您可以将其复制并粘贴到文件中运行，或直接粘贴到 Python REPL（如 IPython）中试用。
 </Tip>
 
-### Prerequisites
+### 前提条件
 
-Make sure you have FastMCP installed. If not, follow the [installation guide](/zh/getting-started/installation).
+确保您已安装 FastMCP。如果没有，请按照[安装指南](/zh/getting-started/installation)进行操作。
 
 ```bash
 pip install fastmcp
 ```
 
 
-## Step 1: Create the Basic Server
+## 步骤 1：创建基本服务器
 
-Every FastMCP application starts with an instance of the `FastMCP` class. This object acts as the container for all your tools and resources.
+每个 FastMCP 应用程序都从 `FastMCP` 类的一个实例开始。该对象作为您所有工具和资源的容器。
 
-Create a new file called `my_mcp_server.py`:
+创建一个名为 `my_mcp_server.py` 的新文件：
 
 ```python my_mcp_server.py
 from fastmcp import FastMCP
 
-# Create a server instance with a descriptive name
-mcp = FastMCP(name="My First MCP Server")
+# 创建一个具有描述性名称的服务器实例
+mcp = FastMCP(name="我的第一个 MCP 服务器")
 ```
 
-That's it! You have a valid (though empty) MCP server. Now, let's add some functionality.
+就是这样！您已经有了一个有效的（虽然是空的）MCP 服务器。现在，让我们添加一些功能。
 
-## Step 2: Add a Tool
+## 步骤 2：添加工具
 
-Tools are functions that an LLM can execute. Let's create a simple tool that adds two numbers.
+工具是 LLM 可以执行的函数。让我们创建一个将两个数字相加的简单工具。
 
-To do this, simply write a standard Python function and decorate it with `@mcp.tool`.
+要做到这一点，只需编写一个标准的 Python 函数并用 `@mcp.tool` 装饰它。
 
 ```python my_mcp_server.py {5-8}
 from fastmcp import FastMCP
 
-mcp = FastMCP(name="My First MCP Server")
+mcp = FastMCP(name="我的第一个 MCP 服务器")
 
 @mcp.tool
 def add(a: int, b: int) -> int:
-    """Adds two integer numbers together."""
+    """将两个整数相加。"""
     return a + b
 ```
 
-FastMCP automatically handles the rest:
-- **Tool Name:** It uses the function name (`add`) as the tool's name.
-- **Description:** It uses the function's docstring as the tool's description for the LLM.
-- **Schema:** It inspects the type hints (`a: int`, `b: int`) to generate a JSON schema for the inputs.
+FastMCP 自动处理其余部分：
+- **工具名称：** 使用函数名（`add`）作为工具的名称。
+- **描述：** 使用函数的文档字符串作为工具对 LLM 的描述。
+- **架构：** 检查类型提示（`a: int`、`b: int`）来为输入生成 JSON 架构。
 
-This is the core philosophy of FastMCP: **write Python, not protocol boilerplate.**
+这是 FastMCP 的核心理念：**编写 Python，而不是协议样板代码。**
 
-## Step 3: Expose Data with Resources
+## 步骤 3：通过资源暴露数据
 
-Resources provide read-only data to the LLM. You can define a resource by decorating a function with `@mcp.resource`, providing a unique URI.
+资源为 LLM 提供只读数据。您可以通过用 `@mcp.resource` 装饰函数来定义资源，并提供唯一的 URI。
 
-Let's expose a simple configuration dictionary as a resource.
+让我们将一个简单的配置字典作为资源暴露。
 
 ```python my_mcp_server.py {10-13}
 from fastmcp import FastMCP
 
-mcp = FastMCP(name="My First MCP Server")
+mcp = FastMCP(name="我的第一个 MCP 服务器")
 
 @mcp.tool
 def add(a: int, b: int) -> int:
-    """Adds two integer numbers together."""
+    """将两个整数相加。"""
     return a + b
 
 @mcp.resource("resource://config")
 def get_config() -> dict:
-    """Provides the application's configuration."""
+    """提供应用程序的配置。"""
     return {"version": "1.0", "author": "MyTeam"}
 ```
 
-When a client requests the URI `resource://config`, FastMCP will execute the `get_config` function and return its output (serialized as JSON) to the client. The function is only called when the resource is requested, enabling lazy-loading of data.
+当客户端请求 URI `resource://config` 时，FastMCP 将执行 `get_config` 函数并将其输出（序列化为 JSON）返回给客户端。该函数仅在请求资源时被调用，实现数据的懒加载。
 
-## Step 4: Generate Dynamic Content with Resource Templates
+## 步骤 4：使用资源模板生成动态内容
 
-Sometimes, you need to generate resources based on parameters. This is what **Resource Templates** are for. You define them using the same `@mcp.resource` decorator but with placeholders in the URI.
+有时，您需要根据参数生成资源。这就是**资源模板**的作用。您使用相同的 `@mcp.resource` 装饰器来定义它们，但在 URI 中使用占位符。
 
-Let's create a template that provides a personalized greeting.
+让我们创建一个提供个性化问候的模板。
 
 ```python my_mcp_server.py {15-17}
 from fastmcp import FastMCP
 
-mcp = FastMCP(name="My First MCP Server")
+mcp = FastMCP(name="我的第一个 MCP 服务器")
 
 @mcp.tool
 def add(a: int, b: int) -> int:
-    """Adds two integer numbers together."""
+    """将两个整数相加。"""
     return a + b
 
 @mcp.resource("resource://config")
 def get_config() -> dict:
-    """Provides the application's configuration."""
+    """提供应用程序的配置。"""
     return {"version": "1.0", "author": "MyTeam"}
 
 @mcp.resource("greetings://{name}")
 def personalized_greeting(name: str) -> str:
-    """Generates a personalized greeting for the given name."""
-    return f"Hello, {name}! Welcome to the MCP server."
+    """为给定名称生成个性化问候。"""
+    return f"您好，{name}！欢迎来到 MCP 服务器。"
 ```
 
-Now, clients can request dynamic URIs:
-- `greetings://Ford` will call `personalized_greeting(name="Ford")`.
-- `greetings://Marvin` will call `personalized_greeting(name="Marvin")`.
+现在，客户端可以请求动态 URI：
+- `greetings://Ford` 将调用 `personalized_greeting(name="Ford")`。
+- `greetings://Marvin` 将调用 `personalized_greeting(name="Marvin")`。
 
-FastMCP automatically maps the `{name}` placeholder in the URI to the `name` parameter in your function.
+FastMCP 自动将 URI 中的 `{name}` 占位符映射到函数中的 `name` 参数。
 
-## Step 5: Run the Server
+## 步骤 5：运行服务器
 
-To make your server executable, add a `__main__` block to your script that calls `mcp.run()`.
+要使您的服务器可执行，请在脚本中添加一个调用 `mcp.run()` 的 `__main__` 代码块。
 
 ```python my_mcp_server.py {19-20}
 from fastmcp import FastMCP
 
-mcp = FastMCP(name="My First MCP Server")
+mcp = FastMCP(name="我的第一个 MCP 服务器")
 
 @mcp.tool
 def add(a: int, b: int) -> int:
-    """Adds two integer numbers together."""
+    """将两个整数相加。"""
     return a + b
 
 @mcp.resource("resource://config")
 def get_config() -> dict:
-    """Provides the application's configuration."""
+    """提供应用程序的配置。"""
     return {"version": "1.0", "author": "MyTeam"}
 
 @mcp.resource("greetings://{name}")
 def personalized_greeting(name: str) -> str:
-    """Generates a personalized greeting for the given name."""
-    return f"Hello, {name}! Welcome to the MCP server."
+    """为给定名称生成个性化问候。"""
+    return f"您好，{name}！欢迎来到 MCP 服务器。"
 
 if __name__ == "__main__":
     mcp.run()
 ```
 
-Now you can run your server from the command line:
+现在您可以从命令行运行您的服务器：
 ```bash
 python my_mcp_server.py
 ```
-This starts the server using the default **STDIO transport**, which is how clients like Claude Desktop communicate with local servers. To learn about other transports, like HTTP, see the [Running Your Server](/zh/deployment/running-server) guide.
+这使用默认的 **STDIO 传输**启动服务器，这是像 Claude Desktop 这样的客户端与本地服务器通信的方式。要了解其他传输方式（如 HTTP），请参阅[运行您的服务器](/zh/deployment/running-server)指南。
 
-## The Complete Server
+## 完整的服务器
 
-Here is the full code for `my_mcp_server.py` (click to expand):
+以下是 `my_mcp_server.py` 的完整代码（点击展开）：
 
 ```python my_mcp_server.py [expandable]
 from fastmcp import FastMCP
 
-# 1. Create the server
-mcp = FastMCP(name="My First MCP Server")
+# 1. 创建服务器
+mcp = FastMCP(name="我的第一个 MCP 服务器")
 
-# 2. Add a tool
+# 2. 添加工具
 @mcp.tool
 def add(a: int, b: int) -> int:
-    """Adds two integer numbers together."""
+    """将两个整数相加。"""
     return a + b
 
-# 3. Add a static resource
+# 3. 添加静态资源
 @mcp.resource("resource://config")
 def get_config() -> dict:
-    """Provides the application's configuration."""
+    """提供应用程序的配置。"""
     return {"version": "1.0", "author": "MyTeam"}
 
-# 4. Add a resource template for dynamic content
+# 4. 为动态内容添加资源模板
 @mcp.resource("greetings://{name}")
 def personalized_greeting(name: str) -> str:
-    """Generates a personalized greeting for the given name."""
-    return f"Hello, {name}! Welcome to the MCP server."
+    """为给定名称生成个性化问候。"""
+    return f"您好，{name}！欢迎来到 MCP 服务器。"
 
-# 5. Make the server runnable
+# 5. 使服务器可运行
 if __name__ == "__main__":
     mcp.run()
 ```
 
-## Next Steps
+## 后续步骤
 
-You've successfully built an MCP server! From here, you can explore more advanced topics:
+您已经成功构建了一个 MCP 服务器！从这里，您可以探索更高级的主题：
 
--   [**Tools in Depth**](/zh/servers/tools): Learn about asynchronous tools, error handling, and custom return types.
--   [**Resources & Templates**](/zh/servers/resources): Discover different resource types, including files and HTTP endpoints.
--   [**Prompts**](/zh/servers/prompts): Create reusable prompt templates for your LLM.
--   [**Running Your Server**](/zh/deployment/running-server): Deploy your server with different transports like HTTP.
+-   [**深入了解工具**](/zh/servers/tools)：了解异步工具、错误处理和自定义返回类型。
+-   [**资源和模板**](/zh/servers/resources)：发现不同的资源类型，包括文件和 HTTP 端点。
+-   [**提示**](/zh/servers/prompts)：为您的 LLM 创建可重用的提示模板。
+-   [**运行您的服务器**](/zh/deployment/running-server)：使用不同的传输方式（如 HTTP）部署您的服务器。
 
