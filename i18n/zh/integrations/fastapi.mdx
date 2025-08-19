@@ -1,46 +1,46 @@
 ---
 title: FastAPI 🤝 FastMCP
 sidebarTitle: FastAPI
-description: Integrate FastMCP with FastAPI applications
+description: 将 FastMCP 与 FastAPI 应用程序集成
 icon: bolt
 ---
 
 import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <Tip>
-**New in 2.11**: FastMCP is introducing a next-generation OpenAPI parser. The new parser has greatly improved performance and compatibility, and is also easier to maintain. To enable it, set the environment variable `FASTMCP_EXPERIMENTAL_ENABLE_NEW_OPENAPI_PARSER=true`. 
+**2.11 中的新功能**：FastMCP 正在引入下一代 OpenAPI 解析器。新解析器在性能和兼容性方面大大改进，也更容易维护。要启用它，请设置环境变量 `FASTMCP_EXPERIMENTAL_ENABLE_NEW_OPENAPI_PARSER=true`。
 
-The new parser is largely API-compatible with the existing implementation and will become the default in a future version. We encourage all users to test it and report any issues before it becomes the default.
+新解析器在 API 方面与现有实现大体兼容，并将在未来版本中成为默认选项。我们鼓励所有用户在它成为默认选项之前测试它并报告任何问题。
 </Tip>
 
-FastMCP provides two powerful ways to integrate with FastAPI applications:
+FastMCP 提供了两种强大的方式来与 FastAPI 应用程序集成：
 
-1. **[Generate an MCP server FROM your FastAPI app](#generating-an-mcp-server)** - Convert existing API endpoints into MCP tools
-2. **[Mount an MCP server INTO your FastAPI app](#mounting-an-mcp-server)** - Add MCP functionality to your web application
+1. **[从您的 FastAPI 应用程序生成 MCP 服务器](#generating-an-mcp-server)** - 将现有的 API 端点转换为 MCP 工具
+2. **[将 MCP 服务器挂载到您的 FastAPI 应用程序中](#mounting-an-mcp-server)** - 向您的 Web 应用程序添加 MCP 功能
 
 
 <Tip>
-Generating MCP servers from OpenAPI is a great way to get started with FastMCP, but in practice LLMs achieve **significantly better performance** with well-designed and curated MCP servers than with auto-converted OpenAPI servers. This is especially true for complex APIs with many endpoints and parameters.
+从 OpenAPI 生成 MCP 服务器是开始使用 FastMCP 的好方法，但在实践中，LLM 在精心设计和策划的 MCP 服务器上的**性能表现显著优于**自动转换的 OpenAPI 服务器。这对于具有许多端点和参数的复杂 API 尤其如此。
 
-We recommend using the FastAPI integration for bootstrapping and prototyping, not for mirroring your API to LLM clients. See the post [Stop Converting Your REST APIs to MCP](https://www.jlowin.dev/blog/stop-converting-rest-apis-to-mcp) for more details.
+我们建议使用 FastAPI 集成进行引导和原型制作，而不是将您的 API 镜像给 LLM 客户端。有关更多详细信息，请参阅文章 [停止将您的 REST API 转换为 MCP](https://www.jlowin.dev/blog/stop-converting-rest-apis-to-mcp)。
 </Tip>
 
 
 <Note>
-FastMCP does *not* include FastAPI as a dependency; you must install it separately to use this integration.
+FastMCP **不**包含 FastAPI 作为依赖；您必须单独安装它才能使用此集成。
 </Note>
 
-## Example FastAPI Application
+## 示例 FastAPI 应用程序
 
-Throughout this guide, we'll use this e-commerce API as our example (click the `Copy` button to copy it for use with other code blocks):
+在整个指南中，我们将使用这个电子商务 API 作为示例（点击 `复制` 按钮可复制它以便在其他代码块中使用）：
 
 ```python [expandable]
-# Copy this FastAPI server into other code blocks in this guide
+# 将此 FastAPI 服务器复制到本指南的其他代码块中
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Models
+# 模型
 class Product(BaseModel):
     name: str
     price: float
@@ -54,19 +54,19 @@ class ProductResponse(BaseModel):
     category: str
     description: str | None = None
 
-# Create FastAPI app
-app = FastAPI(title="E-commerce API", version="1.0.0")
+# 创建 FastAPI 应用程序
+app = FastAPI(title="电子商务 API", version="1.0.0")
 
-# In-memory database
+# 内存数据库
 products_db = {
     1: ProductResponse(
-        id=1, name="Laptop", price=999.99, category="Electronics"
+        id=1, name="笔记本电脑", price=999.99, category="电子产品"
     ),
     2: ProductResponse(
-        id=2, name="Mouse", price=29.99, category="Electronics"
+        id=2, name="鼠标", price=29.99, category="电子产品"
     ),
     3: ProductResponse(
-        id=3, name="Desk Chair", price=299.99, category="Furniture"
+        id=3, name="办公椅", price=299.99, category="家具"
     ),
 }
 next_id = 4
@@ -76,7 +76,7 @@ def list_products(
     category: str | None = None,
     max_price: float | None = None,
 ) -> list[ProductResponse]:
-    """List all products with optional filtering."""
+    """列出所有产品，支持可选过滤。"""
     products = list(products_db.values())
     if category:
         products = [p for p in products if p.category == category]
@@ -86,14 +86,14 @@ def list_products(
 
 @app.get("/products/{product_id}", response_model=ProductResponse)
 def get_product(product_id: int):
-    """Get a specific product by ID."""
+    """根据 ID 获取特定产品。"""
     if product_id not in products_db:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(status_code=404, detail="未找到产品")
     return products_db[product_id]
 
 @app.post("/products", response_model=ProductResponse)
 def create_product(product: Product):
-    """Create a new product."""
+    """创建新产品。"""
     global next_id
     product_response = ProductResponse(id=next_id, **product.model_dump())
     products_db[next_id] = product_response
@@ -102,9 +102,9 @@ def create_product(product: Product):
 
 @app.put("/products/{product_id}", response_model=ProductResponse)
 def update_product(product_id: int, product: Product):
-    """Update an existing product."""
+    """更新现有产品。"""
     if product_id not in products_db:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(status_code=404, detail="未找到产品")
     products_db[product_id] = ProductResponse(
         id=product_id,
         **product.model_dump(),
@@ -113,58 +113,58 @@ def update_product(product_id: int, product: Product):
 
 @app.delete("/products/{product_id}")
 def delete_product(product_id: int):
-    """Delete a product."""
+    """删除产品。"""
     if product_id not in products_db:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(status_code=404, detail="未找到产品")
     del products_db[product_id]
-    return {"message": "Product deleted"}
+    return {"message": "产品已删除"}
 ```
 
 <Tip>
-All subsequent code examples in this guide assume you have the above FastAPI application code already defined. Each example builds upon this base application, `app`.
+本指南中的所有后续代码示例都假设您已经定义了上述 FastAPI 应用程序代码。每个示例都基于这个基础应用程序 `app` 构建。
 </Tip>
 
-## Generating an MCP Server
+## 生成 MCP 服务器
 
 <VersionBadge version="2.0.0" />
 
-One of the most common ways to bootstrap an MCP server is to generate it from an existing FastAPI application. FastMCP will expose your FastAPI endpoints as MCP components (tools, by default) in order to expose your API to LLM clients.
+引导 MCP 服务器最常见的方法之一是从现有的 FastAPI 应用程序生成它。FastMCP 将您的 FastAPI 端点暴露为 MCP 组件（默认为工具），以便将您的 API 暴露给 LLM 客户端。
 
 
 
-### Basic Conversion
+### 基本转换
 
-Convert the FastAPI app to an MCP server with a single line:
+用一行代码将 FastAPI 应用程序转换为 MCP 服务器：
 
 ```python {5}
-# Assumes the FastAPI app from above is already defined
+# 假设上面的 FastAPI 应用程序已经定义
 from fastmcp import FastMCP
 
-# Convert to MCP server
+# 转换为 MCP 服务器
 mcp = FastMCP.from_fastapi(app=app)
 
 if __name__ == "__main__":
     mcp.run()
 ```
 
-### Adding Components
+### 添加组件
 
-Your converted MCP server is a full FastMCP instance, meaning you can add new tools, resources, and other components to it just like you would with any other FastMCP instance.
+您转换的 MCP 服务器是一个完整的 FastMCP 实例，这意味着您可以像处理任何其他 FastMCP 实例一样向其添加新工具、资源和其他组件。
 
 ```python {8-11}
-# Assumes the FastAPI app from above is already defined
+# 假设上面的 FastAPI 应用程序已经定义
 from fastmcp import FastMCP
 
-# Convert to MCP server
+# 转换为 MCP 服务器
 mcp = FastMCP.from_fastapi(app=app)
 
-# Add a new tool
+# 添加新工具
 @mcp.tool
 def get_product(product_id: int) -> ProductResponse:
-    """Get a product by ID."""
+    """根据 ID 获取产品。"""
     return products_db[product_id]
 
-# Run the MCP server
+# 运行 MCP 服务器
 if __name__ == "__main__":
     mcp.run()
 ```
@@ -173,99 +173,99 @@ if __name__ == "__main__":
 
 
 
-### Interacting with the MCP Server
+### 与 MCP 服务器交互
 
-Once you've converted your FastAPI app to an MCP server, you can interact with it using the FastMCP client to test functionality before deploying it to an LLM-based application.
+一旦您将 FastAPI 应用程序转换为 MCP 服务器，您可以使用 FastMCP 客户端与其交互，在将其部署到基于 LLM 的应用程序之前测试功能。
 
 ```python {3, }
-# Assumes the FastAPI app from above is already defined
+# 假设上面的 FastAPI 应用程序已经定义
 from fastmcp import FastMCP
 from fastmcp.client import Client
 import asyncio
 
-# Convert to MCP server
+# 转换为 MCP 服务器
 mcp = FastMCP.from_fastapi(app=app)
 
 async def demo():
     async with Client(mcp) as client:
-        # List available tools
+        # 列出可用工具
         tools = await client.list_tools()
-        print(f"Available tools: {[t.name for t in tools]}")
+        print(f"可用工具: {[t.name for t in tools]}")
         
-        # Create a product
+        # 创建产品
         result = await client.call_tool(
             "create_product_products_post",
             {
-                "name": "Wireless Keyboard",
+                "name": "无线键盘",
                 "price": 79.99,
-                "category": "Electronics",
-                "description": "Bluetooth mechanical keyboard"
+                "category": "电子产品",
+                "description": "蓝牙机械键盘"
             }
         )
-        print(f"Created product: {result.data}")
+        print(f"已创建产品: {result.data}")
         
-        # List electronics under $100
+        # 列出价格低于 $100 的电子产品
         result = await client.call_tool(
             "list_products_products_get",
-            {"category": "Electronics", "max_price": 100}
+            {"category": "电子产品", "max_price": 100}
         )
-        print(f"Affordable electronics: {result.data}")
+        print(f"经济实惠的电子产品: {result.data}")
 
 if __name__ == "__main__":
     asyncio.run(demo())
 ```
 
-### Custom Route Mapping
+### 自定义路由映射
 
-Because FastMCP's FastAPI integration is based on its [OpenAPI integration](/zh/integrations/openapi), you can customize how endpoints are converted to MCP components in exactly the same way. For example, here we use a `RouteMap` to map all GET requests to MCP resources, and all POST/PUT/DELETE requests to MCP tools:
+因为 FastMCP 的 FastAPI 集成基于其 [OpenAPI 集成](/zh/integrations/openapi)，您可以以完全相同的方式自定义端点如何转换为 MCP 组件。例如，这里我们使用 `RouteMap` 将所有 GET 请求映射到 MCP 资源，将所有 POST/PUT/DELETE 请求映射到 MCP 工具：
 
 ```python
-# Assumes the FastAPI app from above is already defined
+# 假设上面的 FastAPI 应用程序已经定义
 from fastmcp import FastMCP
 from fastmcp.server.openapi import RouteMap, MCPType
 
-# If using experimental parser, import from experimental module:
+# 如果使用实验性解析器，请从实验模块导入：
 # from fastmcp.experimental.server.openapi import RouteMap, MCPType
 
-# Custom mapping rules
+# 自定义映射规则
 mcp = FastMCP.from_fastapi(
     app=app,
     route_maps=[
-        # GET with path params → ResourceTemplates
+        # 带有路径参数的 GET → ResourceTemplates
         RouteMap(
             methods=["GET"], 
             pattern=r".*\{.*\}.*", 
             mcp_type=MCPType.RESOURCE_TEMPLATE
         ),
-        # Other GETs → Resources
+        # 其他 GET → Resources
         RouteMap(
             methods=["GET"], 
             pattern=r".*", 
             mcp_type=MCPType.RESOURCE
         ),
-        # POST/PUT/DELETE → Tools (default)
+        # POST/PUT/DELETE → Tools（默认）
     ],
 )
 
-# Now:
+# 现在：
 # - GET /products → Resource
 # - GET /products/{id} → ResourceTemplate
 # - POST/PUT/DELETE → Tools
 ```
 
 <Tip>
-To learn more about customizing the conversion process, see the [OpenAPI Integration guide](/zh/integrations/openapi).
+要了解更多关于自定义转换过程的信息，请参阅 [OpenAPI 集成指南](/zh/integrations/openapi)。
 </Tip>
 
-### Authentication and Headers
+### 身份验证和请求头
 
-You can configure headers and other client options via the `httpx_client_kwargs` parameter. For example, to add authentication to your FastAPI app, you can pass a `headers` dictionary to the `httpx_client_kwargs` parameter:
+您可以通过 `httpx_client_kwargs` 参数配置请求头和其他客户端选项。例如，要为您的 FastAPI 应用程序添加身份验证，您可以将 `headers` 字典传递给 `httpx_client_kwargs` 参数：
 
 ```python {27-31}
-# Assumes the FastAPI app from above is already defined
+# 假设上面的 FastAPI 应用程序已经定义
 from fastmcp import FastMCP
 
-# Add authentication to your FastAPI app
+# 为您的 FastAPI 应用程序添加身份验证
 from fastapi import Depends, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -273,10 +273,10 @@ security = HTTPBearer()
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if credentials.credentials != "secret-token":
-        raise HTTPException(status_code=401, detail="Invalid authentication")
+        raise HTTPException(status_code=401, detail="无效的身份验证")
     return credentials.credentials
 
-# Add a protected endpoint
+# 添加受保护的端点
 @app.get("/admin/stats", dependencies=[Depends(verify_token)])
 def get_admin_stats():
     return {
@@ -284,7 +284,7 @@ def get_admin_stats():
         "categories": list(set(p.category for p in products_db.values()))
     }
 
-# Create MCP server with authentication headers
+# 使用身份验证请求头创建 MCP 服务器
 mcp = FastMCP.from_fastapi(
     app=app,
     httpx_client_kwargs={
@@ -295,29 +295,29 @@ mcp = FastMCP.from_fastapi(
 )
 ```
 
-## Mounting an MCP Server
+## 挂载 MCP 服务器
 
 <VersionBadge version="2.3.1" />
 
-In addition to generating servers, FastMCP can facilitate adding MCP servers to your existing FastAPI application. You can do this by mounting the MCP ASGI application.
+除了生成服务器之外，FastMCP 还可以帮助您将 MCP 服务器添加到现有的 FastAPI 应用程序中。您可以通过挂载 MCP ASGI 应用程序来实现这一点。
 
-### Basic Mounting
+### 基本挂载
 
-To mount an MCP server, you can use the `http_app` method on your FastMCP instance. This will return an ASGI application that can be mounted to your FastAPI application.
+要挂载 MCP 服务器，您可以在 FastMCP 实例上使用 `http_app` 方法。这将返回一个可以挂载到您的 FastAPI 应用程序的 ASGI 应用程序。
 
 ```python {23-30}
 from fastmcp import FastMCP
 from fastapi import FastAPI
 
-# Create MCP server
-mcp = FastMCP("Analytics Tools")
+# 创建 MCP 服务器
+mcp = FastMCP("分析工具")
 
 @mcp.tool
 def analyze_pricing(category: str) -> dict:
-    """Analyze pricing for a category."""
+    """分析某个类别的定价。"""
     products = [p for p in products_db.values() if p.category == category]
     if not products:
-        return {"error": f"No products in {category}"}
+        return {"error": f"{category} 中没有产品"}
     
     prices = [p.price for p in products]
     return {
@@ -327,120 +327,120 @@ def analyze_pricing(category: str) -> dict:
         "max": max(prices),
     }
 
-# Create ASGI app from MCP server
+# 从 MCP 服务器创建 ASGI 应用程序
 mcp_app = mcp.http_app(path='/mcp')
 
-# Key: Pass lifespan to FastAPI
-app = FastAPI(title="E-commerce API", lifespan=mcp_app.lifespan)
+# 关键：将生命周期传递给 FastAPI
+app = FastAPI(title="电子商务 API", lifespan=mcp_app.lifespan)
 
-# Mount the MCP server
+# 挂载 MCP 服务器
 app.mount("/analytics", mcp_app)
 
-# Now: API at /products/*, MCP at /analytics/mcp/
+# 现在：API 在 /products/*，MCP 在 /analytics/mcp/
 ```
 
-## Offering an LLM-Friendly API
+## 提供 LLM 友好的 API
 
-A common pattern is to generate an MCP server from your FastAPI app and mount it back into the same application. This provides an LLM-optimized interface alongside your regular API:
+一个常见的模式是从您的 FastAPI 应用程序生成 MCP 服务器，然后将其挂载回同一个应用程序。这在您的常规 API 旁边提供了一个 LLM 优化的接口：
 
 ```python
-# Assumes the FastAPI app from above is already defined
+# 假设上面的 FastAPI 应用程序已经定义
 from fastmcp import FastMCP
 from fastapi import FastAPI
 
-# 1. Generate MCP server from your API
-mcp = FastMCP.from_fastapi(app=app, name="E-commerce MCP")
+# 1. 从您的 API 生成 MCP 服务器
+mcp = FastMCP.from_fastapi(app=app, name="电子商务 MCP")
 
-# 2. Create the MCP's ASGI app
+# 2. 创建 MCP 的 ASGI 应用程序
 mcp_app = mcp.http_app(path='/mcp')
 
-# 3. Mount it back into your FastAPI app
-app = FastAPI(title="E-commerce API", lifespan=mcp_app.lifespan)
+# 3. 将其挂载回您的 FastAPI 应用程序
+app = FastAPI(title="电子商务 API", lifespan=mcp_app.lifespan)
 app.mount("/llm", mcp_app)
 
-# Now you have:
-# - Regular API: http://localhost:8000/products
-# - LLM-friendly MCP: http://localhost:8000/llm/mcp/
-# Both served from the same FastAPI application!
+# 现在您拥有：
+# - 常规 API：http://localhost:8000/products
+# - LLM 友好的 MCP：http://localhost:8000/llm/mcp/
+# 两者都从同一个 FastAPI 应用程序提供服务！
 ```
 
-This approach lets you maintain a single codebase while offering both traditional REST endpoints and MCP-compatible endpoints for LLM clients.
+这种方法让您可以维护单一代码库，同时为 LLM 客户端提供传统的 REST 端点和 MCP 兼容的端点。
 
-## Key Considerations
+## 关键考虑事项
 
-### Operation IDs
+### 操作 ID
 
-FastAPI operation IDs become MCP component names. Always specify meaningful operation IDs:
+FastAPI 操作 ID 成为 MCP 组件名称。始终指定有意义的操作 ID：
 
 ```python
-# Good - explicit operation_id
+# 好的做法 - 明确的 operation_id
 @app.get("/users/{user_id}", operation_id="get_user_by_id")
 def get_user(user_id: int):
     return {"id": user_id}
 
-# Less ideal - auto-generated name
+# 不太理想 - 自动生成的名称
 @app.get("/users/{user_id}")
 def get_user(user_id: int):
     return {"id": user_id}
 ```
 
-### Lifespan Management
+### 生命周期管理
 
-When mounting MCP servers, always pass the lifespan context:
+挂载 MCP 服务器时，始终传递生命周期上下文：
 
 ```python
-# Correct - lifespan passed
+# 正确 - 传递了生命周期
 mcp_app = mcp.http_app(path='/mcp')
 app = FastAPI(lifespan=mcp_app.lifespan)
 app.mount("/mcp", mcp_app)
 
-# Incorrect - missing lifespan
+# 错误 - 缺少生命周期
 app = FastAPI()
-app.mount("/mcp", mcp.http_app())  # Session manager won't initialize
+app.mount("/mcp", mcp.http_app())  # 会话管理器不会初始化
 ```
 
-### Combining Lifespans
+### 合并生命周期
 
-If your FastAPI app already has a lifespan (for database connections, startup tasks, etc.), you can't simply replace it with the MCP lifespan. Instead, you need to create a new lifespan function that manages both contexts. This ensures that both your app's initialization logic and the MCP server's session manager run properly:
+如果您的 FastAPI 应用程序已经有生命周期（用于数据库连接、启动任务等），您不能简单地用 MCP 生命周期替换它。相反，您需要创建一个管理两个上下文的新生命周期函数。这确保您的应用程序初始化逻辑和 MCP 服务器的会话管理器都能正常运行：
 
 ```python
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastmcp import FastMCP
 
-# Your existing lifespan
+# 您现有的生命周期
 @asynccontextmanager
 async def app_lifespan(app: FastAPI):
-    # Startup
-    print("Starting up the app...")
-    # Initialize database, cache, etc.
+    # 启动
+    print("正在启动应用程序...")
+    # 初始化数据库、缓存等
     yield
-    # Shutdown
-    print("Shutting down the app...")
+    # 关闭
+    print("正在关闭应用程序...")
 
-# Create MCP server
-mcp = FastMCP("Tools")
+# 创建 MCP 服务器
+mcp = FastMCP("工具")
 mcp_app = mcp.http_app(path='/mcp')
 
-# Combine both lifespans
+# 合并两个生命周期
 @asynccontextmanager
 async def combined_lifespan(app: FastAPI):
-    # Run both lifespans
+    # 运行两个生命周期
     async with app_lifespan(app):
         async with mcp_app.lifespan(app):
             yield
 
-# Use the combined lifespan
+# 使用合并的生命周期
 app = FastAPI(lifespan=combined_lifespan)
 app.mount("/mcp", mcp_app)
 ```
 
-This pattern ensures both your app's initialization logic and the MCP server's session manager are properly managed. The key is using nested `async with` statements - the inner context (MCP) will be initialized after the outer context (your app), and cleaned up before it. This maintains the correct initialization and cleanup order for all your resources.
+这个模式确保您的应用程序初始化逻辑和 MCP 服务器的会话管理器都得到正确管理。关键是使用嵌套的 `async with` 语句 - 内部上下文（MCP）将在外部上下文（您的应用程序）之后初始化，并在它之前清理。这为您的所有资源维护了正确的初始化和清理顺序。
 
-### Performance Tips
+### 性能提示
 
-1. **Use in-memory transport for testing** - Pass MCP servers directly to clients
-2. **Design purpose-built MCP tools** - Better than auto-converting complex APIs
-3. **Keep tool parameters simple** - LLMs perform better with focused interfaces
+1. **使用内存传输进行测试** - 将 MCP 服务器直接传递给客户端
+2. **设计专用的 MCP 工具** - 比自动转换复杂 API 更好
+3. **保持工具参数简单** - LLM 在专注的接口上表现更好
 
-For more details on configuration options, see the [OpenAPI Integration guide](/zh/integrations/openapi).
+有关配置选项的更多详细信息，请参阅 [OpenAPI 集成指南](/zh/integrations/openapi)。

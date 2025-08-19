@@ -1,87 +1,87 @@
 ---
-title: Eunomia Authorization 🤝 FastMCP
+title: Eunomia 身份认证 🤝 FastMCP
 sidebarTitle: Eunomia Auth
-description: Add policy-based authorization to your FastMCP servers with Eunomia
+description: 使用 Eunomia 为您的 FastMCP 服务器添加基于策略的授权
 icon: shield-check
 ---
 
-Add **policy-based authorization** to your FastMCP servers with one-line code addition with the **[Eunomia][eunomia-github] authorization middleware**.
+使用 **[Eunomia][eunomia-github] 授权中间件**通过一行代码添加为您的 FastMCP 服务器添加**基于策略的授权**。
 
-Control which tools, resources and prompts MCP clients can view and execute on your server. Define dynamic JSON-based policies and obtain a comprehensive audit log of all access attempts and violations.
+控制 MCP 客户端可以在您的服务器上查看和执行的工具、资源和提示。定义动态的基于 JSON 的策略，并获得所有访问尝试和违规行为的全面审计日志。
 
-## How it Works
+## 工作原理
 
-Exploiting FastMCP's [Middleware][fastmcp-middleare], the Eunomia middleware intercepts all MCP requests to your server and automatically maps MCP methods to authorization checks.
+利用 FastMCP 的[Middleware][fastmcp-middleare]，Eunomia 中间件拦截所有到您服务器的 MCP 请求，并自动将 MCP 方法映射到授权检查。
 
-### Listing Operations
+### 列表操作
 
-The middleware behaves as a filter for listing operations (`tools/list`, `resources/list`, `prompts/list`), hiding to the client components that are not authorized by the defined policies.
-
-```mermaid
-sequenceDiagram
-    participant MCPClient as MCP Client
-    participant EunomiaMiddleware as Eunomia Middleware
-    participant MCPServer as FastMCP Server
-    participant EunomiaServer as Eunomia Server
-
-    MCPClient->>EunomiaMiddleware: MCP Listing Request (e.g., tools/list)
-    EunomiaMiddleware->>MCPServer: MCP Listing Request
-    MCPServer-->>EunomiaMiddleware: MCP Listing Response
-    EunomiaMiddleware->>EunomiaServer: Authorization Checks
-    EunomiaServer->>EunomiaMiddleware: Authorization Decisions
-    EunomiaMiddleware-->>MCPClient: Filtered MCP Listing Response
-```
-
-### Execution Operations
-
-The middleware behaves as a firewall for execution operations (`tools/call`, `resources/read`, `prompts/get`), blocking operations that are not authorized by the defined policies.
+中间件作为列表操作（`tools/list`、`resources/list`、`prompts/list`）的过滤器，对客户端隐藏未由定义策略授权的组件。
 
 ```mermaid
 sequenceDiagram
-    participant MCPClient as MCP Client
-    participant EunomiaMiddleware as Eunomia Middleware
-    participant MCPServer as FastMCP Server
-    participant EunomiaServer as Eunomia Server
+    participant MCPClient as MCP 客户端
+    participant EunomiaMiddleware as Eunomia 中间件
+    participant MCPServer as FastMCP 服务器
+    participant EunomiaServer as Eunomia 服务器
 
-    MCPClient->>EunomiaMiddleware: MCP Execution Request (e.g., tools/call)
-    EunomiaMiddleware->>EunomiaServer: Authorization Check
-    EunomiaServer->>EunomiaMiddleware: Authorization Decision
-    EunomiaMiddleware-->>MCPClient: MCP Unauthorized Error (if denied)
-    EunomiaMiddleware->>MCPServer: MCP Execution Request (if allowed)
-    MCPServer-->>EunomiaMiddleware: MCP Execution Response (if allowed)
-    EunomiaMiddleware-->>MCPClient: MCP Execution Response (if allowed)
+    MCPClient->>EunomiaMiddleware: MCP 列表请求 (例如：tools/list)
+    EunomiaMiddleware->>MCPServer: MCP 列表请求
+    MCPServer-->>EunomiaMiddleware: MCP 列表响应
+    EunomiaMiddleware->>EunomiaServer: 授权检查
+    EunomiaServer->>EunomiaMiddleware: 授权决策
+    EunomiaMiddleware-->>MCPClient: 过滤后的 MCP 列表响应
 ```
 
-## Add Authorization to Your Server
+### 执行操作
+
+中间件作为执行操作（`tools/call`、`resources/read`、`prompts/get`）的防火墙，阻止未由定义策略授权的操作。
+
+```mermaid
+sequenceDiagram
+    participant MCPClient as MCP 客户端
+    participant EunomiaMiddleware as Eunomia 中间件
+    participant MCPServer as FastMCP 服务器
+    participant EunomiaServer as Eunomia 服务器
+
+    MCPClient->>EunomiaMiddleware: MCP 执行请求 (例如：tools/call)
+    EunomiaMiddleware->>EunomiaServer: 授权检查
+    EunomiaServer->>EunomiaMiddleware: 授权决策
+    EunomiaMiddleware-->>MCPClient: MCP 未授权错误 (如果拒绝)
+    EunomiaMiddleware->>MCPServer: MCP 执行请求 (如果允许)
+    MCPServer-->>EunomiaMiddleware: MCP 执行响应 (如果允许)
+    EunomiaMiddleware-->>MCPClient: MCP 执行响应 (如果允许)
+```
+
+## 为您的服务器添加授权
 
 <Note>
-Eunomia is an AI-specific authorization server that handles policy decisions. The server runs embedded within your MCP server by default for a zero-effort configuration, but can alternatively be run remotely for centralized policy decisions.
+Eunomia 是一个专门处理策略决策的 AI 特定授权服务器。默认情况下，服务器嵌入在您的 MCP 服务器内运行，实现零配置，但也可以远程运行以实现集中式策略决策。
 
 </Note>
 
-### Create a Server with Authorization
+### 创建带有授权的服务器
 
-First, install the `eunomia-mcp` package:
+首先，安装 `eunomia-mcp` 包：
 
 ```bash
 pip install eunomia-mcp
 ```
 
-Then create a FastMCP server and add the Eunomia middleware in one line:
+然后创建一个 FastMCP 服务器并在一行中添加 Eunomia 中间件：
 
 ```python server.py
 from fastmcp import FastMCP
 from eunomia_mcp import create_eunomia_middleware
 
-# Create your FastMCP server
-mcp = FastMCP("Secure MCP Server 🔒")
+# 创建您的 FastMCP 服务器
+mcp = FastMCP("安全 MCP 服务器 🔒")
 
 @mcp.tool()
 def add(a: int, b: int) -> int:
-    """Add two numbers"""
+    """将两个数字相加"""
     return a + b
 
-# Add middleware to your server
+# 为您的服务器添加中间件
 middleware = create_eunomia_middleware(policy_file="mcp_policies.json")
 mcp.add_middleware(middleware)
 
@@ -89,39 +89,37 @@ if __name__ == "__main__":
     mcp.run()
 ```
 
-### Configure Access Policies
+### 配置访问策略
 
-Use the `eunomia-mcp` CLI in your terminal to manage your authorization policies:
+在终端中使用 `eunomia-mcp` CLI 来管理您的授权策略：
 
 ```bash
-# Create a default policy file
+# 创建默认策略文件
 eunomia-mcp init
 
-# Or create a policy file customized for your FastMCP server
+# 或者为您的 FastMCP 服务器创建自定义策略文件
 eunomia-mcp init --custom-mcp "app.server:mcp"
 ```
 
-This creates `mcp_policies.json` file that you can further edit to your access control needs.
+这将创建 `mcp_policies.json` 文件，您可以根据访问控制需要进一步编辑。
 
 ```bash
-# Once edited, validate your policy file
+# 编辑完成后，验证您的策略文件
 eunomia-mcp validate mcp_policies.json
 ```
 
-### Run the Server
+### 运行服务器
 
-Start your FastMCP server normally:
+正常启动您的 FastMCP 服务器：
 
 ```bash
 python server.py
 ```
 
-The middleware will now intercept all MCP requests and check them against your policies. Requests include agent identification through headers like `X-Agent-ID`, `X-User-ID`, `User-Agent`, or `Authorization` and an automatic mapping of MCP methods to authorization resources and actions.
+中间件现在将拦截所有 MCP 请求并根据您的策略检查它们。请求包括通过 `X-Agent-ID`、`X-User-ID`、`User-Agent` 或 `Authorization` 等标头的代理识别，以及 MCP 方法到授权资源和操作的自动映射。
 
 <Tip>
-  For detailed policy configuration, custom authentication, and remote
-  deployments, visit the [Eunomia MCP Middleware
-  repository][eunomia-mcp-github].
+  有关详细的策略配置、自定义身份验证和远程部署，请访问 [Eunomia MCP 中间件仓库][eunomia-mcp-github]。
 </Tip>
 
 [eunomia-github]: https://github.com/whataboutyou-ai/eunomia

@@ -1,7 +1,7 @@
 ---
 title: AuthKit 🤝 FastMCP
 sidebarTitle: AuthKit
-description: Secure your FastMCP server with AuthKit by WorkOS
+description: 使用 WorkOS 的 AuthKit 保护您的 FastMCP 服务器
 icon: shield-check
 tag: NEW
 ---
@@ -10,60 +10,60 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 <VersionBadge version="2.11.0" />
 
-This guide shows you how to secure your FastMCP server using WorkOS's **AuthKit**, a complete authentication and user management solution. This integration uses the [**Remote OAuth**](/zh/servers/auth/remote-oauth) pattern, where AuthKit handles user login and your FastMCP server validates the tokens.
+本指南向您展示如何使用 WorkOS 的 **AuthKit**（一个完整的身份验证和用户管理解决方案）来保护您的 FastMCP 服务器。此集成使用[**远程 OAuth**](/zh/servers/auth/remote-oauth) 模式，其中 AuthKit 处理用户登录，您的 FastMCP 服务器验证令牌。
 
 
-## Configuration
-### Prerequisites
+## 配置
+### 先决条件
 
-Before you begin, you will need:
-1.  A **[WorkOS Account](https://workos.com/)** and a new **Project**.
-2.  An **[AuthKit](https://www.authkit.com/)** instance configured within your WorkOS project.
-3.  Your FastMCP server's URL (can be localhost for development, e.g., `http://localhost:8000`).
+在开始之前，您需要：
+1.  一个 **[WorkOS 账户](https://workos.com/)** 和一个新的**项目**。
+2.  在您的 WorkOS 项目中配置的 **[AuthKit](https://www.authkit.com/)** 实例。
+3.  您的 FastMCP 服务器的 URL（开发时可以是 localhost，例如 `http://localhost:8000`）。
 
-### Step 1: AuthKit Configuration
+### 步骤 1：AuthKit 配置
 
-In your WorkOS Dashboard, enable AuthKit and configure the following settings:
+在您的 WorkOS 仪表板中，启用 AuthKit 并配置以下设置：
 
 <Steps>
-<Step title="Enable Dynamic Client Registration">
-    Go to **Applications → Configuration** and enable **Dynamic Client Registration**. This allows MCP clients register with your application automatically.
+<Step title="启用动态客户端注册">
+    转到 **Applications → Configuration** 并启用 **Dynamic Client Registration**。这允许 MCP 客户端自动注册到您的应用程序。
 
     ![Enable Dynamic Client Registration](./images/authkit/enable_dcr.png)
 </Step>
 
-<Step title="Note Your AuthKit Domain">
-    Find your **AuthKit Domain** on the configuration page. It will look like `https://your-project-12345.authkit.app`. You'll need this for your FastMCP server configuration.
+<Step title="记录您的 AuthKit 域名">
+    在配置页面上找到您的 **AuthKit Domain**。它看起来像 `https://your-project-12345.authkit.app`。您在 FastMCP 服务器配置中需要这个域名。
 </Step>
 </Steps>
 
-### Step 2: FastMCP Configuration
+### 步骤 2：FastMCP 配置
 
-Create your FastMCP server file and use the `AuthKitProvider` to handle all the OAuth integration automatically:
+创建您的 FastMCP 服务器文件并使用 `AuthKitProvider` 自动处理所有 OAuth 集成：
 
 ```python server.py
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.workos import AuthKitProvider
 
-# The AuthKitProvider automatically discovers WorkOS endpoints
-# and configures JWT token validation
+# AuthKitProvider 会自动发现 WorkOS 端点
+# 并配置 JWT 令牌验证
 auth_provider = AuthKitProvider(
     authkit_domain="https://your-project-12345.authkit.app",
-    base_url="http://localhost:8000"  # Use your actual server URL
+    base_url="http://localhost:8000"  # 使用您的实际服务器URL
 )
 
-mcp = FastMCP(name="AuthKit Secured App", auth=auth_provider)
+mcp = FastMCP(name="AuthKit 安全应用程序", auth=auth_provider)
 ```
 
-## Testing
+## 测试
 
-To test your server, you can use the `fastmcp` CLI to run it locally. Assuming you've saved the above code to `server.py` (after replacing the `authkit_domain` and `base_url` with your actual values!), you can run the following command:
+要测试您的服务器，您可以使用 `fastmcp` CLI 在本地运行它。假设您已将上述代码保存到 `server.py`（在将 `authkit_domain` 和 `base_url` 替换为您的实际值之后！），您可以运行以下命令：
 
 ```bash
 fastmcp run server.py --transport http --port 8000
 ```
 
-Now, you can use a FastMCP client to test that you can reach your server after authenticating:
+现在，您可以使用 FastMCP 客户端测试在身份验证后是否可以访问您的服务器：
 
 ```python
 from fastmcp import Client
@@ -78,26 +78,26 @@ if __name__ == "__main__":
 ```
 
 
-## Environment Variables
+## 环境变量
 
-You can use environment variables to configure an AuthKit provider without instantiating the provider in your code.
+您可以使用环境变量来配置 AuthKit 提供程序，而无需在代码中实例化提供程序。
 
-To do so, set the following environment variables:
+为此，请设置以下环境变量：
 
 ```bash
-# instruct FastMCP to use the AuthKit provider
+# 明确 FastMCP 使用 AuthKit 提供商
 FASTMCP_SERVER_AUTH=AUTHKIT
 
-# configure the AuthKit provider
+# 配置 AuthKit
 FASTMCP_SERVER_AUTH_AUTHKITPROVIDER_AUTHKIT_DOMAIN="https://your-project-12345.authkit.app"
 FASTMCP_SERVER_AUTH_AUTHKITPROVIDER_BASE_URL="http://localhost:8000"
 ```
 
-For clarity, you do **not** need to instantiate an auth provider when using environment variables:
+为了清楚起见，在使用环境变量时，您**不**需要实例化身份验证提供程序：
 
 ```python server.py
 from fastmcp import FastMCP
 
-# FastMCP automatically creates the AuthKitProvider from environment variables
-mcp = FastMCP(name="WorkOS Secured App")
+# FastMCP 会自动根据环境变量创建 AuthKitProvider 服务。
+mcp = FastMCP(name="WorkOS 安全应用程序")
 ```

@@ -1,7 +1,7 @@
 ---
 title: OpenAI API 🤝 FastMCP
 sidebarTitle: OpenAI API
-description: Call FastMCP servers from the OpenAI API
+description: 从 OpenAI API 调用 FastMCP 服务器
 icon: message-code
 ---
 
@@ -10,46 +10,46 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 ## Responses API
 
-OpenAI's [Responses API](https://platform.openai.com/docs/api-reference/responses) supports [MCP servers](https://platform.openai.com/docs/guides/tools-remote-mcp) as remote tool sources, allowing you to extend AI capabilities with custom functions.
+OpenAI 的 [Responses API](https://platform.openai.com/docs/api-reference/responses) 支持 [MCP 服务器](https://platform.openai.com/docs/guides/tools-remote-mcp)作为远程工具源，允许您使用自定义函数扩展 AI 功能。
 
 <Note>
-The Responses API is a distinct API from OpenAI's Completions API or Assistants API. At this time, only the Responses API supports MCP.
+Responses API 是与 OpenAI 的 Completions API 或 Assistants API 不同的独立 API。目前，只有 Responses API 支持 MCP。
 </Note>
 
 <Tip>
-Currently, the Responses API only accesses **tools** from MCP servers—it queries the `list_tools` endpoint and exposes those functions to the AI agent. Other MCP features like resources and prompts are not currently supported.
+目前，Responses API 仅访问 MCP 服务器的**工具**——它查询 `list_tools` 端点并将这些功能暴露给 AI 代理。目前不支持其他 MCP 功能，如资源和提示。
 </Tip>
 
 
-### Create a Server
+### 创建服务器
 
-First, create a FastMCP server with the tools you want to expose. For this example, we'll create a server with a single tool that rolls dice.
+首先，创建一个包含您要暴露的工具的 FastMCP 服务器。在此示例中，我们将创建一个带有掷骰子单一工具的服务器。
 
 ```python server.py
 import random
 from fastmcp import FastMCP
 
-mcp = FastMCP(name="Dice Roller")
+mcp = FastMCP(name="骰子投掷器")
 
 @mcp.tool
 def roll_dice(n_dice: int) -> list[int]:
-    """Roll `n_dice` 6-sided dice and return the results."""
+    """掷 `n_dice` 个六面骰子并返回结果。"""
     return [random.randint(1, 6) for _ in range(n_dice)]
 
 if __name__ == "__main__":
     mcp.run(transport="http", port=8000)
 ```
 
-### Deploy the Server
+### 部署服务器
 
-Your server must be deployed to a public URL in order for OpenAI to access it.
+您的服务器必须部署到公共 URL，以便 OpenAI 能够访问它。
 
-For development, you can use tools like `ngrok` to temporarily expose a locally-running server to the internet. We'll do that for this example (you may need to install `ngrok` and create a free account), but you can use any other method to deploy your server.
+对于开发，您可以使用像 `ngrok` 这样的工具临时将本地运行的服务器暴露到互联网。我们将在此示例中这样做（您可能需要安装 `ngrok` 并创建一个免费账户），但您可以使用任何其他方法来部署您的服务器。
 
-Assuming you saved the above code as `server.py`, you can run the following two commands in two separate terminals to deploy your server and expose it to the internet:
+假设您将上述代码保存为 `server.py`，您可以在两个独立的终端中运行以下两个命令来部署您的服务器并将其暴露到互联网：
 
 <CodeGroup>
-```bash FastMCP server
+```bash FastMCP 服务器
 python server.py
 ```
 
@@ -59,29 +59,29 @@ ngrok http 8000
 </CodeGroup>
 
 <Warning>
-This exposes your unauthenticated server to the internet. Only run this command in a safe environment if you understand the risks.
+这会将您的未经身份验证的服务器暴露到互联网。只有在您了解风险的情况下，才在安全环境中运行此命令。
 </Warning>
 
-### Call the Server
+### 调用服务器
 
-To use the Responses API, you'll need to install the OpenAI Python SDK (not included with FastMCP):
+要使用 Responses API，您需要安装 OpenAI Python SDK（FastMCP 中不包含）：
 
 ```bash
 pip install openai
 ```
 
-You'll also need to authenticate with OpenAI. You can do this by setting the `OPENAI_API_KEY` environment variable. Consult the OpenAI SDK documentation for more information.
+您还需要通过 OpenAI 进行身份验证。您可以通过设置 `OPENAI_API_KEY` 环境变量来完成此操作。有关更多信息，请查阅 OpenAI SDK 文档。
 
 ```bash
 export OPENAI_API_KEY="your-api-key"
 ```
 
-Here is an example of how to call your server from Python. Note that you'll need to replace `https://your-server-url.com` with the actual URL of your server. In addition, we use `/mcp/` as the endpoint because we deployed a streamable-HTTP server with the default path; you may need to use a different endpoint if you customized your server's deployment.
+以下是如何从 Python 调用您的服务器的示例。请注意，您需要将 `https://your-server-url.com` 替换为您服务器的实际 URL。此外，我们使用 `/mcp/` 作为端点，因为我们部署了一个使用默认路径的可流式 HTTP 服务器；如果您自定义了服务器的部署，可能需要使用不同的端点。
 
 ```python {4, 11-16}
 from openai import OpenAI
 
-# Your server URL (replace with your actual URL)
+# 您的服务器 URL（替换为您的实际 URL）
 url = 'https://your-server-url.com'
 
 client = OpenAI()
@@ -96,30 +96,30 @@ resp = client.responses.create(
             "require_approval": "never",
         },
     ],
-    input="Roll a few dice!",
+    input="投几个骰子！",
 )
 
 print(resp.output_text)
 ```
-If you run this code, you'll see something like the following output:
+如果您运行此代码，您将看到类似以下的输出：
 
 ```text
-You rolled 3 dice and got the following results: 6, 4, and 2!
+您投了 3 个骰子，得到以下结果：6、4 和 2！
 ```
 
-### Authentication
+### 身份验证
 
 <VersionBadge version="2.6.0" />
 
-The Responses API can include headers to authenticate the request, which means you don't have to worry about your server being publicly accessible.
+Responses API 可以包含用于身份验证请求的请求头，这意味着您不必担心您的服务器被公开访问。
 
-#### Server Authentication
+#### 服务器身份验证
 
-The simplest way to add authentication to the server is to use a bearer token scheme. 
+向服务器添加身份验证的最简单方法是使用承载令牌方案。
 
-For this example, we'll quickly generate our own tokens with FastMCP's `RSAKeyPair` utility, but this may not be appropriate for production use. For more details, see the complete server-side [Token Verification](/zh/servers/auth/token-verification) documentation.
+在此示例中，我们将使用 FastMCP 的 `RSAKeyPair` 工具快速生成我们自己的令牌，但这可能不适用于生产使用。有关更多详细信息，请参阅完整的服务器端[令牌验证](/zh/servers/auth/token-verification)文档。
 
-We'll start by creating an RSA key pair to sign and verify tokens.
+我们将首先创建一个 RSA 密钥对来签名和验证令牌。
 
 ```python
 from fastmcp.server.auth.providers.jwt import RSAKeyPair
@@ -129,10 +129,10 @@ access_token = key_pair.create_token(audience="dice-server")
 ```
 
 <Warning>
-FastMCP's `RSAKeyPair` utility is for development and testing only.
-</Warning> 
+FastMCP 的 `RSAKeyPair` 工具仅用于开发和测试。
+</Warning>
 
-Next, we'll create a `JWTVerifier` to authenticate the server. 
+接下来，我们将创建一个 `JWTVerifier` 来验证服务器。 
 
 ```python
 from fastmcp import FastMCP
@@ -146,7 +146,7 @@ auth = JWTVerifier(
 mcp = FastMCP(name="Dice Roller", auth=auth)
 ```
 
-Here is a complete example that you can copy/paste. For simplicity and the purposes of this example only, it will print the token to the console. **Do NOT do this in production!**
+以下是一个您可以复制/粘贴的完整示例。为了简单起见并仅为此示例目的，它将把令牌打印到控制台。**在生产中请勿这样做！**
 
 ```python server.py [expandable]
 from fastmcp import FastMCP
@@ -166,22 +166,22 @@ mcp = FastMCP(name="Dice Roller", auth=auth)
 
 @mcp.tool
 def roll_dice(n_dice: int) -> list[int]:
-    """Roll `n_dice` 6-sided dice and return the results."""
+    """掷 `n_dice` 个六面骰子并返回结果。"""
     return [random.randint(1, 6) for _ in range(n_dice)]
 
 if __name__ == "__main__":
-    print(f"\n---\n\n🔑 Dice Roller access token:\n\n{access_token}\n\n---\n")
+    print(f"\n---\n\n🔑 骰子投掷器访问令牌：\n\n{access_token}\n\n---\n")
     mcp.run(transport="http", port=8000)
 ```
 
-#### Client Authentication
+#### 客户端身份验证
 
-If you try to call the authenticated server with the same OpenAI code we wrote earlier, you'll get an error like this:
+如果您尝试使用我们之前编写的相同 OpenAI 代码调用经过身份验证的服务器，您将收到类似以下的错误：
 
 ```python
 pythonAPIStatusError: Error code: 424 - {
     "error": {
-        "message": "Error retrieving tool list from MCP server: 'dice_server'. Http status code: 401 (Unauthorized)",
+        "message": "从 MCP 服务器获取工具列表时出错： 'dice_server'。Http 状态代码：401（未授权）",
         "type": "external_connector_error",
         "param": "tools",
         "code": "http_error"
@@ -189,18 +189,18 @@ pythonAPIStatusError: Error code: 424 - {
 }
 ```
 
-As expected, the server is rejecting the request because it's not authenticated.
+如预期的那样，服务器拒绝了请求，因为它未经身份验证。
 
-To authenticate the client, you can pass the token in the `Authorization` header with the `Bearer` scheme:
+要验证客户端，您可以在 `Authorization` 请求头中使用 `Bearer` 方案传递令牌：
 
 
 ```python {4, 7, 19-21} [expandable]
 from openai import OpenAI
 
-# Your server URL (replace with your actual URL)
+# 您的服务器 URL（替换为您的实际 URL）
 url = 'https://your-server-url.com'
 
-# Your access token (replace with your actual token)
+# 您的访问令牌（替换为您的实际令牌）
 access_token = 'your-access-token'
 
 client = OpenAI()
@@ -218,10 +218,10 @@ resp = client.responses.create(
             }
         },
     ],
-    input="Roll a few dice!",
+    input="投几个骰子！",
 )
 
 print(resp.output_text)
 ```
 
-You should now see the dice roll results in the output.
+现在您应该在输出中看到骰子投掷结果。

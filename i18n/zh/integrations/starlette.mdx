@@ -1,7 +1,7 @@
 ---
 title: Starlette / ASGI 🤝 FastMCP
 sidebarTitle: Starlette / ASGI
-description: Integrate FastMCP servers into ASGI applications
+description: 将 FastMCP 服务器集成到 ASGI 应用程序中
 icon: server
 ---
 
@@ -9,61 +9,61 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <VersionBadge version="2.3.1" />
 
-FastMCP servers can be integrated into existing ASGI applications, allowing you to add MCP functionality to your web applications. This is useful for:
+FastMCP 服务器可以集成到现有的 ASGI 应用程序中，允许您为 Web 应用程序添加 MCP 功能。这对以下场景很有用：
 
-- Adding MCP functionality to an existing website or API
-- Mounting MCP servers under specific URL paths
-- Combining multiple services in a single application
-- Leveraging existing authentication and middleware
+- 为现有网站或 API 添加 MCP 功能
+- 在特定 URL 路径下挂载 MCP 服务器
+- 在单个应用程序中组合多个服务
+- 利用现有的身份验证和中间件
 
-## Basic Usage
+## 基本用法
 
-To integrate a FastMCP server into an ASGI application, use the `http_app()` method to obtain a Starlette application instance:
+要将 FastMCP 服务器集成到 ASGI 应用程序中，请使用 `http_app()` 方法获取 Starlette 应用程序实例：
 
 <Tip>
-The `http_app()` method is new in FastMCP 2.3.2. In older versions, use `sse_app()` for SSE transport or `streamable_http_app()` for Streamable HTTP transport.
+`http_app()` 方法是 FastMCP 2.3.2 中的新功能。在较旧版本中，对于 SSE 传输使用 `sse_app()`，对于可流式 HTTP 传输使用 `streamable_http_app()`。
 </Tip>
 
 ```python
 from fastmcp import FastMCP
 
-mcp = FastMCP("MyServer")
+mcp = FastMCP("我的服务器")
 
 @mcp.tool
 def hello(name: str) -> str:
-    return f"Hello, {name}!"
+    return f"您好，{name}！"
 
-# Get a Starlette app instance for Streamable HTTP transport (recommended)
+# 获取可流式 HTTP 传输的 Starlette 应用程序实例（推荐）
 http_app = mcp.http_app()
 
-# For legacy SSE transport (deprecated)
+# 用于传统 SSE 传输（已弃用）
 sse_app = mcp.http_app(transport="sse")
 ```
 
-The returned Starlette application can be integrated with other ASGI-compatible web frameworks. The MCP server's endpoint is mounted at `/mcp/` for Streamable HTTP transport and `/sse/` for SSE transport.
+返回的 Starlette 应用程序可以与其他兼容 ASGI 的 Web 框架集成。MCP 服务器的端点在可流式 HTTP 传输中挂载在 `/mcp/`，在 SSE 传输中挂载在 `/sse/`。
 
-### Configuration Options
+### 配置选项
 
-You can customize the endpoint path and access the FastMCP server instance:
+您可以自定义端点路径并访问 FastMCP 服务器实例：
 
 ```python
-# Custom endpoint path
+# 自定义端点路径
 http_app = mcp.http_app(path="/custom-mcp-path")
 
-# Access the FastMCP server from middleware/routes
-# The server is available at: request.app.state.fastmcp_server
+# 从中间件/路由访问 FastMCP 服务器
+# 服务器可通过以下方式访问：request.app.state.fastmcp_server
 ```
 
-### Adding Custom Routes
+### 添加自定义路由
 
-You can add custom web routes directly to your FastMCP server using the `@custom_route` decorator:
+您可以使用 `@custom_route` 装饰器直接向 FastMCP 服务器添加自定义 Web 路由：
 
 ```python
 from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-mcp = FastMCP("MyServer")
+mcp = FastMCP("我的服务器")
 
 @mcp.custom_route("/api/status", methods=["GET"])
 async def get_status(request: Request):
@@ -72,16 +72,16 @@ async def get_status(request: Request):
 http_app = mcp.http_app()
 ```
 
-#### Health Check Endpoints
+#### 健康检查端点
 
-Health checks are commonly needed for monitoring and load balancing:
+健康检查通常用于监控和负载均衡：
 
 ```python
 from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-mcp = FastMCP("MyServer")
+mcp = FastMCP("我的服务器")
 
 @mcp.custom_route("/health", methods=["GET"])
 async def health_check(request: Request):
@@ -90,59 +90,59 @@ async def health_check(request: Request):
 http_app = mcp.http_app()
 ```
 
-The health endpoint will be available at `/health` alongside your MCP endpoint at `/mcp/`.
+健康检查端点将在 `/health` 处可用，与位于 `/mcp/` 的 MCP 端点并列。
 
-## Starlette Integration
+## Starlette 集成
 
-Mount your FastMCP server in another Starlette application:
+在另一个 Starlette 应用程序中挂载您的 FastMCP 服务器：
 
 ```python
 from fastmcp import FastMCP
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-# Create your FastMCP server
-mcp = FastMCP("MyServer")
+# 创建您的 FastMCP 服务器
+mcp = FastMCP("我的服务器")
 
 @mcp.tool
 def analyze(data: str) -> dict:
-    return {"result": f"Analyzed: {data}"}
+    return {"result": f"分析结果：{data}"}
 
-# Create the ASGI app
+# 创建 ASGI 应用程序
 mcp_app = mcp.http_app(path='/mcp')
 
-# Create a Starlette app and mount the MCP server
+# 创建 Starlette 应用程序并挂载 MCP 服务器
 app = Starlette(
     routes=[
         Mount("/mcp-server", app=mcp_app),
-        # Add other routes as needed
+        # 根需添加其他路由
     ],
     lifespan=mcp_app.lifespan,
 )
 ```
 
-The MCP endpoint will be available at `/mcp-server/mcp/` of the resulting Starlette app.
+MCP 端点将在生成的 Starlette 应用程序的 `/mcp-server/mcp/` 处可用。
 
 <Warning>
-For Streamable HTTP transport, you **must** pass the lifespan context from the FastMCP app to the resulting Starlette app, as nested lifespans are not recognized. Otherwise, the FastMCP server's session manager will not be properly initialized.
+对于可流式 HTTP 传输，您**必须**将生命周期上下文从 FastMCP 应用程序传递给生成的 Starlette 应用程序，因为嵌套的生命周期不会被识别。否则，FastMCP 服务器的会话管理器将不会正确初始化。
 </Warning>
 
-### Nested Mounts
+### 嵌套挂载
 
-You can create complex routing structures by nesting mounts:
+您可以通过嵌套挂载创建复杂的路由结构：
 
 ```python
 from fastmcp import FastMCP
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-# Create your FastMCP server
-mcp = FastMCP("MyServer")
+# 创建您的 FastMCP 服务器
+mcp = FastMCP("我的服务器")
 
-# Create the ASGI app
+# 创建 ASGI 应用程序
 mcp_app = mcp.http_app(path='/mcp')
 
-# Create nested application structure
+# 创建嵌套应用程序结构
 inner_app = Starlette(routes=[Mount("/inner", app=mcp_app)])
 app = Starlette(
     routes=[Mount("/outer", app=inner_app)],
@@ -150,23 +150,23 @@ app = Starlette(
 )
 ```
 
-In this setup, the MCP server is accessible at the `/outer/inner/mcp/` path.
+在此设置中，MCP 服务器可在 `/outer/inner/mcp/` 路径下访问。
 
-## Custom Middleware
+## 自定义中间件
 
 <VersionBadge version="2.3.2" />
 
-Add custom Starlette middleware to your FastMCP ASGI apps by passing a list of middleware instances:
+通过传递中间件实例列表，向您的 FastMCP ASGI 应用程序添加自定义 Starlette 中间件：
 
 ```python
 from fastmcp import FastMCP
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 
-# Create your FastMCP server
-mcp = FastMCP("MyServer")
+# 创建您的 FastMCP 服务器
+mcp = FastMCP("我的服务器")
 
-# Define custom middleware
+# 定义自定义中间件
 custom_middleware = [
     Middleware(
         CORSMiddleware,
@@ -176,13 +176,13 @@ custom_middleware = [
     )
 ]
 
-# Create ASGI app with middleware
+# 创建带有中间件的 ASGI 应用程序
 http_app = mcp.http_app(custom_middleware=custom_middleware)
 ```
 
-## Running the Server
+## 运行服务器
 
-To run your ASGI application, use an ASGI server like `uvicorn`:
+要运行您的 ASGI 应用程序，请使用像 `uvicorn` 这样的 ASGI 服务器：
 
 ```python
 import uvicorn
@@ -191,23 +191,23 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
 
-Or from the command line:
+或从命令行：
 
 ```bash
 uvicorn path.to.your.app:app --host 0.0.0.0 --port 8000
 ```
 
-## Framework-Specific Integration
+## 框架特定集成
 
 ### FastAPI
 
-For FastAPI-specific integration patterns including both mounting MCP servers into FastAPI apps and generating MCP servers from FastAPI apps, see the [FastAPI Integration guide](/zh/integrations/fastapi).
+对于 FastAPI 特定的集成模式，包括将 MCP 服务器挂载到 FastAPI 应用程序中和从 FastAPI 应用程序生成 MCP 服务器，请参阅 [FastAPI 集成指南](/zh/integrations/fastapi)。
 
-### Other ASGI Frameworks
+### 其他 ASGI 框架
 
-The patterns shown here work with any ASGI-compatible framework. The key requirements are:
+这里显示的模式适用于任何兼容 ASGI 的框架。关键要求是：
 
-1. Mount the FastMCP ASGI app at your desired path
-2. Pass the lifespan context to your root application
-3. Configure any necessary middleware or authentication
+1. 在您所需的路径下挂载 FastMCP ASGI 应用程序
+2. 将生命周期上下文传递给您的根应用程序
+3. 配置任何必要的中间件或身份验证
 

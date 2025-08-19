@@ -1,45 +1,45 @@
 ---
 title: Anthropic API 🤝 FastMCP
 sidebarTitle: Anthropic API
-description: Call FastMCP servers from the Anthropic API
+description: 从 Anthropic API 调用 FastMCP 服务器
 icon: message-code
 ---
 
 import { VersionBadge } from "/snippets/version-badge.mdx"
 
 
-Anthropic's [Messages API](https://docs.anthropic.com/en/api/messages) supports MCP servers as remote tool sources. This tutorial will show you how to create a FastMCP server and deploy it to a public URL, then how to call it from the Messages API.
+Anthropic 的 [Messages API](https://docs.anthropic.com/en/api/messages) 支持将 MCP 服务器作为远程工具源。本教程将向您展示如何创建一个 FastMCP 服务器并将其部署到公共 URL，然后如何从 Messages API 调用它。
 
 <Tip>
-Currently, the MCP connector only accesses **tools** from MCP servers—it queries the `list_tools` endpoint and exposes those functions to Claude. Other MCP features like resources and prompts are not currently supported. You can read more about the MCP connector in the [Anthropic documentation](https://docs.anthropic.com/en/docs/agents-and-tools/mcp-connector).
+目前，MCP 连接器仅从 MCP 服务器访问**工具**——它查询 `list_tools` 端点并将这些功能公开给 Claude。其他 MCP 功能（如资源和提示）目前不受支持。您可以在 [Anthropic 文档](https://docs.anthropic.com/en/docs/agents-and-tools/mcp-connector) 中了解更多关于 MCP 连接器的信息。
 </Tip>
 
-## Create a Server
+## 创建服务器
 
-First, create a FastMCP server with the tools you want to expose. For this example, we'll create a server with a single tool that rolls dice.
+首先，创建一个包含您要公开的工具的 FastMCP 服务器。在此示例中，我们将创建一个服务器，它包含一个单一的工具，这个工具能掷骰子。
 
 ```python server.py
 import random
 from fastmcp import FastMCP
 
-mcp = FastMCP(name="Dice Roller")
+mcp = FastMCP(name="骰子投掷器")
 
 @mcp.tool
 def roll_dice(n_dice: int) -> list[int]:
-    """Roll `n_dice` 6-sided dice and return the results."""
+    """掷 `n_dice` 个六面骰子，并返回结果。"""
     return [random.randint(1, 6) for _ in range(n_dice)]
 
 if __name__ == "__main__":
     mcp.run(transport="http", port=8000)
 ```
 
-## Deploy the Server
+## 部署服务器
 
-Your server must be deployed to a public URL in order for Anthropic to access it. The MCP connector supports both SSE and Streamable HTTP transports.
+您的服务器必须部署到公共 URL，以便 Anthropic 访问它。MCP 连接器支持 SSE 和 Streamable HTTP 传输。
 
-For development, you can use tools like `ngrok` to temporarily expose a locally-running server to the internet. We'll do that for this example (you may need to install `ngrok` and create a free account), but you can use any other method to deploy your server.
+对于开发，您可以使用 `ngrok` 等工具临时将本地运行的服务器暴露到互联网。我们将在此示例中这样做（您可能需要安装 `ngrok` 并创建一个免费账户），但您可以使用任何其他方法来部署您的服务器。
 
-Assuming you saved the above code as `server.py`, you can run the following two commands in two separate terminals to deploy your server and expose it to the internet:
+假设您将上述代码保存为 `server.py`，您可以在两个单独的终端中运行以下两个命令来部署您的服务器并将其暴露到互联网：
 
 <CodeGroup>
 ```bash FastMCP server
@@ -52,30 +52,30 @@ ngrok http 8000
 </CodeGroup>
 
 <Warning>
-This exposes your unauthenticated server to the internet. Only run this command in a safe environment if you understand the risks.
+这会将您的未认证服务器暴露到互联网。如果您了解风险，只能在安全环境中运行此命令。
 </Warning>
 
-## Call the Server
+## 调用服务器
 
-To use the Messages API with MCP servers, you'll need to install the Anthropic Python SDK (not included with FastMCP):
+要在 MCP 服务器上使用 Messages API，您需要安装 Anthropic Python SDK（FastMCP 不包含）：
 
 ```bash
 pip install anthropic
 ```
 
-You'll also need to authenticate with Anthropic. You can do this by setting the `ANTHROPIC_API_KEY` environment variable. Consult the Anthropic SDK documentation for more information.
+您还需要向 Anthropic 进行身份验证。您可以通过设置 `ANTHROPIC_API_KEY` 环境变量来实现。请查阅 Anthropic SDK 文档以获取更多信息。
 
 ```bash
 export ANTHROPIC_API_KEY="your-api-key"
 ```
 
-Here is an example of how to call your server from Python. Note that you'll need to replace `https://your-server-url.com` with the actual URL of your server. In addition, we use `/mcp/` as the endpoint because we deployed a streamable-HTTP server with the default path; you may need to use a different endpoint if you customized your server's deployment. **At this time you must also include the `extra_headers` parameter with the `anthropic-beta` header.**
+以下是如何从 Python 调用您的服务器的示例。请注意，您需要将 `https://your-server-url.com` 替换为您服务器的实际 URL。此外，我们使用 `/mcp/` 作为端点，因为我们部署了一个使用默认路径的 streamable-HTTP 服务器；如果您自定义了服务器的部署，可能需要使用不同的端点。**目前您还必须包含带有 `anthropic-beta` 标头的 `extra_headers` 参数。**
 
 ```python {5, 13-22}
 import anthropic
 from rich import print
 
-# Your server URL (replace with your actual URL)
+# 您的服务器网址（请将其替换为您的实际网址）
 url = 'https://your-server-url.com'
 
 client = anthropic.Anthropic()
@@ -99,30 +99,30 @@ response = client.beta.messages.create(
 print(response.content)
 ```
 
-If you run this code, you'll see something like the following output:
+如果您运行此代码，您将看到如下输出：
 
 ```text
-I'll roll some dice for you! Let me use the dice rolling tool.
+我来为您掷骰子！让我使用掷骰子工具。
 
-I rolled 3 dice and got: 4, 2, 6
+我掷了 3 个骰子，得到：4、2、6
 
-The results were 4, 2, and 6. Would you like me to roll again or roll a different number of dice?
+结果是 4、2 和 6。您想让我再掷一次或掷不同数量的骰子吗？
 ```
 
 
-## Authentication
+## 身份验证
 
 <VersionBadge version="2.6.0" />
 
-The MCP connector supports OAuth authentication through authorization tokens, which means you can secure your server while still allowing Anthropic to access it.
+MCP 连接器通过授权令牌支持 OAuth 身份验证，这意味着您可以保护您的服务器，同时仍然允许 Anthropic 访问它。
 
-### Server Authentication
+### 服务器身份验证
 
-The simplest way to add authentication to the server is to use a bearer token scheme. 
+向服务器添加身份验证的最简单方法是使用承载令牌方案。
 
-For this example, we'll quickly generate our own tokens with FastMCP's `RSAKeyPair` utility, but this may not be appropriate for production use. For more details, see the complete server-side [Token Verification](/zh/servers/auth/token-verification) documentation.
+在此示例中，我们将使用 FastMCP 的 `RSAKeyPair` 实用程序快速生成我们自己的令牌，但这可能不适合生产使用。有关更多详细信息，请参阅完整的服务器端[令牌验证](/zh/servers/auth/token-verification)文档。
 
-We'll start by creating an RSA key pair to sign and verify tokens.
+我们将首先创建一个 RSA 密钥对来签名和验证令牌。
 
 ```python
 from fastmcp.server.auth.providers.jwt import RSAKeyPair
@@ -132,10 +132,10 @@ access_token = key_pair.create_token(audience="dice-server")
 ```
 
 <Warning>
-FastMCP's `RSAKeyPair` utility is for development and testing only.
+FastMCP 的 `RSAKeyPair` 实用程序仅用于开发和测试。
 </Warning> 
 
-Next, we'll create a `JWTVerifier` to authenticate the server. 
+接下来，我们将创建一个 `JWTVerifier` 来验证服务器。
 
 ```python
 from fastmcp import FastMCP
@@ -149,7 +149,7 @@ auth = JWTVerifier(
 mcp = FastMCP(name="Dice Roller", auth=auth)
 ```
 
-Here is a complete example that you can copy/paste. For simplicity and the purposes of this example only, it will print the token to the console. **Do NOT do this in production!**
+这是一个可以复制/粘贴的完整示例。为了简单起见，仅出于此示例的目的，它将令牌打印到控制台。**不要在生产环境中这样做！**
 
 ```python server.py [expandable]
 from fastmcp import FastMCP
@@ -169,38 +169,38 @@ mcp = FastMCP(name="Dice Roller", auth=auth)
 
 @mcp.tool
 def roll_dice(n_dice: int) -> list[int]:
-    """Roll `n_dice` 6-sided dice and return the results."""
+    """掷 `n_dice` 个六面骰子，并返回结果。"""
     return [random.randint(1, 6) for _ in range(n_dice)]
 
 if __name__ == "__main__":
-    print(f"\n---\n\n🔑 Dice Roller access token:\n\n{access_token}\n\n---\n")
+    print(f"\n---\n\n🔑 骰子投掷器 access token:\n\n{access_token}\n\n---\n")
     mcp.run(transport="http", port=8000)
 ```
 
-### Client Authentication
+### 客户端身份验证
 
-If you try to call the authenticated server with the same Anthropic code we wrote earlier, you'll get an error indicating that the server rejected the request because it's not authenticated.
+如果您尝试使用我们之前编写的相同 Anthropic 代码调用经过身份验证的服务器，您将收到一个错误，指示服务器因未进行身份验证而拒绝了请求。
 
 ```python
 Error code: 400 - {
     "type": "error", 
     "error": {
         "type": "invalid_request_error", 
-        "message": "MCP server 'dice-server' requires authentication. Please provide an authorization_token.",
+        "message": "MCP 服务器“dice-server”需要进行身份验证。请提供授权令牌。",
     },
 }
 ```
 
-To authenticate the client, you can pass the token using the `authorization_token` parameter in your MCP server configuration:
+要验证客户端，您可以在 MCP 服务器配置中使用 `authorization_token` 参数传递令牌：
 
 ```python {8, 21}
 import anthropic
 from rich import print
 
-# Your server URL (replace with your actual URL)
+# 您的服务器网址（请将其替换为您的实际网址）
 url = 'https://your-server-url.com'
 
-# Your access token (replace with your actual token)
+# 您的访问令牌（请将此处的“令牌”替换为您实际的令牌）
 access_token = 'your-access-token'
 
 client = anthropic.Anthropic()
@@ -225,4 +225,4 @@ response = client.beta.messages.create(
 print(response.content)
 ```
 
-You should now see the dice roll results in the output.
+您现在应该在输出中看到掷骰子结果。

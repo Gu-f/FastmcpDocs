@@ -1,48 +1,48 @@
 ---
 title: ChatGPT 🤝 FastMCP
 sidebarTitle: ChatGPT
-description: Connect FastMCP servers to ChatGPT Deep Research
+description: 将 FastMCP 服务器连接到 ChatGPT Deep Research
 icon: message-smile
 
 ---
 
-ChatGPT supports MCP servers through remote HTTP connections, allowing you to extend ChatGPT's capabilities with custom tools and knowledge from your FastMCP servers.
+ChatGPT 通过远程 HTTP 连接支持 MCP 服务器，允许您使用 FastMCP 服务器的自定义工具和知识扩展 ChatGPT 的功能。
 
 <Note>
-MCP integration with ChatGPT is currently limited to **Deep Research** functionality and is not available for general chat. This feature is available for ChatGPT Pro, Team, Enterprise, and Edu users.
+ChatGPT 的 MCP 集成目前仅限于 **Deep Research** 功能，不适用于一般聊天。此功能适用于 ChatGPT Pro、Team、Enterprise 和 Edu 用户。
 </Note>
 
 <Tip>
-OpenAI's official MCP documentation and examples are built with **FastMCP v2**! Check out their [simple Deep Research-style MCP server example](https://github.com/openai/sample-deep-research-mcp) for a quick reference similar to the one in this document, or their [more complete Deep Research example](https://github.com/openai/openai-cookbook/tree/main/examples/deep_research_api/how_to_build_a_deep_research_mcp_server) from the OpenAI Cookbook, which includes vector search and more.
+OpenAI 官方的 MCP 文档和示例是用 **FastMCP v2** 构建的！查看他们的[简单 Deep Research 风格 MCP 服务器示例](https://github.com/openai/sample-deep-research-mcp)以获得与本文档类似的快速参考，或者查看 OpenAI Cookbook 中[更完整的 Deep Research 示例](https://github.com/openai/openai-cookbook/tree/main/examples/deep_research_api/how_to_build_a_deep_research_mcp_server)，其中包括向量搜索等功能。
 </Tip>
 
-## Deep Research
+## 深度思考功能(Deep Research)
 
-ChatGPT's Deep Research feature requires MCP servers to be internet-accessible HTTP endpoints with **exactly two specific tools**:
+ChatGPT 的 Deep Research 功能要求 MCP 服务器是可通过互联网访问的 HTTP 端点，并包含**恰好两个特定工具**：
 
-- **`search`**: For searching through your resources and returning matching IDs
-- **`fetch`**: For retrieving the full content of specific resources by ID
+- **`search`**：用于搜索您的资源并返回匹配的 ID
+- **`fetch`**：用于通过 ID 检索特定资源的完整内容
 
 <Warning>
-If your server doesn't implement both `search` and `fetch` tools with the correct signatures, ChatGPT will show the error: "This MCP server doesn't implement our specification". Both tools are required.
+如果您的服务器没有实现具有正确签名的 `search` 和 `fetch` 工具，ChatGPT 将显示错误："This MCP server doesn't implement our specification"。两个工具都是必需的。
 </Warning>
 
-### Tool Descriptions Matter
+### 工具描述很重要
 
-Since ChatGPT needs to understand how to use your tools effectively, **write detailed tool descriptions**. The description teaches ChatGPT how to form queries, what parameters to use, and what to expect from your data. Poor descriptions lead to poor search results.
+由于 ChatGPT 需要了解如何有效使用您的工具，**请编写详细的工具描述**。描述教会 ChatGPT 如何形成查询、使用什么参数以及从您的数据中期望什么。糟糕的描述会导致糟糕的搜索结果。
 
-### Create a Server
+### 创建服务器
 
-A Deep Research-compatible server must implement these two required tools:
+与 Deep Research 兼容的服务器必须实现这两个必需的工具：
 
-- **`search(query: str)`** - Takes a query of any kind and returns matching record IDs
-- **`fetch(id: str)`** - Takes an ID and returns the record
+- **`search(query: str)`** - 接受任何类型的查询并返回匹配的记录 ID
+- **`fetch(id: str)`** - 接受 ID 并返回记录
 
-**Critical**: Write detailed docstrings for both tools. These descriptions teach ChatGPT how to use your tools effectively. Poor descriptions lead to poor search results.
+**关键**：为两个工具编写详细的文档字符串。这些描述教会 ChatGPT 如何有效使用您的工具。糟糕的描述会导致糟糕的搜索结果。
 
-The `search` tool should take a query (of any kind!) and return IDs. The `fetch` tool should take an ID and return the record.
+`search` 工具应该接受查询（任何类型的！）并返回 ID。`fetch` 工具应该接受 ID 并返回记录。
 
-Here's a reference server implementation you can adapt (see also [OpenAI's sample server](https://github.com/openai/sample-deep-research-mcp) for comparison):
+以下是您可以调整的参考服务器实现（另请参阅 [OpenAI 的示例服务器](https://github.com/openai/sample-deep-research-mcp) 进行比较）：
 
 ```python server.py [expandable]
 import json
@@ -62,7 +62,7 @@ def create_server(
     name: str | None = None,
     instructions: str | None = None,
 ) -> FastMCP:
-    """Create a FastMCP server that can search and fetch records from a JSON file."""
+    """创建一个名为“FastMCP”的服务器，该服务器能够从一个 JSON 文件中搜索并获取记录。"""
     records = json.loads(Path(records_path).read_text())
 
     RECORDS = [Record(**r) for r in records]
@@ -73,9 +73,9 @@ def create_server(
     @mcp.tool()
     async def search(query: str):
         """
-        Simple unranked keyword search across title, text, and metadata.
-        Searches for any of the query terms in the record content.
-        Returns a list of matching record IDs for ChatGPT to fetch.
+        对标题、文本和元数据进行简单的无序关键词搜索。
+        在记录内容中搜索任意查询词。
+        返回匹配记录的 ID 列表，以便 ChatGPT 获取。
         """
         toks = query.lower().split()
         ids = []
@@ -91,11 +91,11 @@ def create_server(
     @mcp.tool()
     async def fetch(id: str):
         """
-        Fetch a record by ID.
-        Returns the complete record data for ChatGPT to analyze and cite.
+        根据 ID 获取一条记录。
+        返回完整的记录数据，以便 ChatGPT 进行分析和引用。
         """
         if id not in LOOKUP:
-            raise ValueError(f"Unknown record ID: {id}")
+            raise ValueError(f"未知的记录 ID: {id}")
         return LOOKUP[id]
 
     return mcp
@@ -105,13 +105,13 @@ if __name__ == "__main__":
     mcp.run(transport="http", port=8000)
 ```
 
-### Deploy the Server
+### 部署服务器
 
-Your server must be deployed to a public URL in order for ChatGPT to access it.
+您的服务器必须部署到公共 URL，以便 ChatGPT 访问它。
 
-For development, you can use tools like `ngrok` to temporarily expose a locally-running server to the internet. We'll do that for this example (you may need to install `ngrok` and create a free account), but you can use any other method to deploy your server.
+对于开发，您可以使用 `ngrok` 等工具临时将本地运行的服务器暴露到互联网。我们将在此示例中这样做（您可能需要安装 `ngrok` 并创建一个免费账户），但您可以使用任何其他方法来部署您的服务器。
 
-Assuming you saved the above code as `server.py`, you can run the following two commands in two separate terminals to deploy your server and expose it to the internet:
+假设您将上述代码保存为 `server.py`，您可以在两个单独的终端中运行以下两个命令来部署您的服务器并将其暴露到互联网：
 
 <CodeGroup>
 ```bash FastMCP server
@@ -124,36 +124,36 @@ ngrok http 8000
 </CodeGroup>
 
 <Warning>
-This exposes your unauthenticated server to the internet. Only run this command in a safe environment if you understand the risks.
+这会将您的未认证服务器暴露到互联网。如果您了解风险，只能在安全环境中运行此命令。
 </Warning>
 
-### Connect to ChatGPT
+### 连接到 ChatGPT
 
-Replace `https://your-server-url.com` with the actual URL of your server (such as your ngrok URL).
+将 `https://your-server-url.com` 替换为您服务器的实际 URL（例如您的 ngrok URL）。
 
-1. Open ChatGPT and go to **Settings** → **Connectors**
-2. Click **Add custom connector**
-3. Enter your server details:
+1. 打开 ChatGPT 并转到 **Settings** → **Connectors**
+2. 点击 **Add custom connector**
+3. 输入您的服务器详细信息：
    - **Name**: Library Catalog
-   - **URL**: Your server URL, including the path.
-        - **Note**: Ensure your URL includes the correct path for the transport you’re using. The defaults are /sse/ for SSE (e.g., https://abc123.ngrok.io/sse/) and /mcp/ for HTTP (e.g., https://abc123.ngrok.io/mcp/).
+   - **URL**: 您的服务器 URL，包括路径。
+        - **注意**：确保您的 URL 包含您使用的传输的正确路径。默认值是 SSE 的 /sse/（例如，https://abc123.ngrok.io/sse/）和 HTTP 的 /mcp/（例如，https://abc123.ngrok.io/mcp/）。
    - **Description**: A library catalog for searching and retrieving books
 
-#### Test the Connection
+#### 测试连接
 
-1. Start a new chat in ChatGPT
-2. Click **Tools** → **Run deep research** 
-3. Select your **Library Catalog** connector as a source
-4. Ask questions like:
-   - "Search for Python programming books"
-   - "Find books about AI and machine learning"
-   - "Show me books by the Python Software Foundation"
+1. 在 ChatGPT 中开始新聊天
+2. 点击 **Tools** → **Run deep research** 
+3. 选择您的 **Library Catalog** 连接器作为源
+4. 问一些问题，比如：
+   - "搜索 Python 编程书籍"
+   - "查找关于 AI 和机器学习的书籍"
+   - "显示 Python Software Foundation 的书籍"
 
-ChatGPT will use your server's search and fetch tools to find relevant information and cite the sources in its response.
+ChatGPT 将使用您服务器的搜索和获取工具来查找相关信息，并在其回复中引用来源。
 
-### Troubleshooting
+### 故障排除
 
 #### "This MCP server doesn't implement our specification"
 
 
-If you get this error, it most likely means that your server doesn't implement the required tools (`search` and `fetch`). To correct it, ensure that your server meets the service requirements.
+如果您收到此错误，很可能是因为您的服务器没有实现所需的工具（`search` 和 `fetch`）。要纠正此问题，请确保您的服务器满足服务要求。
