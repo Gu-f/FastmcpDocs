@@ -5,7 +5,7 @@ sidebarTitle: tool
 
 # `fastmcp.tools.tool`
 
-## Functions
+## 函数
 
 ### `default_serializer` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L58" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -13,11 +13,11 @@ sidebarTitle: tool
 default_serializer(data: Any) -> str
 ```
 
-## Classes
+## 类
 
 ### `ToolResult` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L62" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
-**Methods:**
+**方法：**
 
 #### `to_mcp_result` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L93" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -28,10 +28,10 @@ to_mcp_result(self) -> list[ContentBlock] | tuple[list[ContentBlock], dict[str, 
 ### `Tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L101" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Internal tool registration info.
+内部工具注册信息。
 
 
-**Methods:**
+**方法：**
 
 #### `enable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L119" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -57,7 +57,7 @@ to_mcp_tool(self, **overrides: Any) -> MCPTool
 from_function(fn: Callable[..., Any], name: str | None = None, title: str | None = None, description: str | None = None, tags: set[str] | None = None, annotations: ToolAnnotations | None = None, exclude_args: list[str] | None = None, output_schema: dict[str, Any] | None | NotSetT | Literal[False] = NotSet, serializer: Callable[[Any], str] | None = None, meta: dict[str, Any] | None = None, enabled: bool | None = None) -> FunctionTool
 ```
 
-Create a Tool from a function.
+从函数创建一个工具。
 
 
 #### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L188" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -66,13 +66,13 @@ Create a Tool from a function.
 run(self, arguments: dict[str, Any]) -> ToolResult
 ```
 
-Run the tool with arguments.
+使用参数运行工具。
 
-This method is not implemented in the base Tool class and must be
-implemented by subclasses.
+此方法在基础 Tool 类中未实现，必须由
+子类实现。
 
-`run()` can EITHER return a list of ContentBlocks, or a tuple of
-(list of ContentBlocks, dict of structured output).
+`run()` 可以返回 ContentBlocks 列表，或者
+（ContentBlocks 列表，结构化输出字典）元组。
 
 
 #### `from_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L201" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -83,7 +83,7 @@ from_tool(cls, tool: Tool) -> TransformedTool
 
 ### `FunctionTool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L235" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
-**Methods:**
+**方法：**
 
 #### `from_function` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L239" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -91,7 +91,7 @@ from_tool(cls, tool: Tool) -> TransformedTool
 from_function(cls, fn: Callable[..., Any], name: str | None = None, title: str | None = None, description: str | None = None, tags: set[str] | None = None, annotations: ToolAnnotations | None = None, exclude_args: list[str] | None = None, output_schema: dict[str, Any] | None | NotSetT | Literal[False] = NotSet, serializer: Callable[[Any], str] | None = None, meta: dict[str, Any] | None = None, enabled: bool | None = None) -> FunctionTool
 ```
 
-Create a Tool from a function.
+从函数创建一个工具。
 
 
 #### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L297" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -100,12 +100,12 @@ Create a Tool from a function.
 run(self, arguments: dict[str, Any]) -> ToolResult
 ```
 
-Run the tool with arguments.
+使用参数运行工具。
 
 
 ### `ParsedFunction` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L343" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
-**Methods:**
+**方法：**
 
 #### `from_function` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool.py#L351" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 

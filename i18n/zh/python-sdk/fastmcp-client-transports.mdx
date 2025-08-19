@@ -5,7 +5,7 @@ sidebarTitle: transports
 
 # `fastmcp.client.transports`
 
-## Functions
+## 函数
 
 ### `infer_transport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L903" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -14,37 +14,36 @@ infer_transport(transport: ClientTransport | FastMCP | FastMCP1Server | AnyUrl |
 ```
 
 
-Infer the appropriate transport type from the given transport argument.
+从给定的传输参数推断适当的传输类型。
 
-This function attempts to infer the correct transport type from the provided
-argument, handling various input types and converting them to the appropriate
-ClientTransport subclass.
+此函数尝试从提供的参数推断正确的传输类型，处理各种输入类型并将它们
+转换为适当的 ClientTransport 子类。
 
-The function supports these input types:
-- ClientTransport: Used directly without modification
-- FastMCP or FastMCP1Server: Creates an in-memory FastMCPTransport
-- Path or str (file path): Creates PythonStdioTransport (.py) or NodeStdioTransport (.js)
-- AnyUrl or str (URL): Creates StreamableHttpTransport (default) or SSETransport (for /sse endpoints)
-- MCPConfig or dict: Creates MCPConfigTransport, potentially connecting to multiple servers
+该函数支持这些输入类型：
+- ClientTransport： 直接使用而不修改
+- FastMCP 或 FastMCP1Server： 创建内存 FastMCPTransport
+- Path 或 str（文件路径）： 创建 PythonStdioTransport（.py）或 NodeStdioTransport（.js）
+- AnyUrl 或 str（URL）： 创建 StreamableHttpTransport（默认）或 SSETransport（针对 /sse 端点）
+- MCPConfig 或 dict： 创建 MCPConfigTransport，可能连接到多个服务器
 
-For HTTP URLs, they are assumed to be Streamable HTTP URLs unless they end in `/sse`.
+对于 HTTP URL，除非以 `/sse` 结尾，否则它们被假设为 Streamable HTTP URL。
 
-For MCPConfig with multiple servers, a composite client is created where each server
-is mounted with its name as prefix. This allows accessing tools and resources from multiple
-servers through a single unified client interface, using naming patterns like
-`servername_toolname` for tools and `protocol://servername/path` for resources.
-If the MCPConfig contains only one server, a direct connection is established without prefixing.
+对于具有多个服务器的 MCPConfig，将创建一个复合客户端，其中每个服务器
+都以其名称作为前缀进行挂载。这允许通过单一统一的客户端接口
+从多个服务器访问工具和资源，使用命名模式如
+工具使用 `servername_toolname`，资源使用 `protocol://servername/path`。
+如果 MCPConfig 仅包含一个服务器，则建立直接连接而不添加前缀。
 
-**Examples:**
+**示例：**
 
 ```python
-# Connect to a local Python script
+# 连接到本地 Python 脚本
 transport = infer_transport("my_script.py")
 
-# Connect to a remote server via HTTP
+# 通过 HTTP 连接到远程服务器
 transport = infer_transport("http://example.com/mcp")
 
-# Connect to multiple servers using MCPConfig
+# 使用 MCPConfig 连接到多个服务器
 config = {
     "mcpServers": {
         "weather": {"url": "http://weather.example.com/mcp"},
@@ -55,24 +54,24 @@ transport = infer_transport(config)
 ```
 
 
-## Classes
+## 类
 
 ### `SessionKwargs` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L59" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Keyword arguments for the MCP ClientSession constructor.
+MCP ClientSession 构造函数的关键字参数。
 
 
 ### `ClientTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L71" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Abstract base class for different MCP client transport mechanisms.
+不同 MCP 客户端传输机制的抽象基类。
 
-A Transport is responsible for establishing and managing connections
-to an MCP server, and providing a ClientSession within an async context.
+传输负责建立和管理与 MCP 服务器的连接，
+并在异步上下文中提供 ClientSession。
 
 
-**Methods:**
+**方法：**
 
 #### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L82" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -80,17 +79,16 @@ to an MCP server, and providing a ClientSession within an async context.
 connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[ClientSession]
 ```
 
-Establishes a connection and yields an active ClientSession.
+建立连接并产生一个活动的 ClientSession。
 
-The ClientSession is *not* expected to be initialized in this context manager.
+ClientSession *不*期望在此上下文管理器中初始化。
 
-The session is guaranteed to be valid only within the scope of the
-async context manager. Connection setup and teardown are handled
-within this context.
+会话仅在异步上下文管理器的范围内保证有效。
+连接设置和拆卸在此上下文中处理。
 
-**Args:**
-- `**session_kwargs`: Keyword arguments to pass to the ClientSession
-              constructor (e.g., callbacks, timeouts).
+**参数：**
+- `**session_kwargs`: 传递给 ClientSession 构造函数的关键字参数
+              （例如，回调函数、超时设置）。
 
 
 #### `close` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L108" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -99,16 +97,16 @@ within this context.
 close(self)
 ```
 
-Close the transport.
+关闭传输。
 
 
 ### `WSTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L117" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Transport implementation that connects to an MCP server via WebSockets.
+通过 WebSockets 连接到 MCP 服务器的传输实现。
 
 
-**Methods:**
+**方法：**
 
 #### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L135" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -119,10 +117,10 @@ connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[
 ### `SSETransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L156" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Transport implementation that connects to an MCP server via Server-Sent Events.
+通过服务器发送事件连接到 MCP 服务器的传输实现。
 
 
-**Methods:**
+**方法：**
 
 #### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L192" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -133,10 +131,10 @@ connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[
 ### `StreamableHttpTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L228" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Transport implementation that connects to an MCP server via Streamable HTTP Requests.
+通过可流式 HTTP 请求连接到 MCP 服务器的传输实现。
 
 
-**Methods:**
+**方法：**
 
 #### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L264" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -147,13 +145,13 @@ connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[
 ### `StdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L301" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Base transport for connecting to an MCP server via subprocess with stdio.
+通过子进程与标准输入输出连接到 MCP 服务器的基础传输。
 
-This is a base class that can be subclassed for specific command-based
-transports like Python, Node, Uvx, etc.
+这是一个基类，可以为特定的基于命令的传输
+（如 Python、Node、Uvx 等）进行子类化。
 
 
-**Methods:**
+**方法：**
 
 #### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L344" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -182,51 +180,51 @@ close(self)
 ### `PythonStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L431" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Transport for running Python scripts.
+用于运行 Python 脚本的传输。
 
 
 ### `FastMCPStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L477" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Transport for running FastMCP servers using the FastMCP CLI.
+使用 FastMCP CLI 运行 FastMCP 服务器的传输。
 
 
 ### `NodeStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L504" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Transport for running Node.js scripts.
+用于运行 Node.js 脚本的传输。
 
 
 ### `UvStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L546" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Transport for running commands via the uv tool.
+通过 uv 工具运行命令的传输。
 
 
 ### `UvxStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L603" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Transport for running commands via the uvx tool.
+通过 uvx 工具运行命令的传输。
 
 
 ### `NpxStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L667" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Transport for running commands via the npx tool.
+通过 npx 工具运行命令的传输。
 
 
 ### `FastMCPTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L729" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-In-memory transport for FastMCP servers.
+FastMCP 服务器的内存传输。
 
-This transport connects directly to a FastMCP server instance in the same
-Python process. It works with both FastMCP 2.x servers and FastMCP 1.0
-servers from the low-level MCP SDK. This is particularly useful for unit
-tests or scenarios where client and server run in the same runtime.
+此传输直接连接到同一 Python 进程中的 FastMCP 服务器实例。
+它适用于 FastMCP 2.x 服务器和来自低级 MCP SDK 的 FastMCP 1.0
+服务器。这对于单元测试或客户端和服务器在同一运行时中运行的
+场景特别有用。
 
 
-**Methods:**
+**方法：**
 
 #### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L748" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -237,28 +235,29 @@ connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[
 ### `MCPConfigTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L783" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Transport for connecting to one or more MCP servers defined in an MCPConfig.
+用于连接到 MCPConfig 中定义的一个或多个 MCP 服务器的传输。
 
-This transport provides a unified interface to multiple MCP servers defined in an MCPConfig
-object or dictionary matching the MCPConfig schema. It supports two key scenarios:
+此传输为 MCPConfig 对象或匹配 MCPConfig 架构的字典中定义的
+多个 MCP 服务器提供统一接口。它支持两个关键场景：
 
-1. If the MCPConfig contains exactly one server, it creates a direct transport to that server.
-2. If the MCPConfig contains multiple servers, it creates a composite client by mounting
-   all servers on a single FastMCP instance, with each server's name, by default, used as its mounting prefix.
+1. 如果 MCPConfig 包含恰好一个服务器，它会创建到该服务器的直接传输。
+2. 如果 MCPConfig 包含多个服务器，它会通过在单个 FastMCP 实例上
+   挂载所有服务器来创建复合客户端，默认情况下每个服务器的名称
+   用作其挂载前缀。
 
-In the multi-server case, tools are accessible with the prefix pattern `{server_name}_{tool_name}`
-and resources with the pattern `protocol://{server_name}/path/to/resource`.
+在多服务器情况下，工具可通过前缀模式 `{server_name}_{tool_name}` 访问，
+资源可通过模式 `protocol://{server_name}/path/to/resource` 访问。
 
-This is particularly useful for creating clients that need to interact with multiple specialized
-MCP servers through a single interface, simplifying client code.
+这对于创建需要通过单一接口与多个专门的 MCP 服务器交互的
+客户端特别有用，简化了客户端代码。
 
-**Examples:**
+**示例：**
 
 ```python
 from fastmcp import Client
 from fastmcp.utilities.mcp_config import MCPConfig
 
-# Create a config with multiple servers
+# 创建包含多个服务器的配置
 config = {
     "mcpServers": {
         "weather": {
@@ -272,20 +271,20 @@ config = {
     }
 }
 
-# Create a client with the config
+# 使用配置创建客户端
 client = Client(config)
 
 async with client:
-    # Access tools with prefixes
+    # 使用前缀访问工具
     weather = await client.call_tool("weather_get_forecast", {"city": "London"})
     events = await client.call_tool("calendar_list_events", {"date": "2023-06-01"})
 
-    # Access resources with prefixed URIs
+    # 使用前缀 URI 访问资源
     icons = await client.read_resource("weather://weather/icons/sunny")
 ```
 
 
-**Methods:**
+**方法：**
 
 #### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L855" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 

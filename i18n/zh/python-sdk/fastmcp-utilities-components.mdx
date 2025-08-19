@@ -5,17 +5,17 @@ sidebarTitle: components
 
 # `fastmcp.utilities.components`
 
-## Classes
+## 类
 
 ### `FastMCPMeta` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L15" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ### `FastMCPComponent` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L28" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Base class for FastMCP tools, prompts, resources, and resource templates.
+FastMCP 工具、提示、资源和资源模板的基类。
 
 
-**Methods:**
+**方法：**
 
 #### `key` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L61" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -23,10 +23,10 @@ Base class for FastMCP tools, prompts, resources, and resource templates.
 key(self) -> str
 ```
 
-The key of the component. This is used for internal bookkeeping
-and may reflect e.g. prefixes or other identifiers. You should not depend on
-keys having a certain value, as the same tool loaded from different
-hierarchies of servers may have different keys.
+组件的键。这用于内部簿记，
+可能反映例如前缀或其他标识符。您不应该依赖于
+键具有特定值，因为从不同服务器层次结构加载的相同工具
+可能具有不同的键。
 
 
 #### `get_meta` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L70" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -35,10 +35,10 @@ hierarchies of servers may have different keys.
 get_meta(self, include_fastmcp_meta: bool | None = None) -> dict[str, Any] | None
 ```
 
-Get the meta information about the component.
+获取有关组件的元信息。
 
-If include_fastmcp_meta is True, a `_fastmcp` key will be added to the
-meta, containing a `tags` field with the tags of the component.
+如果 include_fastmcp_meta 为 True，将在元信息中添加一个 `_fastmcp` 键，
+包含一个带有组件标签的 `tags` 字段。
 
 
 #### `model_copy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L94" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -47,12 +47,12 @@ meta, containing a `tags` field with the tags of the component.
 model_copy(self) -> Self
 ```
 
-Create a copy of the component.
+创建组件的副本。
 
-**Args:**
-- `update`: A dictionary of fields to update.
-- `deep`: Whether to deep copy the component.
-- `key`: The key to use for the copy.
+**参数：**
+- `update`: 要更新的字段字典。
+- `deep`: 是否深度复制组件。
+- `key`: 用于副本的键。
 
 
 #### `enable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L127" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -61,7 +61,7 @@ Create a copy of the component.
 enable(self) -> None
 ```
 
-Enable the component.
+启用组件。
 
 
 #### `disable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L131" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -70,7 +70,7 @@ Enable the component.
 disable(self) -> None
 ```
 
-Disable the component.
+禁用组件。
 
 
 #### `copy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L135" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -79,19 +79,19 @@ Disable the component.
 copy(self) -> Self
 ```
 
-Create a copy of the component.
+创建组件的副本。
 
 
 ### `MirroredComponent` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L140" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Base class for components that are mirrored from a remote server.
+从远程服务器镜像的组件的基类。
 
-Mirrored components cannot be enabled or disabled directly. Call copy() first
-to create a local version you can modify.
+镜像组件不能直接启用或禁用。请先调用 copy() 
+创建一个可修改的本地版本。
 
 
-**Methods:**
+**方法：**
 
 #### `enable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L153" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -99,7 +99,7 @@ to create a local version you can modify.
 enable(self) -> None
 ```
 
-Enable the component.
+启用组件。
 
 
 #### `disable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L162" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -108,7 +108,7 @@ Enable the component.
 disable(self) -> None
 ```
 
-Disable the component.
+禁用组件。
 
 
 #### `copy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L171" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -117,5 +117,5 @@ Disable the component.
 copy(self) -> Self
 ```
 
-Create a copy of the component that can be modified.
+创建可以修改的组件副本。
 

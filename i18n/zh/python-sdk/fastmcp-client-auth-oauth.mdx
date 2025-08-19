@@ -5,7 +5,7 @@ sidebarTitle: oauth
 
 # `fastmcp.client.auth.oauth`
 
-## Functions
+## 函数
 
 ### `default_cache_dir` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L36" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -20,24 +20,24 @@ check_if_auth_required(mcp_url: str, httpx_kwargs: dict[str, Any] | None = None)
 ```
 
 
-Check if the MCP endpoint requires authentication by making a test request.
+通过发送测试请求检查 MCP 端点是否需要身份验证。
 
-**Returns:**
-- True if auth appears to be required, False otherwise
+**返回值：**
+- 如果似乎需要身份验证则返回 True，否则返回 False
 
 
-## Classes
+## 类
 
 ### `FileTokenStorage` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L40" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-File-based token storage implementation for OAuth credentials and tokens.
-Implements the mcp.client.auth.TokenStorage protocol.
+基于文件的令牌存储实现，用于 OAuth 凭据和令牌。
+实现了 mcp.client.auth.TokenStorage 协议。
 
-Each instance is tied to a specific server URL for proper token isolation.
+每个实例都绑定到特定的服务器 URL，以实现适当的令牌隔离。
 
 
-**Methods:**
+**方法：**
 
 #### `get_base_url` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L55" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -45,7 +45,7 @@ Each instance is tied to a specific server URL for proper token isolation.
 get_base_url(url: str) -> str
 ```
 
-Extract the base URL (scheme + host) from a URL.
+从 URL 中提取基础 URL（协议 + 主机）。
 
 
 #### `get_cache_key` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L60" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -54,7 +54,7 @@ Extract the base URL (scheme + host) from a URL.
 get_cache_key(self) -> str
 ```
 
-Generate a safe filesystem key from the server's base URL.
+从服务器的基础 URL 生成安全的文件系统键。
 
 
 #### `get_tokens` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L75" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -63,7 +63,7 @@ Generate a safe filesystem key from the server's base URL.
 get_tokens(self) -> OAuthToken | None
 ```
 
-Load tokens from file storage.
+从文件存储加载令牌。
 
 
 #### `set_tokens` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L92" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -72,7 +72,7 @@ Load tokens from file storage.
 set_tokens(self, tokens: OAuthToken) -> None
 ```
 
-Save tokens to file storage.
+将令牌保存到文件存储。
 
 
 #### `get_client_info` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L98" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -81,7 +81,7 @@ Save tokens to file storage.
 get_client_info(self) -> OAuthClientInformationFull | None
 ```
 
-Load client information from file storage.
+从文件存储加载客户端信息。
 
 
 #### `set_client_info` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L126" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -90,7 +90,7 @@ Load client information from file storage.
 set_client_info(self, client_info: OAuthClientInformationFull) -> None
 ```
 
-Save client information to file storage.
+将客户端信息保存到文件存储。
 
 
 #### `clear` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L132" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -99,7 +99,7 @@ Save client information to file storage.
 clear(self) -> None
 ```
 
-Clear all cached data for this server.
+清除此服务器的所有缓存数据。
 
 
 #### `clear_all` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L141" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -108,19 +108,19 @@ Clear all cached data for this server.
 clear_all(cls, cache_dir: Path | None = None) -> None
 ```
 
-Clear all cached data for all servers.
+清除所有服务器的所有缓存数据。
 
 
 ### `OAuth` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L184" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-OAuth client provider for MCP servers with browser-based authentication.
+为具有基于浏览器身份验证的 MCP 服务器提供的 OAuth 客户端提供者。
 
-This class provides OAuth authentication for FastMCP clients by opening
-a browser for user authorization and running a local callback server.
+此类通过打开浏览器进行用户授权并运行本地回调服务器，
+为 FastMCP 客户端提供 OAuth 身份验证。
 
 
-**Methods:**
+**方法：**
 
 #### `redirect_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L250" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -128,7 +128,7 @@ a browser for user authorization and running a local callback server.
 redirect_handler(self, authorization_url: str) -> None
 ```
 
-Open browser for authorization.
+打开浏览器进行授权。
 
 
 #### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L255" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -137,5 +137,5 @@ Open browser for authorization.
 callback_handler(self) -> tuple[str, str | None]
 ```
 
-Handle OAuth callback and return (auth_code, state).
+处理 OAuth 回调并返回 (auth_code, state)。
 

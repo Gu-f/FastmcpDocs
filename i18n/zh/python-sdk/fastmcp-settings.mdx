@@ -5,17 +5,17 @@ sidebarTitle: settings
 
 # `fastmcp.settings`
 
-## Classes
+## 类
 
 ### `ExtendedEnvSettingsSource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/settings.py#L27" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A special EnvSettingsSource that allows for multiple env var prefixes to be used.
+一个特殊的 EnvSettingsSource，允许使用多个环境变量前缀。
 
-Raises a deprecation warning if the old `FASTMCP_SERVER_` prefix is used.
+如果使用旧的 `FASTMCP_SERVER_` 前缀，则会引发弃用警告。
 
 
-**Methods:**
+**方法：**
 
 #### `get_field_value` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/settings.py#L34" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -30,10 +30,10 @@ get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool
 ### `Settings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/settings.py#L77" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-FastMCP settings.
+FastMCP 设置。
 
 
-**Methods:**
+**方法：**
 
 #### `get_setting` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/settings.py#L89" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -41,8 +41,8 @@ FastMCP settings.
 get_setting(self, attr: str) -> Any
 ```
 
-Get a setting. If the setting contains one or more `__`, it will be
-treated as a nested setting.
+获取设置。如果设置包含一个或多个 `__`，它将被
+视为嵌套设置。
 
 
 #### `set_setting` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/settings.py#L102" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -51,8 +51,8 @@ treated as a nested setting.
 set_setting(self, attr: str, value: Any) -> None
 ```
 
-Set a setting. If the setting contains one or more `__`, it will be
-treated as a nested setting.
+设置一个设置项。如果设置项包含一个或多个 `__`，它将被
+视为嵌套设置。
 
 
 #### `settings_customise_sources` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/settings.py#L116" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -67,8 +67,8 @@ settings_customise_sources(cls, settings_cls: type[BaseSettings], init_settings:
 settings(self) -> Self
 ```
 
-This property is for backwards compatibility with FastMCP < 2.8.0,
-which accessed fastmcp.settings.settings
+此属性用于与 FastMCP < 2.8.0 的向后兼容，
+该版本访问 fastmcp.settings.settings
 
 
 #### `normalize_log_level` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/settings.py#L153" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>

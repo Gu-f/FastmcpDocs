@@ -5,7 +5,7 @@ sidebarTitle: context
 
 # `fastmcp.server.context`
 
-## Functions
+## 函数
 
 ### `set_context` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L63" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -13,64 +13,63 @@ sidebarTitle: context
 set_context(context: Context) -> Generator[Context, None, None]
 ```
 
-## Classes
+## 类
 
 ### `LogData` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L51" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Data object for passing log arguments to client-side handlers.
+用于向客户端处理器传递日志参数的数据对象。
 
-This provides an interface to match the Python standard library logging,
-for compatibility with structured logging.
+这提供了与 Python 标准库日志匹配的接口，
+以便与结构化日志兼容。
 
 
 ### `Context` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L72" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Context object providing access to MCP capabilities.
+提供对 MCP 功能访问的上下文对象。
 
-This provides a cleaner interface to MCP's RequestContext functionality.
-It gets injected into tool and resource functions that request it via type hints.
+这为 MCP 的 RequestContext 功能提供了更清洁的接口。
+它会被注入到通过类型提示请求它的工具和资源函数中。
 
-To use context in a tool function, add a parameter with the Context type annotation:
+要在工具函数中使用上下文，请添加一个带有 Context 类型注释的参数：
 
 ```python
 @server.tool
 def my_tool(x: int, ctx: Context) -> str:
-    # Log messages to the client
+    # 向客户端记录消息
     ctx.info(f"Processing {x}")
-    ctx.debug("Debug info")
-    ctx.warning("Warning message")
-    ctx.error("Error message")
+    ctx.debug("调试信息")
+    ctx.warning("警告消息")
+    ctx.error("错误消息")
 
-    # Report progress
-    ctx.report_progress(50, 100, "Processing")
+    # 报告进度
+    ctx.report_progress(50, 100, "处理中")
 
-    # Access resources
+    # 访问资源
     data = ctx.read_resource("resource://data")
 
-    # Get request info
+    # 获取请求信息
     request_id = ctx.request_id
     client_id = ctx.client_id
 
-    # Manage state across the request
+    # 在请求过程中管理状态
     ctx.set_state("key", "value")
     value = ctx.get_state("key")
 
     return str(x)
 ```
 
-State Management:
-Context objects maintain a state dictionary that can be used to store and share
-data across middleware and tool calls within a request. When a new context
-is created (nested contexts), it inherits a copy of its parent's state, ensuring
-that modifications in child contexts don't affect parent contexts.
+状态管理：
+Context 对象维护一个状态字典，可用于在请求内的中间件和工具调用之间
+存储和共享数据。当创建新的上下文（嵌套上下文）时，它会继承父上下文状态的副本，
+确保子上下文中的修改不会影响父上下文。
 
-The context parameter name can be anything as long as it's annotated with Context.
-The context is optional - tools that don't need it can omit the parameter.
+上下文参数名可以是任意名称，只要它使用 Context 注释即可。
+上下文是可选的 - 不需要它的工具可以省略该参数。
 
 
-**Methods:**
+**方法：**
 
 #### `request_context` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L145" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -78,9 +77,9 @@ The context is optional - tools that don't need it can omit the parameter.
 request_context(self) -> RequestContext[ServerSession, Any, Request]
 ```
 
-Access to the underlying request context.
+访问底层的请求上下文。
 
-If called outside of a request context, this will raise a ValueError.
+如果在请求上下文外调用，将引发 ValueError。
 
 
 #### `report_progress` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L155" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -89,11 +88,11 @@ If called outside of a request context, this will raise a ValueError.
 report_progress(self, progress: float, total: float | None = None, message: str | None = None) -> None
 ```
 
-Report progress for the current operation.
+为当前操作报告进度。
 
-**Args:**
-- `progress`: Current progress value e.g. 24
-- `total`: Optional total value e.g. 100
+**参数：**
+- `progress`: 当前进度值，例如 24
+- `total`: 可选的总值，例如 100
 
 
 #### `read_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L182" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -102,13 +101,13 @@ Report progress for the current operation.
 read_resource(self, uri: str | AnyUrl) -> list[ReadResourceContents]
 ```
 
-Read a resource by URI.
+按 URI 读取资源。
 
-**Args:**
-- `uri`: Resource URI to read
+**参数：**
+- `uri`: 要读取的资源 URI
 
-**Returns:**
-- The resource content as either text or bytes
+**返回值：**
+- 资源内容，为文本或字节
 
 
 #### `log` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L195" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -117,14 +116,14 @@ Read a resource by URI.
 log(self, message: str, level: LoggingLevel | None = None, logger_name: str | None = None, extra: Mapping[str, Any] | None = None) -> None
 ```
 
-Send a log message to the client.
+向客户端发送日志消息。
 
-**Args:**
-- `message`: Log message
-- `level`: Optional log level. One of "debug", "info", "notice", "warning", "error", "critical",
-"alert", or "emergency". Default is "info".
-- `logger_name`: Optional logger name
-- `extra`: Optional mapping for additional arguments
+**参数：**
+- `message`: 日志消息
+- `level`: 可选的日志级别。可以是 "debug"、"info"、"notice"、"warning"、"error"、"critical"、
+"alert" 或 "emergency" 之一。默认为 "info"。
+- `logger_name`: 可选的记录器名称
+- `extra`: 额外参数的可选映射
 
 
 #### `client_id` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L222" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -133,7 +132,7 @@ Send a log message to the client.
 client_id(self) -> str | None
 ```
 
-Get the client ID if available.
+获取客户端 ID（如果可用）。
 
 
 #### `request_id` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L231" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -142,7 +141,7 @@ Get the client ID if available.
 request_id(self) -> str
 ```
 
-Get the unique ID for this request.
+获取此请求的唯一 ID。
 
 
 #### `session_id` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L236" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -151,15 +150,13 @@ Get the unique ID for this request.
 session_id(self) -> str
 ```
 
-Get the MCP session ID for ALL transports.
+获取所有传输的 MCP 会话 ID。
 
-Returns the session ID that can be used as a key for session-based
-data storage (e.g., Redis) to share data between tool calls within
-the same client session.
+返回可用作基于会话的数据存储（例如 Redis）键的会话 ID，
+以在同一客户端会话内的工具调用之间共享数据。
 
-**Returns:**
-- The session ID for StreamableHTTP transports, or a generated ID
-- for other transports.
+**返回值：**
+- StreamableHTTP 传输的会话 ID，或其他传输的生成 ID。
 
 
 #### `session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L280" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -168,7 +165,7 @@ the same client session.
 session(self) -> ServerSession
 ```
 
-Access to the underlying session for advanced usage.
+访问底层会话以进行高级使用。
 
 
 #### `debug` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L285" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -177,7 +174,7 @@ Access to the underlying session for advanced usage.
 debug(self, message: str, logger_name: str | None = None, extra: Mapping[str, Any] | None = None) -> None
 ```
 
-Send a debug log message.
+发送调试日志消息。
 
 
 #### `info` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L296" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -186,7 +183,7 @@ Send a debug log message.
 info(self, message: str, logger_name: str | None = None, extra: Mapping[str, Any] | None = None) -> None
 ```
 
-Send an info log message.
+发送信息日志消息。
 
 
 #### `warning` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L307" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -195,7 +192,7 @@ Send an info log message.
 warning(self, message: str, logger_name: str | None = None, extra: Mapping[str, Any] | None = None) -> None
 ```
 
-Send a warning log message.
+发送警告日志消息。
 
 
 #### `error` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L318" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -204,7 +201,7 @@ Send a warning log message.
 error(self, message: str, logger_name: str | None = None, extra: Mapping[str, Any] | None = None) -> None
 ```
 
-Send an error log message.
+发送错误日志消息。
 
 
 #### `list_roots` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L329" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -213,7 +210,7 @@ Send an error log message.
 list_roots(self) -> list[Root]
 ```
 
-List the roots available to the server, as indicated by the client.
+列出客户端指示的服务器可用根目录。
 
 
 #### `send_tool_list_changed` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L334" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -222,7 +219,7 @@ List the roots available to the server, as indicated by the client.
 send_tool_list_changed(self) -> None
 ```
 
-Send a tool list changed notification to the client.
+向客户端发送工具列表更改通知。
 
 
 #### `send_resource_list_changed` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L338" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -231,7 +228,7 @@ Send a tool list changed notification to the client.
 send_resource_list_changed(self) -> None
 ```
 
-Send a resource list changed notification to the client.
+向客户端发送资源列表更改通知。
 
 
 #### `send_prompt_list_changed` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L342" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -240,7 +237,7 @@ Send a resource list changed notification to the client.
 send_prompt_list_changed(self) -> None
 ```
 
-Send a prompt list changed notification to the client.
+向客户端发送提示列表更改通知。
 
 
 #### `sample` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L346" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -249,11 +246,10 @@ Send a prompt list changed notification to the client.
 sample(self, messages: str | list[str | SamplingMessage], system_prompt: str | None = None, include_context: IncludeContext | None = None, temperature: float | None = None, max_tokens: int | None = None, model_preferences: ModelPreferences | str | list[str] | None = None) -> ContentBlock
 ```
 
-Send a sampling request to the client and await the response.
+向客户端发送采样请求并等待响应。
 
-Call this method at any time to have the server request an LLM
-completion from the client. The client must be appropriately configured,
-or the request will error.
+随时调用此方法让服务器从客户端请求 LLM 完成。
+客户端必须正确配置，否则请求将出错。
 
 
 #### `elicit` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L393" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -280,27 +276,23 @@ elicit(self, message: str, response_type: list[str]) -> AcceptedElicitation[str]
 elicit(self, message: str, response_type: type[T] | list[str] | None = None) -> AcceptedElicitation[T] | AcceptedElicitation[dict[str, Any]] | AcceptedElicitation[str] | DeclinedElicitation | CancelledElicitation
 ```
 
-Send an elicitation request to the client and await the response.
+向客户端发送引出请求并等待响应。
 
-Call this method at any time to request additional information from
-the user through the client. The client must support elicitation,
-or the request will error.
+随时调用此方法通过客户端从用户请求额外信息。
+客户端必须支持引出，否则请求将出错。
 
-Note that the MCP protocol only supports simple object schemas with
-primitive types. You can provide a dataclass, TypedDict, or BaseModel to
-comply. If you provide a primitive type, an object schema with a single
-"value" field will be generated for the MCP interaction and
-automatically deconstructed into the primitive type upon response.
+请注意，MCP 协议仅支持具有原始类型的简单对象架构。
+您可以提供 dataclass、TypedDict 或 BaseModel 来遵循要求。
+如果您提供的是原始类型，将为 MCP 交互生成一个具有单个
+"value" 字段的对象架构，并在响应时自动解析为原始类型。
 
-If the response_type is None, the generated schema will be that of an
-empty object in order to comply with the MCP protocol requirements.
-Clients must send an empty object ("{}")in response.
+如果 response_type 为 None，生成的架构将是空对象的架构，
+以符合 MCP 协议要求。客户端必须发送空对象 ("{}") 作为响应。
 
-**Args:**
-- `message`: A human-readable message explaining what information is needed
-- `response_type`: The type of the response, which should be a primitive
-type or dataclass or BaseModel. If it is a primitive type, an
-object schema with a single "value" field will be generated.
+**参数：**
+- `message`: 解释需要什么信息的人类可读消息
+- `response_type`: 响应的类型，应该是原始类型或 dataclass 或 BaseModel。
+如果是原始类型，将生成一个具有单个 "value" 字段的对象架构。
 
 
 #### `get_http_request` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L517" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -309,7 +301,7 @@ object schema with a single "value" field will be generated.
 get_http_request(self) -> Request
 ```
 
-Get the active starlette request.
+获取活动的 starlette 请求。
 
 
 #### `set_state` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L532" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -318,7 +310,7 @@ Get the active starlette request.
 set_state(self, key: str, value: Any) -> None
 ```
 
-Set a value in the context state.
+在上下文状态中设置值。
 
 
 #### `get_state` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/context.py#L536" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -327,5 +319,5 @@ Set a value in the context state.
 get_state(self, key: str) -> Any
 ```
 
-Get a value from the context state. Returns None if the key is not found.
+从上下文状态获取值。如果未找到键，则返回 None。
 

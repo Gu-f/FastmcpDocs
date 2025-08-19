@@ -5,15 +5,15 @@ sidebarTitle: prompt_manager
 
 # `fastmcp.prompts.prompt_manager`
 
-## Classes
+## 类
 
 ### `PromptManager` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt_manager.py#L21" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Manages FastMCP prompts.
+管理 FastMCP 提示。
 
 
-**Methods:**
+**方法：**
 
 #### `mount` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt_manager.py#L45" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -21,7 +21,7 @@ Manages FastMCP prompts.
 mount(self, server: MountedServer) -> None
 ```
 
-Adds a mounted server as a source for prompts.
+添加挂载的服务器作为提示的来源。
 
 
 #### `has_prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt_manager.py#L89" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -30,7 +30,7 @@ Adds a mounted server as a source for prompts.
 has_prompt(self, key: str) -> bool
 ```
 
-Check if a prompt exists.
+检查提示是否存在。
 
 
 #### `get_prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt_manager.py#L94" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -39,7 +39,7 @@ Check if a prompt exists.
 get_prompt(self, key: str) -> Prompt
 ```
 
-Get prompt by key.
+根据键获取提示。
 
 
 #### `get_prompts` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt_manager.py#L101" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -48,7 +48,7 @@ Get prompt by key.
 get_prompts(self) -> dict[str, Prompt]
 ```
 
-Gets the complete, unfiltered inventory of all prompts.
+获取所有提示的完整、未过滤的清单。
 
 
 #### `list_prompts` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt_manager.py#L107" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -57,7 +57,7 @@ Gets the complete, unfiltered inventory of all prompts.
 list_prompts(self) -> list[Prompt]
 ```
 
-Lists all prompts, applying protocol filtering.
+列出所有提示，应用协议过滤。
 
 
 #### `add_prompt_from_fn` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt_manager.py#L114" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -66,7 +66,7 @@ Lists all prompts, applying protocol filtering.
 add_prompt_from_fn(self, fn: Callable[..., PromptResult | Awaitable[PromptResult]], name: str | None = None, description: str | None = None, tags: set[str] | None = None) -> FunctionPrompt
 ```
 
-Create a prompt from a function.
+从函数创建提示。
 
 
 #### `add_prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt_manager.py#L134" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -75,7 +75,7 @@ Create a prompt from a function.
 add_prompt(self, prompt: Prompt) -> Prompt
 ```
 
-Add a prompt to the manager.
+向管理器添加提示。
 
 
 #### `render_prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt_manager.py#L152" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -84,6 +84,6 @@ Add a prompt to the manager.
 render_prompt(self, name: str, arguments: dict[str, Any] | None = None) -> GetPromptResult
 ```
 
-Internal API for servers: Finds and renders a prompt, respecting the
-filtered protocol path.
+服务器内部 API：查找并渲染提示，遵循
+过滤的协议路径。
 

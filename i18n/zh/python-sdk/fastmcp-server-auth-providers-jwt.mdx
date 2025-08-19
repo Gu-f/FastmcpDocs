@@ -6,29 +6,29 @@ sidebarTitle: jwt
 # `fastmcp.server.auth.providers.jwt`
 
 
-TokenVerifier implementations for FastMCP.
+FastMCP 的 TokenVerifier 实现。
 
-## Classes
+## 类
 
 ### `JWKData` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L26" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-JSON Web Key data structure.
+JSON Web Key 数据结构。
 
 
 ### `JWKSData` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L39" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-JSON Web Key Set data structure.
+JSON Web Key Set 数据结构。
 
 
 ### `RSAKeyPair` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L46" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-RSA key pair for JWT testing.
+用于 JWT 测试的 RSA 密钥对。
 
 
-**Methods:**
+**方法：**
 
 #### `generate` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L53" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -36,10 +36,10 @@ RSA key pair for JWT testing.
 generate(cls) -> RSAKeyPair
 ```
 
-Generate an RSA key pair for testing.
+生成用于测试的 RSA 密钥对。
 
-**Returns:**
-- Generated key pair
+**返回值：**
+- 生成的密钥对
 
 
 #### `create_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L88" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -48,42 +48,42 @@ Generate an RSA key pair for testing.
 create_token(self, subject: str = 'fastmcp-user', issuer: str = 'https://fastmcp.example.com', audience: str | list[str] | None = None, scopes: list[str] | None = None, expires_in_seconds: int = 3600, additional_claims: dict[str, Any] | None = None, kid: str | None = None) -> str
 ```
 
-Generate a test JWT token for testing purposes.
+生成用于测试目的的测试 JWT 令牌。
 
-**Args:**
-- `subject`: Subject claim (usually user ID)
-- `issuer`: Issuer claim
-- `audience`: Audience claim - can be a string or list of strings (optional)
-- `scopes`: List of scopes to include
-- `expires_in_seconds`: Token expiration time in seconds
-- `additional_claims`: Any additional claims to include
-- `kid`: Key ID to include in header
+**参数：**
+- `subject`: 主体声明（通常为用户 ID）
+- `issuer`: 发行者声明
+- `audience`: 受众声明 - 可以是字符串或字符串列表（可选）
+- `scopes`: 要包含的范围列表
+- `expires_in_seconds`: 令牌过期时间（秒）
+- `additional_claims`: 要包含的任何额外声明
+- `kid`: 要在头部中包含的密钥 ID
 
 
 ### `JWTVerifierSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L141" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Settings for JWT token verification.
+JWT 令牌验证设置。
 
 
 ### `JWTVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L160" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-JWT token verifier using public key or JWKS.
+使用公钥或 JWKS 的 JWT 令牌验证器。
 
-This verifier validates JWT tokens signed by an external issuer. It's ideal for
-scenarios where you have a centralized identity provider (like Auth0, Okta, or
-your own OAuth server) that issues JWTs, and your FastMCP server acts as a
-resource server validating those tokens.
+此验证器验证由外部发行者签名的 JWT 令牌。适用于
+您有集中式身份提供者（如 Auth0、Okta 或
+您自己的 OAuth 服务器）颁发 JWT，而您的 FastMCP 服务器作为
+资源服务器验证这些令牌的情况。
 
-Use this when:
-- You have JWT tokens issued by an external service
-- You want asymmetric key verification (public/private key pairs)
-- You need JWKS support for automatic key rotation
-- Your tokens contain standard OAuth scopes and claims
+在以下情况下使用：
+- 您有由外部服务颁发的 JWT 令牌
+- 您需要非对称密钥验证（公钥/私钥对）
+- 您需要 JWKS 支持以实现自动密钥轮转
+- 您的令牌包含标准 OAuth 范围和声明
 
 
-**Methods:**
+**方法：**
 
 #### `load_access_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L356" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -91,13 +91,13 @@ Use this when:
 load_access_token(self, token: str) -> AccessToken | None
 ```
 
-Validates the provided JWT bearer token.
+验证提供的 JWT 承载令牌。
 
-**Args:**
-- `token`: The JWT token string to validate
+**参数：**
+- `token`: 要验证的 JWT 令牌字符串
 
-**Returns:**
-- AccessToken object if valid, None if invalid or expired
+**返回值：**
+- 如果有效则返回 AccessToken 对象，如果无效或过期则返回 None
 
 
 #### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L458" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -106,38 +106,37 @@ Validates the provided JWT bearer token.
 verify_token(self, token: str) -> AccessToken | None
 ```
 
-Verify a bearer token and return access info if valid.
+验证承载令牌并在有效时返回访问信息。
 
-This method implements the TokenVerifier protocol by delegating
-to our existing load_access_token method.
+此方法通过委托给我们现有的 load_access_token 方法
+来实现 TokenVerifier 协议。
 
-**Args:**
-- `token`: The JWT token string to validate
+**参数：**
+- `token`: 要验证的 JWT 令牌字符串
 
-**Returns:**
-- AccessToken object if valid, None if invalid or expired
+**返回值：**
+- 如果有效则返回 AccessToken 对象，如果无效或过期则返回 None
 
 
 ### `StaticTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L474" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Simple static token verifier for testing and development.
+用于测试和开发的简单静态令牌验证器。
 
-This verifier validates tokens against a predefined dictionary of valid token
-strings and their associated claims. When a token string matches a key in the
-dictionary, the verifier returns the corresponding claims as if the token was
-validated by a real authorization server.
+此验证器根据预定义的有效令牌字符串及其相关声明的字典
+来验证令牌。当令牌字符串与字典中的键匹配时，
+验证器返回相应的声明，就像令牌由真正的授权服务器验证一样。
 
-Use this when:
-- You're developing or testing locally without a real OAuth server
-- You need predictable tokens for automated testing
-- You want to simulate different users/scopes without complex setup
-- You're prototyping and need simple API key-style authentication
+在以下情况下使用：
+- 您在未使用真正 OAuth 服务器的情况下进行本地开发或测试
+- 您需要可预测的令牌进行自动化测试
+- 您想要在不复杂设置的情况下模拟不同的用户/范围
+- 您正在进行原型制作，需要简单的 API 密钥风格认证
 
-WARNING: Never use this in production - tokens are stored in plain text!
+警告：绝不要在生产环境中使用 - 令牌以明文形式存储！
 
 
-**Methods:**
+**方法：**
 
 #### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L508" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -145,5 +144,5 @@ WARNING: Never use this in production - tokens are stored in plain text!
 verify_token(self, token: str) -> AccessToken | None
 ```
 
-Verify token against static token dictionary.
+根据静态令牌字典验证令牌。
 

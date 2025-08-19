@@ -6,9 +6,9 @@ sidebarTitle: cursor
 # `fastmcp.cli.install.cursor`
 
 
-Cursor integration for FastMCP install using Cyclopts.
+使用 Cyclopts 为 FastMCP 安装提供的 Cursor 集成。
 
-## Functions
+## 函数
 
 ### `generate_cursor_deeplink` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/cursor.py#L20" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -17,14 +17,14 @@ generate_cursor_deeplink(server_name: str, server_config: StdioMCPServer) -> str
 ```
 
 
-Generate a Cursor deeplink for installing the MCP server.
+生成用于安装 MCP 服务器的 Cursor 深度链接。
 
-**Args:**
-- `server_name`: Name of the server
-- `server_config`: Server configuration
+**参数：**
+- `server_name`: 服务器名称
+- `server_config`: 服务器配置
 
-**Returns:**
-- Deeplink URL that can be clicked to install the server
+**返回值：**
+- 可点击安装服务器的深度链接 URL
 
 
 ### `open_deeplink` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/cursor.py#L44" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -34,13 +34,13 @@ open_deeplink(deeplink: str) -> bool
 ```
 
 
-Attempt to open a deeplink URL using the system's default handler.
+尝试使用系统默认处理程序打开深度链接 URL。
 
-**Args:**
-- `deeplink`: The deeplink URL to open
+**参数：**
+- `deeplink`: 要打开的深度链接 URL
 
-**Returns:**
-- True if the command succeeded, False otherwise
+**返回值：**
+- 如果命令成功则返回 True，否则返回 False
 
 
 ### `install_cursor` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/cursor.py#L67" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -50,21 +50,21 @@ install_cursor(file: Path, server_object: str | None, name: str) -> bool
 ```
 
 
-Install FastMCP server in Cursor.
+在 Cursor 中安装 FastMCP 服务器。
 
-**Args:**
-- `file`: Path to the server file
-- `server_object`: Optional server object name (for \:object suffix)
-- `name`: Name for the server in Cursor
-- `with_editable`: Optional directory to install in editable mode
-- `with_packages`: Optional list of additional packages to install
-- `env_vars`: Optional dictionary of environment variables
-- `python_version`: Optional Python version to use
-- `with_requirements`: Optional requirements file to install from
-- `project`: Optional project directory to run within
+**参数：**
+- `file`: 服务器文件的路径
+- `server_object`: 可选的服务器对象名称（用于 \:object 后缀）
+- `name`: 在 Cursor 中的服务器名称
+- `with_editable`: 可选的目录，以可编辑模式安装
+- `with_packages`: 可选的附加包列表，用于安装
+- `env_vars`: 可选的环境变量字典
+- `python_version`: 可选的要使用的 Python 版本
+- `with_requirements`: 可选的需求文件，用于安装依赖
+- `project`: 可选的项目目录，在其中运行
 
-**Returns:**
-- True if installation was successful, False otherwise
+**返回值：**
+- 如果安装成功则返回 True，否则返回 False
 
 
 ### `cursor_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/cursor.py#L153" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -74,8 +74,8 @@ cursor_command(server_spec: str) -> None
 ```
 
 
-Install an MCP server in Cursor.
+在 Cursor 中安装 MCP 服务器。
 
-**Args:**
-- `server_spec`: Python file to install, optionally with \:object suffix
+**参数：**
+- `server_spec`: 要安装的 Python 文件，可选择性地带有 \:object 后缀
 

@@ -6,15 +6,15 @@ sidebarTitle: mcp_config
 # `fastmcp.mcp_config`
 
 
-Canonical MCP Configuration Format.
+规范的 MCP 配置格式。
 
-This module defines the standard configuration format for Model Context Protocol (MCP) servers.
-It provides a client-agnostic, extensible format that can be used across all MCP implementations.
+此模块定义了模型上下文协议 (MCP) 服务器的标准配置格式。
+它提供了一个客户端无关的可扩展格式，可以在所有 MCP 实现中使用。
 
-The configuration format supports both stdio and remote (HTTP/SSE) transports, with comprehensive
-field definitions for server metadata, authentication, and execution parameters.
+该配置格式支持 stdio 和远程 (HTTP/SSE) 传输，为服务器元数据、
+身份验证和执行参数提供全面的字段定义。
 
-Example configuration:
+配置示例：
 ```json
 {
     "mcpServers": {
@@ -30,7 +30,7 @@ Example configuration:
 ```
 
 
-## Functions
+## 函数
 
 ### `infer_transport_type_from_url` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L57" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -39,7 +39,7 @@ infer_transport_type_from_url(url: str | AnyUrl) -> Literal['http', 'sse']
 ```
 
 
-Infer the appropriate transport type from the given URL.
+从给定的 URL 推断适当的传输类型。
 
 
 ### `update_config_file` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L293" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -49,23 +49,23 @@ update_config_file(file_path: Path, server_name: str, server_config: CanonicalMC
 ```
 
 
-Update an MCP configuration file from a server object, preserving existing fields.
+从服务器对象更新 MCP 配置文件，保留现有字段。
 
-This is used for updating the mcpServer configurations of third-party tools so we do not
-worry about transforming server objects here.
+这用于更新第三方工具的 mcpServer 配置，因此我们不需要担心
+在这里转换服务器对象。
 
 
-## Classes
+## 类
 
 ### `StdioMCPServer` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L110" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-MCP server configuration for stdio transport.
+用于 stdio 传输的 MCP 服务器配置。
 
-This is the canonical configuration format for MCP servers using stdio transport.
+这是使用 stdio 传输的 MCP 服务器的规范配置格式。
 
 
-**Methods:**
+**方法：**
 
 #### `to_transport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L140" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -76,18 +76,18 @@ to_transport(self) -> StdioTransport
 ### `TransformingStdioMCPServer` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L151" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A Stdio server with tool transforms.
+带有工具转换的 Stdio 服务器。
 
 
 ### `RemoteMCPServer` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L155" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-MCP server configuration for HTTP/SSE transport.
+用于 HTTP/SSE 传输的 MCP 服务器配置。
 
-This is the canonical configuration format for MCP servers using remote transports.
+这是使用远程传输的 MCP 服务器的规范配置格式。
 
 
-**Methods:**
+**方法：**
 
 #### `to_transport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L191" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -98,20 +98,20 @@ to_transport(self) -> StreamableHttpTransport | SSETransport
 ### `TransformingRemoteMCPServer` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L216" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A Remote server with tool transforms.
+带有工具转换的远程服务器。
 
 
 ### `MCPConfig` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L227" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A configuration object for MCP Servers that conforms to the canonical MCP configuration format
-while adding additional fields for enabling FastMCP-specific features like tool transformations
-and filtering by tags.
+符合规范 MCP 配置格式的 MCP 服务器配置对象，
+同时添加了额外字段以启用 FastMCP 特定功能，如工具转换
+和按标签过滤。
 
-For an MCPConfig that is strictly canonical, see the `CanonicalMCPConfig` class.
+有关严格规范的 MCPConfig，请参阅 `CanonicalMCPConfig` 类。
 
 
-**Methods:**
+**方法：**
 
 #### `validate_mcp_servers` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L240" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -119,7 +119,7 @@ For an MCPConfig that is strictly canonical, see the `CanonicalMCPConfig` class.
 validate_mcp_servers(self, info: ValidationInfo) -> dict[str, Any]
 ```
 
-Validate the MCP servers.
+验证 MCP 服务器。
 
 
 #### `add_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L250" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -128,7 +128,7 @@ Validate the MCP servers.
 add_server(self, name: str, server: MCPServerTypes) -> None
 ```
 
-Add or update a server in the configuration.
+在配置中添加或更新服务器。
 
 
 #### `from_dict` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L255" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -137,7 +137,7 @@ Add or update a server in the configuration.
 from_dict(cls, config: dict[str, Any]) -> Self
 ```
 
-Parse MCP configuration from dictionary format.
+从字典格式解析 MCP 配置。
 
 
 #### `to_dict` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L259" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -146,7 +146,7 @@ Parse MCP configuration from dictionary format.
 to_dict(self) -> dict[str, Any]
 ```
 
-Convert MCPConfig to dictionary format, preserving all fields.
+将 MCPConfig 转换为字典格式，保留所有字段。
 
 
 #### `write_to_file` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L263" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -155,7 +155,7 @@ Convert MCPConfig to dictionary format, preserving all fields.
 write_to_file(self, file_path: Path) -> None
 ```
 
-Write configuration to JSON file.
+将配置写入 JSON 文件。
 
 
 #### `from_file` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L269" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -164,19 +164,19 @@ Write configuration to JSON file.
 from_file(cls, file_path: Path) -> Self
 ```
 
-Load configuration from JSON file.
+从 JSON 文件加载配置。
 
 
 ### `CanonicalMCPConfig` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L278" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Canonical MCP configuration format.
+规范的 MCP 配置格式。
 
-This defines the standard configuration format for Model Context Protocol servers.
-The format is designed to be client-agnostic and extensible for future use cases.
+这定义了模型上下文协议服务器的标准配置格式。
+该格式设计为客户端无关且可为未来用例扩展。
 
 
-**Methods:**
+**方法：**
 
 #### `add_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L288" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -184,5 +184,5 @@ The format is designed to be client-agnostic and extensible for future use cases
 add_server(self, name: str, server: CanonicalMCPServerTypes) -> None
 ```
 
-Add or update a server in the configuration.
+在配置中添加或更新服务器。
 

@@ -5,7 +5,7 @@ sidebarTitle: openapi
 
 # `fastmcp.utilities.openapi`
 
-## Functions
+## 函数
 
 ### `format_array_parameter` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L41" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -14,15 +14,15 @@ format_array_parameter(values: list, parameter_name: str, is_query_parameter: bo
 ```
 
 
-Format an array parameter according to OpenAPI specifications.
+根据 OpenAPI 规范格式化数组参数。
 
-**Args:**
-- `values`: List of values to format
-- `parameter_name`: Name of the parameter (for error messages)
-- `is_query_parameter`: If True, can return list for explode=True behavior
+**参数：**
+- `values`: 要格式化的值列表
+- `parameter_name`: 参数名称（用于错误消息）
+- `is_query_parameter`: 如果为 True，可以为 explode=True 行为返回列表
 
-**Returns:**
-- String (comma-separated) or list (for query params with explode=True)
+**返回值：**
+- 字符串（逗号分隔）或列表（对于 explode=True 的查询参数）
 
 
 ### `format_deep_object_parameter` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L91" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -32,19 +32,18 @@ format_deep_object_parameter(param_value: dict, parameter_name: str) -> dict[str
 ```
 
 
-Format a dictionary parameter for deepObject style serialization.
+为 deepObject 样式序列化格式化字典参数。
 
-According to OpenAPI 3.0 spec, deepObject style with explode=true serializes
-object properties as separate query parameters with bracket notation.
+根据 OpenAPI 3.0 规范，explode=true 的 deepObject 样式将对象属性序列化为带括号表示法的单独查询参数。
 
-For example: `{"id": "123", "type": "user"}` becomes `param[id]=123&param[type]=user`.
+例如：`{"id": "123", "type": "user"}` 变成 `param[id]=123&param[type]=user`。
 
-**Args:**
-- `param_value`: Dictionary value to format
-- `parameter_name`: Name of the parameter
+**参数：**
+- `param_value`: 要格式化的字典值
+- `parameter_name`: 参数名称
 
-**Returns:**
-- Dictionary with bracketed parameter names as keys
+**返回值：**
+- 以带括号的参数名作为键的字典
 
 
 ### `parse_openapi_to_http_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L201" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -54,10 +53,9 @@ parse_openapi_to_http_routes(openapi_dict: dict[str, Any]) -> list[HTTPRoute]
 ```
 
 
-Parses an OpenAPI schema dictionary into a list of HTTPRoute objects
-using the openapi-pydantic library.
+使用 openapi-pydantic 库将 OpenAPI 模式字典解析为 HTTPRoute 对象列表。
 
-Supports both OpenAPI 3.0.x and 3.1.x versions.
+支持 OpenAPI 3.0.x 和 3.1.x 版本。
 
 
 ### `clean_schema_for_display` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L741" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -67,7 +65,7 @@ clean_schema_for_display(schema: JsonSchema | None) -> JsonSchema | None
 ```
 
 
-Clean up a schema dictionary for display by removing internal/complex fields.
+通过删除内部/复杂字段来清理模式字典以供显示。
 
 
 ### `generate_example_from_schema` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L801" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -77,8 +75,8 @@ generate_example_from_schema(schema: JsonSchema | None) -> Any
 ```
 
 
-Generate a simple example value from a JSON schema dictionary.
-Very basic implementation focusing on types.
+从 JSON 模式字典生成简单的示例值。
+非常基础的实现，专注于类型。
 
 
 ### `format_json_for_description` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L884" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -88,7 +86,7 @@ format_json_for_description(data: Any, indent: int = 2) -> str
 ```
 
 
-Formats Python data as a JSON string block for markdown.
+将 Python 数据格式化为 markdown 的 JSON 字符串块。
 
 
 ### `format_description_with_responses` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L893" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -98,20 +96,18 @@ format_description_with_responses(base_description: str, responses: dict[str, An
 ```
 
 
-Formats the base description string with response, parameter, and request body information.
+使用响应、参数和请求体信息格式化基础描述字符串。
 
-**Args:**
-- `base_description`: The initial description to be formatted.
-- `responses`: A dictionary of response information, keyed by status code.
-- `parameters`: A list of parameter information,
-including path and query parameters. Each parameter includes details such as name,
-location, whether it is required, and a description.
-- `request_body`: Information about the request body,
-including its description, whether it is required, and its content schema.
+**参数：**
+- `base_description`: 要格式化的初始描述。
+- `responses`: 以状态码为键的响应信息字典。
+- `parameters`: 参数信息列表，
+包括路径和查询参数。每个参数包括名称、位置、是否必需和描述等详细信息。
+- `request_body`: 请求体信息，
+包括其描述、是否必需及其内容模式。
 
-**Returns:**
-- The formatted description string with additional details about responses, parameters,
-- and the request body.
+**返回值：**
+- 包含响应、参数和请求体的附加详细信息的格式化描述字符串。
 
 
 ### `extract_output_schema_from_responses` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L1419" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -121,54 +117,52 @@ extract_output_schema_from_responses(responses: dict[str, ResponseInfo], schema_
 ```
 
 
-Extract output schema from OpenAPI responses for use as MCP tool output schema.
+从 OpenAPI 响应中提取输出模式以用作 MCP 工具输出模式。
 
-This function finds the first successful response (200, 201, 202, 204) with a
-JSON-compatible content type and extracts its schema. If the schema is not an
-object type, it wraps it to comply with MCP requirements.
+此函数查找第一个成功响应（200、201、202、204），该响应具有与 JSON 兼容的内容类型并提取其模式。如果模式不是对象类型，它会包装该模式以符合 MCP 要求。
 
-**Args:**
-- `responses`: Dictionary of ResponseInfo objects keyed by status code
-- `schema_definitions`: Optional schema definitions to include in the output schema
-- `openapi_version`: OpenAPI version string, used to optimize nullable field handling
+**参数：**
+- `responses`: 以状态码为键的 ResponseInfo 对象字典
+- `schema_definitions`: 可选的模式定义，包含在输出模式中
+- `openapi_version`: OpenAPI 版本字符串，用于优化可空字段处理
 
-**Returns:**
-- MCP-compliant output schema with potential wrapping, or None if no suitable schema found
+**返回值：**
+- 具有潜在包装的 MCP 兼容输出模式，如果未找到合适的模式则返回 None
 
 
-## Classes
+## 类
 
 ### `ParameterInfo` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L124" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Represents a single parameter for an HTTP operation in our IR.
+在我们的 IR 中表示 HTTP 操作的单个参数。
 
 
 ### `RequestBodyInfo` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L136" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Represents the request body for an HTTP operation in our IR.
+在我们的 IR 中表示 HTTP 操作的请求体。
 
 
 ### `ResponseInfo` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L146" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Represents response information in our IR.
+在我们的 IR 中表示响应信息。
 
 
 ### `HTTPRoute` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L154" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Intermediate Representation for a single OpenAPI operation.
+单个 OpenAPI 操作的中间表示。
 
 
 ### `OpenAPIParser` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L255" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Unified parser for OpenAPI schemas with generic type parameters to handle both 3.0 and 3.1.
+统一的 OpenAPI 模式解析器，具有泛型类型参数以处理 3.0 和 3.1 版本。
 
 
-**Methods:**
+**方法：**
 
 #### `parse` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/openapi.py#L619" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -176,5 +170,5 @@ Unified parser for OpenAPI schemas with generic type parameters to handle both 3
 parse(self) -> list[HTTPRoute]
 ```
 
-Parse the OpenAPI schema into HTTP routes.
+将 OpenAPI 模式解析为 HTTP 路由。
 

@@ -5,26 +5,26 @@ sidebarTitle: auth
 
 # `fastmcp.server.auth.auth`
 
-## Classes
+## 类
 
 ### `AccessToken` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L28" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-AccessToken that includes all JWT claims.
+包含所有 JWT 声明的访问令牌。
 
 
 ### `AuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L34" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Base class for all FastMCP authentication providers.
+所有 FastMCP 认证提供者的基类。
 
-This class provides a unified interface for all authentication providers,
-whether they are simple token verifiers or full OAuth authorization servers.
-All providers must be able to verify tokens and can optionally provide
-custom authentication routes.
+此类为所有认证提供者提供统一接口，
+无论它们是简单的令牌验证器还是完整的 OAuth 授权服务器。
+所有提供者都必须能够验证令牌，并可选择性地提供
+自定义认证路由。
 
 
-**Methods:**
+**方法：**
 
 #### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L56" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -32,15 +32,15 @@ custom authentication routes.
 verify_token(self, token: str) -> AccessToken | None
 ```
 
-Verify a bearer token and return access info if valid.
+验证承载令牌并在有效时返回访问信息。
 
-All auth providers must implement token verification.
+所有认证提供者都必须实现令牌验证。
 
-**Args:**
-- `token`: The token string to validate
+**参数：**
+- `token`: 要验证的令牌字符串
 
-**Returns:**
-- AccessToken object if valid, None if invalid or expired
+**返回值：**
+- 如果有效则返回 AccessToken 对象，如果无效或过期则返回 None
 
 
 #### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L69" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -49,16 +49,16 @@ All auth providers must implement token verification.
 get_routes(self) -> list[Route]
 ```
 
-Get the routes for this authentication provider.
+获取此认证提供者的路由。
 
-Each provider is responsible for creating whatever routes it needs:
-- TokenVerifier: typically no routes (default implementation)
-- RemoteAuthProvider: protected resource metadata routes
-- OAuthProvider: full OAuth authorization server routes
-- Custom providers: whatever routes they need
+每个提供者负责创建其所需的路由：
+- TokenVerifier：通常没有路由（默认实现）
+- RemoteAuthProvider：受保护资源元数据路由
+- OAuthProvider：完整的 OAuth 授权服务器路由
+- 自定义提供者：其所需的任何路由
 
-**Returns:**
-- List of routes for this provider
+**返回值：**
+- 此提供者的路由列表
 
 
 #### `get_resource_metadata_url` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L83" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -67,19 +67,19 @@ Each provider is responsible for creating whatever routes it needs:
 get_resource_metadata_url(self) -> AnyHttpUrl | None
 ```
 
-Get the resource metadata URL for RFC 9728 compliance.
+获取符合 RFC 9728 的资源元数据 URL。
 
 
 ### `TokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L96" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Base class for token verifiers (Resource Servers).
+令牌验证器（资源服务器）的基类。
 
-This class provides token verification capability without OAuth server functionality.
-Token verifiers typically don't provide authentication routes by default.
+此类提供令牌验证功能，但不具备 OAuth 服务器功能。
+令牌验证器通常默认情况下不提供认证路由。
 
 
-**Methods:**
+**方法：**
 
 #### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L120" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -93,19 +93,19 @@ Verify a bearer token and return access info if valid.
 ### `RemoteAuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L125" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Authentication provider for resource servers that verify tokens from known authorization servers.
+用于资源服务器的认证提供者，验证来自已知授权服务器的令牌。
 
-This provider composes a TokenVerifier with authorization server metadata to create
-standardized OAuth 2.0 Protected Resource endpoints (RFC 9728). Perfect for:
-- JWT verification with known issuers
-- Remote token introspection services
-- Any resource server that knows where its tokens come from
+此提供者将 TokenVerifier 与授权服务器元数据组合以创建
+标准化的 OAuth 2.0 受保护资源端点（RFC 9728）。适用于：
+- 与已知发行者的 JWT 验证
+- 远程令牌内省服务
+- 任何知道其令牌来源的资源服务器
 
-Use this when you have token verification logic and want to advertise
-the authorization servers that issue valid tokens.
+当您有令牌验证逻辑并想要宣传
+颁发有效令牌的授权服务器时使用此选项。
 
 
-**Methods:**
+**方法：**
 
 #### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L163" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -113,7 +113,7 @@ the authorization servers that issue valid tokens.
 verify_token(self, token: str) -> AccessToken | None
 ```
 
-Verify token using the configured token verifier.
+使用配置的令牌验证器验证令牌。
 
 
 #### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L167" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -122,23 +122,23 @@ Verify token using the configured token verifier.
 get_routes(self) -> list[Route]
 ```
 
-Get OAuth routes for this provider.
+获取此提供者的 OAuth 路由。
 
-By default, returns only the standardized OAuth 2.0 Protected Resource routes.
-Subclasses can override this method to add additional routes by calling
-super().get_routes() and extending the returned list.
+默认情况下，仅返回标准化的 OAuth 2.0 受保护资源路由。
+子类可以通过调用 super().get_routes() 并扩展返回的列表
+来重写此方法以添加额外的路由。
 
 
 ### `OAuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L184" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-OAuth Authorization Server provider.
+OAuth 授权服务器提供者。
 
-This class provides full OAuth server functionality including client registration,
-authorization flows, token issuance, and token verification.
+此类提供完整的 OAuth 服务器功能，包括客户端注册、
+授权流程、令牌颁发和令牌验证。
 
 
-**Methods:**
+**方法：**
 
 #### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L251" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -146,16 +146,16 @@ authorization flows, token issuance, and token verification.
 verify_token(self, token: str) -> AccessToken | None
 ```
 
-Verify a bearer token and return access info if valid.
+验证承载令牌并在有效时返回访问信息。
 
-This method implements the TokenVerifier protocol by delegating
-to our existing load_access_token method.
+此方法通过委托给我们现有的 load_access_token 方法
+来实现 TokenVerifier 协议。
 
-**Args:**
-- `token`: The token string to validate
+**参数：**
+- `token`: 要验证的令牌字符串
 
-**Returns:**
-- AccessToken object if valid, None if invalid or expired
+**返回值：**
+- 如果有效则返回 AccessToken 对象，如果无效或过期则返回 None
 
 
 #### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L266" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -164,12 +164,12 @@ to our existing load_access_token method.
 get_routes(self) -> list[Route]
 ```
 
-Get OAuth authorization server routes and optional protected resource routes.
+获取 OAuth 授权服务器路由和可选的受保护资源路由。
 
-This method creates the full set of OAuth routes including:
-- Standard OAuth authorization server routes (/.well-known/oauth-authorization-server, /authorize, /token, etc.)
-- Optional protected resource routes if resource_server_url is configured
+此方法创建完整的 OAuth 路由集，包括：
+- 标准 OAuth 授权服务器路由（/.well-known/oauth-authorization-server、/authorize、/token 等）
+- 如果配置了 resource_server_url，则包含可选的受保护资源路由
 
-**Returns:**
-- List of OAuth routes
+**返回值：**
+- OAuth 路由列表
 

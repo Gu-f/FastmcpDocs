@@ -6,9 +6,9 @@ sidebarTitle: inspect
 # `fastmcp.utilities.inspect`
 
 
-Utilities for inspecting FastMCP instances.
+用于检查 FastMCP 实例的实用程序。
 
-## Functions
+## 函数
 
 ### `inspect_fastmcp_v2` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L83" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -17,13 +17,13 @@ inspect_fastmcp_v2(mcp: FastMCP[Any]) -> FastMCPInfo
 ```
 
 
-Extract information from a FastMCP v2.x instance.
+从 FastMCP v2.x 实例中提取信息。
 
-**Args:**
-- `mcp`: The FastMCP v2.x instance to inspect
+**参数：**
+- `mcp`: 要检查的 FastMCP v2.x 实例
 
-**Returns:**
-- FastMCPInfo dataclass containing the extracted information
+**返回值：**
+- 包含提取信息的 FastMCPInfo 数据类
 
 
 ### `inspect_fastmcp_v1` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L185" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -33,13 +33,13 @@ inspect_fastmcp_v1(mcp: FastMCP1x) -> FastMCPInfo
 ```
 
 
-Extract information from a FastMCP v1.x instance using a Client.
+使用客户端从 FastMCP v1.x 实例中提取信息。
 
-**Args:**
-- `mcp`: The FastMCP v1.x instance to inspect
+**参数：**
+- `mcp`: 要检查的 FastMCP v1.x 实例
 
-**Returns:**
-- FastMCPInfo dataclass containing the extracted information
+**返回值：**
+- 包含提取信息的 FastMCPInfo 数据类
 
 
 ### `inspect_fastmcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L306" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -49,46 +49,46 @@ inspect_fastmcp(mcp: FastMCP[Any] | FastMCP1x) -> FastMCPInfo
 ```
 
 
-Extract information from a FastMCP instance into a dataclass.
+将 FastMCP 实例的信息提取到数据类中。
 
-This function automatically detects whether the instance is FastMCP v1.x or v2.x
-and uses the appropriate extraction method.
+此函数会自动检测实例是 FastMCP v1.x 还是 v2.x，
+并使用适当的提取方法。
 
-**Args:**
-- `mcp`: The FastMCP instance to inspect (v1.x or v2.x)
+**参数：**
+- `mcp`: 要检查的 FastMCP 实例（v1.x 或 v2.x）
 
-**Returns:**
-- FastMCPInfo dataclass containing the extracted information
+**返回值：**
+- 包含提取信息的 FastMCPInfo 数据类
 
 
-## Classes
+## 类
 
 ### `ToolInfo` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L17" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Information about a tool.
+关于工具的信息。
 
 
 ### `PromptInfo` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L30" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Information about a prompt.
+关于提示的信息。
 
 
 ### `ResourceInfo` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L42" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Information about a resource.
+关于资源的信息。
 
 
 ### `TemplateInfo` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L55" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Information about a resource template.
+关于资源模板的信息。
 
 
 ### `FastMCPInfo` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L68" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Information extracted from a FastMCP instance.
+从 FastMCP 实例中提取的信息。
 

@@ -6,9 +6,9 @@ sidebarTitle: prompt
 # `fastmcp.prompts.prompt`
 
 
-Base classes for FastMCP prompts.
+FastMCP 提示的基类。
 
-## Functions
+## 函数
 
 ### `Message` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt.py#L31" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -17,24 +17,24 @@ Message(content: str | ContentBlock, role: Role | None = None, **kwargs: Any) ->
 ```
 
 
-A user-friendly constructor for PromptMessage.
+PromptMessage 的用户友好构造函数。
 
 
-## Classes
+## 类
 
 ### `PromptArgument` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt.py#L53" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-An argument that can be passed to a prompt.
+可以传递给提示的参数。
 
 
 ### `Prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt.py#L65" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A prompt template that can be rendered with parameters.
+可以使用参数渲染的提示模板。
 
 
-**Methods:**
+**方法：**
 
 #### `enable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt.py#L72" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -54,7 +54,7 @@ disable(self) -> None
 to_mcp_prompt(self, **overrides: Any) -> MCPPrompt
 ```
 
-Convert the prompt to an MCP prompt.
+将提示转换为 MCP 提示。
 
 
 #### `from_function` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt.py#L113" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -63,13 +63,13 @@ Convert the prompt to an MCP prompt.
 from_function(fn: Callable[..., PromptResult | Awaitable[PromptResult]], name: str | None = None, title: str | None = None, description: str | None = None, tags: set[str] | None = None, enabled: bool | None = None, meta: dict[str, Any] | None = None) -> FunctionPrompt
 ```
 
-Create a Prompt from a function.
+从函数创建提示。
 
-The function can return:
-- A string (converted to a message)
-- A Message object
-- A dict (converted to a message)
-- A sequence of any of the above
+函数可以返回：
+- 字符串（转换为消息）
+- Message 对象
+- 字典（转换为消息）
+- 上述任意类型的序列
 
 
 #### `render` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt.py#L141" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -78,16 +78,16 @@ The function can return:
 render(self, arguments: dict[str, Any] | None = None) -> list[PromptMessage]
 ```
 
-Render the prompt with arguments.
+使用参数渲染提示。
 
 
 ### `FunctionPrompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt.py#L149" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A prompt that is a function.
+作为函数的提示。
 
 
-**Methods:**
+**方法：**
 
 #### `from_function` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt.py#L155" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -95,13 +95,13 @@ A prompt that is a function.
 from_function(cls, fn: Callable[..., PromptResult | Awaitable[PromptResult]], name: str | None = None, title: str | None = None, description: str | None = None, tags: set[str] | None = None, enabled: bool | None = None, meta: dict[str, Any] | None = None) -> FunctionPrompt
 ```
 
-Create a Prompt from a function.
+从函数创建提示。
 
-The function can return:
-- A string (converted to a message)
-- A Message object
-- A dict (converted to a message)
-- A sequence of any of the above
+函数可以返回：
+- 字符串（转换为消息）
+- Message 对象
+- 字典（转换为消息）
+- 上述任意类型的序列
 
 
 #### `render` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/prompts/prompt.py#L315" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -110,5 +110,5 @@ The function can return:
 render(self, arguments: dict[str, Any] | None = None) -> list[PromptMessage]
 ```
 
-Render the prompt with arguments.
+使用参数渲染提示。
 

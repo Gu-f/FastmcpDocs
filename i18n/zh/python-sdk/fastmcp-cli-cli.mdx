@@ -6,9 +6,9 @@ sidebarTitle: cli
 # `fastmcp.cli.cli`
 
 
-FastMCP CLI tools using Cyclopts.
+使用 Cyclopts 的 FastMCP CLI 工具。
 
-## Functions
+## 函数
 
 ### `version` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L103" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -17,7 +17,7 @@ version()
 ```
 
 
-Display version information and platform details.
+显示版本信息和平台详细信息。
 
 
 ### `dev` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L141" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -27,10 +27,10 @@ dev(server_spec: str) -> None
 ```
 
 
-Run an MCP server with the MCP Inspector for development.
+使用 MCP Inspector 运行 MCP 服务器进行开发。
 
-**Args:**
-- `server_spec`: Python file to run, optionally with \:object suffix
+**参数：**
+- `server_spec`: 要运行的 Python 文件，可选择性地带有 \:object 后缀
 
 
 ### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L286" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -40,19 +40,19 @@ run(server_spec: str, *server_args: str) -> None
 ```
 
 
-Run an MCP server or connect to a remote one.
+运行 MCP 服务器或连接到远程服务器。
 
-The server can be specified in four ways:
-1. Module approach: "server.py" - runs the module directly, looking for an object named 'mcp', 'server', or 'app'
-2. Import approach: "server.py:app" - imports and runs the specified server object
-3. URL approach: "http://server-url" - connects to a remote server and creates a proxy
-4. MCPConfig file: "mcp.json" - runs as a proxy server for the MCP Servers in the MCPConfig file
+服务器可以通过四种方式指定：
+1. 模块方式："server.py" - 直接运行模块，查找名为 'mcp'、'server' 或 'app' 的对象
+2. 导入方式："server.py:app" - 导入并运行指定的服务器对象
+3. URL 方式："http://server-url" - 连接到远程服务器并创建代理
+4. MCPConfig 文件："mcp.json" - 作为 MCPConfig 文件中 MCP 服务器的代理服务器运行
 
-Server arguments can be passed after -- :
+服务器参数可以在 -- 后传递：
 fastmcp run server.py -- --config config.json --debug
 
-**Args:**
-- `server_spec`: Python file, object specification (file\:obj), MCPConfig file, or URL
+**参数：**
+- `server_spec`: Python 文件、对象规范 (file\:obj)、MCPConfig 文件或 URL
 
 
 ### `inspect` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L439" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -62,19 +62,18 @@ inspect(server_spec: str) -> None
 ```
 
 
-Inspect an MCP server and generate a JSON report.
+检查 MCP 服务器并生成 JSON 报告。
 
-This command analyzes an MCP server and generates a comprehensive JSON report
-containing information about the server's name, instructions, version, tools,
-prompts, resources, templates, and capabilities.
+此命令分析 MCP 服务器并生成包含服务器名称、说明、版本、工具、
+提示、资源、模板和功能信息的综合 JSON 报告。
 
-**Examples:**
+**示例：**
 
 fastmcp inspect server.py
 fastmcp inspect server.py -o report.json
 fastmcp inspect server.py:mcp -o analysis.json
 fastmcp inspect path/to/server.py:app -o /tmp/server-info.json
 
-**Args:**
-- `server_spec`: Python file to inspect, optionally with \:object suffix
+**参数：**
+- `server_spec`: 要检查的 Python 文件，可选择性地带有 \:object 后缀
 

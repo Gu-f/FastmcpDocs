@@ -5,7 +5,7 @@ sidebarTitle: elicitation
 
 # `fastmcp.server.elicitation`
 
-## Functions
+## 函数
 
 ### `get_elicitation_schema` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/elicitation.py#L42" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -14,10 +14,10 @@ get_elicitation_schema(response_type: type[T]) -> dict[str, Any]
 ```
 
 
-Get the schema for an elicitation response.
+获取引出响应的模式。
 
-**Args:**
-- `response_type`: The type of the response
+**参数：**
+- `response_type`: 响应的类型
 
 
 ### `validate_elicitation_json_schema` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/elicitation.py#L58" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -27,28 +27,28 @@ validate_elicitation_json_schema(schema: dict[str, Any]) -> None
 ```
 
 
-Validate that a JSON schema follows MCP elicitation requirements.
+验证 JSON 模式是否符合 MCP 引出要求。
 
-This ensures the schema is compatible with MCP elicitation requirements:
-- Must be an object schema
-- Must only contain primitive field types (string, number, integer, boolean)
-- Must be flat (no nested objects or arrays of objects)
-- Allows const fields (for Literal types) and enum fields (for Enum types)
-- Only primitive types and their nullable variants are allowed
+这确保模式与 MCP 引出要求兼容：
+- 必须是对象模式
+- 必须仅包含原始字段类型（string、number、integer、boolean）
+- 必须是平坐的（没有嵌套对象或对象数组）
+- 允许 const 字段（用于 Literal 类型）和 enum 字段（用于 Enum 类型）
+- 仅允许原始类型及其可为空的变体
 
-**Args:**
-- `schema`: The JSON schema to validate
+**参数：**
+- `schema`: 要验证的 JSON 模式
 
-**Raises:**
-- `TypeError`: If the schema doesn't meet MCP elicitation requirements
+**抛出异常：**
+- `TypeError`: 如果模式不符合 MCP 引出要求
 
 
-## Classes
+## 类
 
 ### `AcceptedElicitation` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/elicitation.py#L30" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Result when user accepts the elicitation.
+用户接受引出时的结果。
 
 
 ### `ScalarElicitationType` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/elicitation.py#L38" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>

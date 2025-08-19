@@ -6,23 +6,23 @@ sidebarTitle: rate_limiting
 # `fastmcp.server.middleware.rate_limiting`
 
 
-Rate limiting middleware for protecting FastMCP servers from abuse.
+用于保护 FastMCP 服务器免受滥用的限流中间件。
 
-## Classes
+## 类
 
 ### `RateLimitError` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/rate_limiting.py#L15" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Error raised when rate limit is exceeded.
+超出限流时引发的错误。
 
 
 ### `TokenBucketRateLimiter` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/rate_limiting.py#L22" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Token bucket implementation for rate limiting.
+用于限流的令牌桶实现。
 
 
-**Methods:**
+**方法：**
 
 #### `consume` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/rate_limiting.py#L38" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -30,22 +30,22 @@ Token bucket implementation for rate limiting.
 consume(self, tokens: int = 1) -> bool
 ```
 
-Try to consume tokens from the bucket.
+尝试从桶中消耗令牌。
 
-**Args:**
-- `tokens`: Number of tokens to consume
+**参数：**
+- `tokens`: 要消耗的令牌数量
 
-**Returns:**
-- True if tokens were available and consumed, False otherwise
+**返回值：**
+- 如果令牌可用并被消耗则为 True，否则为 False
 
 
 ### `SlidingWindowRateLimiter` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/rate_limiting.py#L61" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Sliding window rate limiter implementation.
+滑动窗口限流器实现。
 
 
-**Methods:**
+**方法：**
 
 #### `is_allowed` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/rate_limiting.py#L76" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -53,19 +53,19 @@ Sliding window rate limiter implementation.
 is_allowed(self) -> bool
 ```
 
-Check if a request is allowed.
+检查请求是否被允许。
 
 
 ### `RateLimitingMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/rate_limiting.py#L92" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Middleware that implements rate limiting to prevent server abuse.
+实现限流以防止服务器滥用的中间件。
 
-Uses a token bucket algorithm by default, allowing for burst traffic
-while maintaining a sustainable long-term rate.
+默认使用令牌桶算法，允许突发流量，
+同时维持可持续的长期速率。
 
 
-**Methods:**
+**方法：**
 
 #### `on_request` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/rate_limiting.py#L152" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -73,19 +73,19 @@ while maintaining a sustainable long-term rate.
 on_request(self, context: MiddlewareContext, call_next: CallNext) -> Any
 ```
 
-Apply rate limiting to requests.
+对请求应用限流。
 
 
 ### `SlidingWindowRateLimitingMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/rate_limiting.py#L170" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Middleware that implements sliding window rate limiting.
+实现滑动窗口限流的中间件。
 
-Uses a sliding window approach which provides more precise rate limiting
-but uses more memory to track individual request timestamps.
+使用滑动窗口方法，提供更精确的限流，
+但使用更多内存来跟踪单个请求的时间戳。
 
 
-**Methods:**
+**方法：**
 
 #### `on_request` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/rate_limiting.py#L219" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -93,5 +93,5 @@ but uses more memory to track individual request timestamps.
 on_request(self, context: MiddlewareContext, call_next: CallNext) -> Any
 ```
 
-Apply sliding window rate limiting to requests.
+对请求应用滑动窗口限流。
 

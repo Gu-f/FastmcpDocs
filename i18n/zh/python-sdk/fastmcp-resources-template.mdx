@@ -6,9 +6,9 @@ sidebarTitle: template
 # `fastmcp.resources.template`
 
 
-Resource template functionality.
+资源模板功能。
 
-## Functions
+## 函数
 
 ### `build_regex` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L29" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -22,15 +22,15 @@ build_regex(template: str) -> re.Pattern
 match_uri_template(uri: str, uri_template: str) -> dict[str, str] | None
 ```
 
-## Classes
+## 类
 
 ### `ResourceTemplate` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L53" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A template for dynamically creating resources.
+用于动态创建资源的模板。
 
 
-**Methods:**
+**方法：**
 
 #### `enable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L72" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -56,7 +56,7 @@ from_function(fn: Callable[..., Any], uri_template: str, name: str | None = None
 set_default_mime_type(cls, mime_type: str | None) -> str
 ```
 
-Set default MIME type if not provided.
+如果未提供，设置默认 MIME 类型。
 
 
 #### `matches` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L122" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -65,7 +65,7 @@ Set default MIME type if not provided.
 matches(self, uri: str) -> dict[str, Any] | None
 ```
 
-Check if URI matches template and extract parameters.
+检查 URI 是否匹配模板并提取参数。
 
 
 #### `read` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L126" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -74,7 +74,7 @@ Check if URI matches template and extract parameters.
 read(self, arguments: dict[str, Any]) -> str | bytes
 ```
 
-Read the resource content.
+读取资源内容。
 
 
 #### `create_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L132" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -83,7 +83,7 @@ Read the resource content.
 create_resource(self, uri: str, params: dict[str, Any]) -> Resource
 ```
 
-Create a resource from the template with the given parameters.
+使用给定参数从模板创建资源。
 
 
 #### `to_mcp_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L150" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -92,7 +92,7 @@ Create a resource from the template with the given parameters.
 to_mcp_template(self, **overrides: Any) -> MCPResourceTemplate
 ```
 
-Convert the resource template to an MCPResourceTemplate.
+将资源模板转换为 MCPResourceTemplate。
 
 
 #### `from_mcp_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L169" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -101,7 +101,7 @@ Convert the resource template to an MCPResourceTemplate.
 from_mcp_template(cls, mcp_template: MCPResourceTemplate) -> ResourceTemplate
 ```
 
-Creates a FastMCP ResourceTemplate from a raw MCP ResourceTemplate object.
+从原始的 MCP ResourceTemplate 对象创建 FastMCP ResourceTemplate。
 
 
 #### `key` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L182" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -110,19 +110,19 @@ Creates a FastMCP ResourceTemplate from a raw MCP ResourceTemplate object.
 key(self) -> str
 ```
 
-The key of the component. This is used for internal bookkeeping
-and may reflect e.g. prefixes or other identifiers. You should not depend on
-keys having a certain value, as the same tool loaded from different
-hierarchies of servers may have different keys.
+组件的键。这用于内部簿记，
+可能反映例如前缀或其他标识符。您不应依赖
+键具有某个特定值，因为从不同服务器层次结构加载的
+同一工具可能具有不同的键。
 
 
 ### `FunctionResourceTemplate` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L192" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A template for dynamically creating resources.
+用于动态创建资源的模板。
 
 
-**Methods:**
+**方法：**
 
 #### `read` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L197" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -130,7 +130,7 @@ A template for dynamically creating resources.
 read(self, arguments: dict[str, Any]) -> str | bytes
 ```
 
-Read the resource content.
+读取资源内容。
 
 
 #### `from_function` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L213" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -139,5 +139,5 @@ Read the resource content.
 from_function(cls, fn: Callable[..., Any], uri_template: str, name: str | None = None, title: str | None = None, description: str | None = None, mime_type: str | None = None, tags: set[str] | None = None, enabled: bool | None = None, annotations: Annotations | None = None, meta: dict[str, Any] | None = None) -> FunctionResourceTemplate
 ```
 
-Create a template from a function.
+从函数创建模板。
 

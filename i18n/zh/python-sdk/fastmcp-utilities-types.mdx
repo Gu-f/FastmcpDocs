@@ -6,9 +6,9 @@ sidebarTitle: types
 # `fastmcp.utilities.types`
 
 
-Common types used across FastMCP.
+FastMCP 中使用的通用类型。
 
-## Functions
+## 函数
 
 ### `get_cached_typeadapter` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L39" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -17,10 +17,10 @@ get_cached_typeadapter(cls: T) -> TypeAdapter[T]
 ```
 
 
-TypeAdapters are heavy objects, and in an application context we'd typically
-create them once in a global scope and reuse them as often as possible.
-However, this isn't feasible for user-generated functions. Instead, we use a
-cache to minimize the cost of creating them as much as possible.
+TypeAdapters 是重型对象，在应用程序上下文中，我们通常会
+在全局作用域中创建一次，并尽可能多地重复使用。
+然而，这对于用户生成的函数是不可行的。因此，我们使用
+缓存来尽可能减少创建它们的成本。
 
 
 ### `issubclass_safe` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L114" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -30,7 +30,7 @@ issubclass_safe(cls: type, base: type) -> bool
 ```
 
 
-Check if cls is a subclass of base, even if cls is a type variable.
+检查 cls 是否为 base 的子类，即使 cls 是类型变量。
 
 
 ### `is_class_member_of_type` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L124" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -40,10 +40,10 @@ is_class_member_of_type(cls: type, base: type) -> bool
 ```
 
 
-Check if cls is a member of base, even if cls is a type variable.
+检查 cls 是否为 base 的成员，即使 cls 是类型变量。
 
-Base can be a type, a UnionType, or an Annotated type. Generic types are not
-considered members (e.g. T is not a member of list\[T]).
+Base 可以是类型、UnionType 或 Annotated 类型。泛型类型不
+被认为是成员（例如 T 不是 list\[T] 的成员）。
 
 
 ### `find_kwarg_by_type` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L146" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -53,9 +53,9 @@ find_kwarg_by_type(fn: Callable, kwarg_type: type) -> str | None
 ```
 
 
-Find the name of the kwarg that is of type kwarg_type.
+查找类型为 kwarg_type 的 kwarg 的名称。
 
-Includes union types that contain the kwarg_type, as well as Annotated types.
+包括包含 kwarg_type 的联合类型，以及 Annotated 类型。
 
 
 ### `replace_type` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L375" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -65,17 +65,17 @@ replace_type(type_, type_map: dict[type, type])
 ```
 
 
-Given a (possibly generic, nested, or otherwise complex) type, replaces all
-instances of old_type with new_type.
+给定一个（可能是泛型、嵌套或其他复杂的）类型，将所有
+old_type 的实例替换为 new_type。
 
-This is useful for transforming types when creating tools.
+这对于在创建工具时转换类型很有用。
 
-**Args:**
-- `type_`: The type to replace instances of old_type with new_type.
-- `old_type`: The type to replace.
-- `new_type`: The type to replace old_type with.
+**参数：**
+- `type_`: 要将 old_type 实例替换为 new_type 的类型。
+- `old_type`: 要替换的类型。
+- `new_type`: 用来替换 old_type 的类型。
 
-Examples:
+示例：
 ```python
 >>> replace_type(list[int | bool], {int: str})
 list[str | bool]
@@ -85,21 +85,21 @@ list[list[str]]
 ```
 
 
-## Classes
+## 类
 
 ### `FastMCPBaseModel` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L32" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Base model for FastMCP models.
+FastMCP 模型的基类。
 
 
 ### `Image` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L172" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Helper class for returning images from tools.
+用于从工具返回图像的辅助类。
 
 
-**Methods:**
+**方法：**
 
 #### `to_image_content` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L209" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -107,16 +107,16 @@ Helper class for returning images from tools.
 to_image_content(self, mime_type: str | None = None, annotations: Annotations | None = None) -> mcp.types.ImageContent
 ```
 
-Convert to MCP ImageContent.
+转换为 MCP ImageContent。
 
 
 ### `Audio` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L231" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Helper class for returning audio from tools.
+用于从工具返回音频的辅助类。
 
 
-**Methods:**
+**方法：**
 
 #### `to_audio_content` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L268" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -127,10 +127,10 @@ to_audio_content(self, mime_type: str | None = None, annotations: Annotations | 
 ### `File` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L289" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Helper class for returning audio from tools.
+用于从工具返回音频的辅助类。
 
 
-**Methods:**
+**方法：**
 
 #### `to_resource_content` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/types.py#L328" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 

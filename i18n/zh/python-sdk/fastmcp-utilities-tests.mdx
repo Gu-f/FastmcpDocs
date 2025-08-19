@@ -5,7 +5,7 @@ sidebarTitle: tests
 
 # `fastmcp.utilities.tests`
 
-## Functions
+## 函数
 
 ### `temporary_settings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L25" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -14,10 +14,10 @@ temporary_settings(**kwargs: Any)
 ```
 
 
-Temporarily override FastMCP setting values.
+临时覆盖 FastMCP 设置值。
 
-**Args:**
-- `**kwargs`: The settings to override, including nested settings.
+**参数：**
+- `**kwargs`: 要覆盖的设置，包括嵌套设置。
 
 
 ### `run_server_in_process` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L75" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -27,18 +27,16 @@ run_server_in_process(server_fn: Callable[..., None], *args, **kwargs) -> Genera
 ```
 
 
-Context manager that runs a FastMCP server in a separate process and
-returns the server URL. When the context manager is exited, the server process is killed.
+在单独的进程中运行 FastMCP 服务器并返回服务器 URL 的上下文管理器。当上下文管理器退出时，服务器进程将被终止。
 
-**Args:**
-- `server_fn`: The function that runs a FastMCP server. FastMCP servers are
-not pickleable, so we need a function that creates and runs one.
-- `*args`: Arguments to pass to the server function.
-- `provide_host_and_port`: Whether to provide the host and port to the server function as kwargs.
-- `**kwargs`: Keyword arguments to pass to the server function.
+**参数：**
+- `server_fn`: 运行 FastMCP 服务器的函数。FastMCP 服务器不可 pickle 化，因此我们需要一个创建并运行服务器的函数。
+- `*args`: 传递给服务器函数的参数。
+- `provide_host_and_port`: 是否将主机和端口作为关键字参数提供给服务器函数。
+- `**kwargs`: 传递给服务器函数的关键字参数。
 
-**Returns:**
-- The server URL.
+**返回值：**
+- 服务器 URL。
 
 
 ### `caplog_for_fastmcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L136" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -48,21 +46,20 @@ caplog_for_fastmcp(caplog)
 ```
 
 
-Context manager to capture logs from FastMCP loggers even when propagation is disabled.
+即使在禁用传播时也能捕获来自 FastMCP 记录器的日志的上下文管理器。
 
 
-## Classes
+## 类
 
 ### `HeadlessOAuth` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L147" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-OAuth provider that bypasses browser interaction for testing.
+用于绕过浏览器交互进行测试的 OAuth 提供程序。
 
-This simulates the complete OAuth flow programmatically by making HTTP requests
-instead of opening a browser and running a callback server. Useful for automated testing.
+通过发起 HTTP 请求而不是打开浏览器和运行回调服务器来程序化地模拟完整的 OAuth 流程。对自动化测试很有用。
 
 
-**Methods:**
+**方法：**
 
 #### `redirect_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L160" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -70,7 +67,7 @@ instead of opening a browser and running a callback server. Useful for automated
 redirect_handler(self, authorization_url: str) -> None
 ```
 
-Make HTTP request to authorization URL and store response for callback handler.
+向授权 URL 发出 HTTP 请求并为回调处理程序存储响应。
 
 
 #### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L166" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -79,5 +76,5 @@ Make HTTP request to authorization URL and store response for callback handler.
 callback_handler(self) -> tuple[str, str | None]
 ```
 
-Parse stored response and return (auth_code, state).
+解析存储的响应并返回 (auth_code, state)。
 

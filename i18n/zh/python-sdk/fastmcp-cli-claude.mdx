@@ -6,9 +6,9 @@ sidebarTitle: claude
 # `fastmcp.cli.claude`
 
 
-Claude app integration utilities.
+Claude 应用程序集成实用工具。
 
-## Functions
+## 函数
 
 ### `get_claude_config_path` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/claude.py#L14" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -17,7 +17,7 @@ get_claude_config_path() -> Path | None
 ```
 
 
-Get the Claude config directory based on platform.
+根据平台获取 Claude 配置目录。
 
 
 ### `update_claude_config` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/claude.py#L32" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -27,17 +27,15 @@ update_claude_config(file_spec: str, server_name: str) -> bool
 ```
 
 
-Add or update a FastMCP server in Claude's configuration.
+在 Claude 配置中添加或更新 FastMCP 服务器。
 
-**Args:**
-- `file_spec`: Path to the server file, optionally with \:object suffix
-- `server_name`: Name for the server in Claude's config
-- `with_editable`: Optional directory to install in editable mode
-- `with_packages`: Optional list of additional packages to install
-- `env_vars`: Optional dictionary of environment variables. These are merged with
-any existing variables, with new values taking precedence.
+**参数：**
+- `file_spec`: 服务器文件的路径，可选择性地带有 \:object 后缀
+- `server_name`: 在 Claude 配置中的服务器名称
+- `with_editable`: 可选的目录，以可编辑模式安装
+- `with_packages`: 可选的附加包列表，用于安装
+- `env_vars`: 可选的环境变量字典。这些变量会与现有变量合并，新值优先。
 
-**Raises:**
-- `RuntimeError`: If Claude Desktop's config directory is not found, indicating
-Claude Desktop may not be installed or properly set up.
+**抛出异常：**
+- `RuntimeError`: 如果未找到 Claude Desktop 的配置目录，表明 Claude Desktop 可能未安装或未正确设置。
 

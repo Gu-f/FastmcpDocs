@@ -5,35 +5,34 @@ sidebarTitle: workos
 
 # `fastmcp.server.auth.providers.workos`
 
-## Classes
+## 类
 
 ### `AuthKitProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L18" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ### `AuthKitProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L31" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-AuthKit metadata provider for DCR (Dynamic Client Registration).
+用于 DCR（动态客户端注册）的 AuthKit 元数据提供者。
 
-This provider implements AuthKit integration using metadata forwarding
-instead of OAuth proxying. This is the recommended approach for WorkOS DCR
-as it allows WorkOS to handle the OAuth flow directly while FastMCP acts
-as a resource server.
+此提供者使用元数据转发而非 OAuth 代理来实现 AuthKit 集成。
+这是 WorkOS DCR 的推荐方法，因为它允许 WorkOS 直接处理 OAuth 流程，
+而 FastMCP 作为资源服务器。
 
-IMPORTANT SETUP REQUIREMENTS:
+重要的设置要求：
 
-1. Enable Dynamic Client Registration in WorkOS Dashboard:
-   - Go to Applications → Configuration
-   - Toggle "Dynamic Client Registration" to enabled
+1. 在 WorkOS 仪表板中启用动态客户端注册：
+   - 转到应用程序 → 配置
+   - 将“动态客户端注册”切换为启用
 
-2. Configure your FastMCP server URL as a callback:
-   - Add your server URL to the Redirects tab in WorkOS dashboard
-   - Example: https://your-fastmcp-server.com/oauth2/callback
+2. 将您的 FastMCP 服务器 URL 配置为回调：
+   - 在 WorkOS 仪表板的重定向选项卡中添加您的服务器 URL
+   - 示例：https://your-fastmcp-server.com/oauth2/callback
 
-For detailed setup instructions, see:
+有关详细设置说明，请参阅：
 https://workos.com/docs/authkit/mcp/integrating/token-verification
 
 
-**Methods:**
+**方法：**
 
 #### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L114" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -41,8 +40,8 @@ https://workos.com/docs/authkit/mcp/integrating/token-verification
 get_routes(self) -> list[Route]
 ```
 
-Get OAuth routes including AuthKit authorization server metadata forwarding.
+获取包括 AuthKit 授权服务器元数据转发的 OAuth 路由。
 
-This returns the standard protected resource routes plus an authorization server
-metadata endpoint that forwards AuthKit's OAuth metadata to clients.
+这返回标准的受保护资源路由，加上一个授权服务器
+元数据端点，该端点向客户端转发 AuthKit 的 OAuth 元数据。
 

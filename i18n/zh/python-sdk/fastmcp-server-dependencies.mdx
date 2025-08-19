@@ -5,7 +5,7 @@ sidebarTitle: dependencies
 
 # `fastmcp.server.dependencies`
 
-## Functions
+## 函数
 
 ### `get_context` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/dependencies.py#L30" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -26,13 +26,13 @@ get_http_headers(include_all: bool = False) -> dict[str, str]
 ```
 
 
-Extract headers from the current HTTP request if available.
+从当前 HTTP 请求中提取头部（如果可用）。
 
-Never raises an exception, even if there is no active HTTP request (in which case
-an empty dict is returned).
+即使没有活动的 HTTP 请求（在这种情况下
+返回空字典），也不会抛出异常。
 
-By default, strips problematic headers like `content-length` that cause issues if forwarded to downstream clients.
-If `include_all` is True, all headers are returned.
+默认情况下，会剥离像 `content-length` 这样的有问题的头部，这些头部如果转发给下游客户端会导致问题。
+如果 `include_all` 为 True，则返回所有头部。
 
 
 ### `get_access_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/dependencies.py#L105" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -42,8 +42,8 @@ get_access_token() -> AccessToken | None
 ```
 
 
-Get the FastMCP access token from the current context.
+从当前上下文获取 FastMCP 访问令牌。
 
-**Returns:**
-- The access token if an authenticated user is available, None otherwise.
+**返回值：**
+- 如果有已认证的用户可用，则返回访问令牌，否则返回 None。
 

@@ -5,7 +5,7 @@ sidebarTitle: middleware
 
 # `fastmcp.server.middleware.middleware`
 
-## Functions
+## 函数
 
 ### `make_middleware_wrapper` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/middleware.py#L66" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -14,22 +14,22 @@ make_middleware_wrapper(middleware: Middleware, call_next: CallNext[T, R]) -> Ca
 ```
 
 
-Create a wrapper that applies a single middleware to a context. The
-closure bakes in the middleware and call_next function, so it can be
-passed to other functions that expect a call_next function.
+创建一个将单个中间件应用于上下文的包装器。
+闭包中包含中间件和 call_next 函数，因此可以将其
+传递给其他期望 call_next 函数的函数。
 
 
-## Classes
+## 类
 
 ### `CallNext` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/middleware.py#L42" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ### `MiddlewareContext` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/middleware.py#L47" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Unified context for all middleware operations.
+所有中间件操作的统一上下文。
 
 
-**Methods:**
+**方法：**
 
 #### `copy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/middleware.py#L62" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -40,10 +40,10 @@ copy(self, **kwargs: Any) -> MiddlewareContext[T]
 ### `Middleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/middleware.py#L79" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Base class for FastMCP middleware with dispatching hooks.
+带有调度钩子的 FastMCP 中间件基类。
 
 
-**Methods:**
+**方法：**
 
 #### `on_message` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/middleware.py#L126" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 

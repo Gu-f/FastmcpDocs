@@ -5,7 +5,7 @@ sidebarTitle: proxy
 
 # `fastmcp.server.proxy`
 
-## Functions
+## 函数
 
 ### `default_proxy_roots_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L521" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -14,24 +14,24 @@ default_proxy_roots_handler(context: RequestContext[ClientSession, LifespanConte
 ```
 
 
-A handler that forwards the list roots request from the remote server to the proxy's connected clients and relays the response back to the remote server.
+一个处理程序，将来自远程服务器的列表根目录请求转发给代理的已连接客户端，并将响应传递回远程服务器。
 
 
-## Classes
+## 类
 
 ### `ProxyManagerMixin` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L56" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A mixin for proxy managers to provide a unified client retrieval method.
+为代理管理器提供统一客户端检索方法的混入类。
 
 
 ### `ProxyToolManager` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L69" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A ToolManager that sources its tools from a remote client in addition to local and mounted tools.
+除了本地和挂载工具外，还从远程客户端获取工具的 ToolManager。
 
 
-**Methods:**
+**方法：**
 
 #### `get_tools` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L76" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -39,7 +39,7 @@ A ToolManager that sources its tools from a remote client in addition to local a
 get_tools(self) -> dict[str, Tool]
 ```
 
-Gets the unfiltered tool inventory including local, mounted, and proxy tools.
+获取未过滤的工具清单，包括本地、挂载和代理工具。
 
 
 #### `list_tools` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L102" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -48,7 +48,7 @@ Gets the unfiltered tool inventory including local, mounted, and proxy tools.
 list_tools(self) -> list[Tool]
 ```
 
-Gets the filtered list of tools including local, mounted, and proxy tools.
+获取过滤后的工具列表，包括本地、挂载和代理工具。
 
 
 #### `call_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L107" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -57,16 +57,16 @@ Gets the filtered list of tools including local, mounted, and proxy tools.
 call_tool(self, key: str, arguments: dict[str, Any]) -> ToolResult
 ```
 
-Calls a tool, trying local/mounted first, then proxy if not found.
+调用工具，先尝试本地/挂载工具，如果未找到则使用代理。
 
 
 ### `ProxyResourceManager` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L123" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A ResourceManager that sources its resources from a remote client in addition to local and mounted resources.
+除了本地和挂载资源外，还从远程客户端获取资源的 ResourceManager。
 
 
-**Methods:**
+**方法：**
 
 #### `get_resources` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L130" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -74,7 +74,7 @@ A ResourceManager that sources its resources from a remote client in addition to
 get_resources(self) -> dict[str, Resource]
 ```
 
-Gets the unfiltered resource inventory including local, mounted, and proxy resources.
+获取未过滤的资源清单，包括本地、挂载和代理资源。
 
 
 #### `get_resource_templates` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L153" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -83,7 +83,7 @@ Gets the unfiltered resource inventory including local, mounted, and proxy resou
 get_resource_templates(self) -> dict[str, ResourceTemplate]
 ```
 
-Gets the unfiltered template inventory including local, mounted, and proxy templates.
+获取未过滤的模板清单，包括本地、挂载和代理模板。
 
 
 #### `list_resources` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L176" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -92,7 +92,7 @@ Gets the unfiltered template inventory including local, mounted, and proxy templ
 list_resources(self) -> list[Resource]
 ```
 
-Gets the filtered list of resources including local, mounted, and proxy resources.
+获取过滤后的资源列表，包括本地、挂载和代理资源。
 
 
 #### `list_resource_templates` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L181" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -101,7 +101,7 @@ Gets the filtered list of resources including local, mounted, and proxy resource
 list_resource_templates(self) -> list[ResourceTemplate]
 ```
 
-Gets the filtered list of templates including local, mounted, and proxy templates.
+获取过滤后的模板列表，包括本地、挂载和代理模板。
 
 
 #### `read_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L186" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -110,16 +110,16 @@ Gets the filtered list of templates including local, mounted, and proxy template
 read_resource(self, uri: AnyUrl | str) -> str | bytes
 ```
 
-Reads a resource, trying local/mounted first, then proxy if not found.
+读取资源，先尝试本地/挂载资源，如果未找到则使用代理。
 
 
 ### `ProxyPromptManager` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L204" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A PromptManager that sources its prompts from a remote client in addition to local and mounted prompts.
+除了本地和挂载提示外，还从远程客户端获取提示的 PromptManager。
 
 
-**Methods:**
+**方法：**
 
 #### `get_prompts` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L211" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -127,7 +127,7 @@ A PromptManager that sources its prompts from a remote client in addition to loc
 get_prompts(self) -> dict[str, Prompt]
 ```
 
-Gets the unfiltered prompt inventory including local, mounted, and proxy prompts.
+获取未过滤的提示清单，包括本地、挂载和代理提示。
 
 
 #### `list_prompts` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L234" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -136,7 +136,7 @@ Gets the unfiltered prompt inventory including local, mounted, and proxy prompts
 list_prompts(self) -> list[Prompt]
 ```
 
-Gets the filtered list of prompts including local, mounted, and proxy prompts.
+获取过滤后的提示列表，包括本地、挂载和代理提示。
 
 
 #### `render_prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L239" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -145,16 +145,16 @@ Gets the filtered list of prompts including local, mounted, and proxy prompts.
 render_prompt(self, name: str, arguments: dict[str, Any] | None = None) -> GetPromptResult
 ```
 
-Renders a prompt, trying local/mounted first, then proxy if not found.
+渲染提示，先尝试本地/挂载提示，如果未找到则使用代理。
 
 
 ### `ProxyTool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L256" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A Tool that represents and executes a tool on a remote server.
+表示并在远程服务器上执行工具的 Tool。
 
 
-**Methods:**
+**方法：**
 
 #### `from_mcp_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L266" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -162,7 +162,7 @@ A Tool that represents and executes a tool on a remote server.
 from_mcp_tool(cls, client: Client, mcp_tool: mcp.types.Tool) -> ProxyTool
 ```
 
-Factory method to create a ProxyTool from a raw MCP tool schema.
+从原始 MCP 工具架构创建 ProxyTool 的工厂方法。
 
 
 #### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L280" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -171,16 +171,16 @@ Factory method to create a ProxyTool from a raw MCP tool schema.
 run(self, arguments: dict[str, Any], context: Context | None = None) -> ToolResult
 ```
 
-Executes the tool by making a call through the client.
+通过客户端调用来执行工具。
 
 
 ### `ProxyResource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L299" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A Resource that represents and reads a resource from a remote server.
+表示并从远程服务器读取资源的 Resource。
 
 
-**Methods:**
+**方法：**
 
 #### `from_mcp_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L319" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -188,7 +188,7 @@ A Resource that represents and reads a resource from a remote server.
 from_mcp_resource(cls, client: Client, mcp_resource: mcp.types.Resource) -> ProxyResource
 ```
 
-Factory method to create a ProxyResource from a raw MCP resource schema.
+从原始 MCP 资源架构创建 ProxyResource 的工厂方法。
 
 
 #### `read` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L337" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -197,16 +197,16 @@ Factory method to create a ProxyResource from a raw MCP resource schema.
 read(self) -> str | bytes
 ```
 
-Read the resource content from the remote server.
+从远程服务器读取资源内容。
 
 
 ### `ProxyTemplate` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L352" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A ResourceTemplate that represents and creates resources from a remote server template.
+表示并从远程服务器模板创建资源的 ResourceTemplate。
 
 
-**Methods:**
+**方法：**
 
 #### `from_mcp_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L362" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -214,7 +214,7 @@ A ResourceTemplate that represents and creates resources from a remote server te
 from_mcp_template(cls, client: Client, mcp_template: mcp.types.ResourceTemplate) -> ProxyTemplate
 ```
 
-Factory method to create a ProxyTemplate from a raw MCP template schema.
+从原始 MCP 模板架构创建 ProxyTemplate 的工厂方法。
 
 
 #### `create_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L378" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -223,16 +223,16 @@ Factory method to create a ProxyTemplate from a raw MCP template schema.
 create_resource(self, uri: str, params: dict[str, Any], context: Context | None = None) -> ProxyResource
 ```
 
-Create a resource from the template by calling the remote server.
+通过调用远程服务器从模板创建资源。
 
 
 ### `ProxyPrompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L413" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A Prompt that represents and renders a prompt from a remote server.
+表示并从远程服务器渲染提示的 Prompt。
 
 
-**Methods:**
+**方法：**
 
 #### `from_mcp_prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L425" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -240,7 +240,7 @@ A Prompt that represents and renders a prompt from a remote server.
 from_mcp_prompt(cls, client: Client, mcp_prompt: mcp.types.Prompt) -> ProxyPrompt
 ```
 
-Factory method to create a ProxyPrompt from a raw MCP prompt schema.
+从原始 MCP 提示架构创建 ProxyPrompt 的工厂方法。
 
 
 #### `render` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L447" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -249,24 +249,24 @@ Factory method to create a ProxyPrompt from a raw MCP prompt schema.
 render(self, arguments: dict[str, Any]) -> list[PromptMessage]
 ```
 
-Render the prompt by making a call through the client.
+通过客户端调用来渲染提示。
 
 
 ### `FastMCPProxy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L454" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A FastMCP server that acts as a proxy to a remote MCP-compliant server.
-It uses specialized managers that fulfill requests via a client factory.
+作为远程 MCP 兼容服务器代理的 FastMCP 服务器。
+它使用专门的管理器通过客户端工厂来完成请求。
 
 
 ### `ProxyClient` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L531" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A proxy client that forwards advanced interactions between a remote MCP server and the proxy's connected clients.
-Supports forwarding roots, sampling, elicitation, logging, and progress.
+在远程 MCP 服务器和代理的已连接客户端之间转发高级交互的代理客户端。
+支持转发根目录、采样、引出、日志记录和进度。
 
 
-**Methods:**
+**方法：**
 
 #### `default_sampling_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L562" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -274,7 +274,7 @@ Supports forwarding roots, sampling, elicitation, logging, and progress.
 default_sampling_handler(cls, messages: list[mcp.types.SamplingMessage], params: mcp.types.CreateMessageRequestParams, context: RequestContext[ClientSession, LifespanContextT]) -> mcp.types.CreateMessageResult
 ```
 
-A handler that forwards the sampling request from the remote server to the proxy's connected clients and relays the response back to the remote server.
+一个处理程序，将来自远程服务器的采样请求转发给代理的已连接客户端，并将响应传递回远程服务器。
 
 
 #### `default_elicitation_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L588" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -283,7 +283,7 @@ A handler that forwards the sampling request from the remote server to the proxy
 default_elicitation_handler(cls, message: str, response_type: type, params: mcp.types.ElicitRequestParams, context: RequestContext[ClientSession, LifespanContextT]) -> ElicitResult
 ```
 
-A handler that forwards the elicitation request from the remote server to the proxy's connected clients and relays the response back to the remote server.
+一个处理程序，将来自远程服务器的引出请求转发给代理的已连接客户端，并将响应传递回远程服务器。
 
 
 #### `default_log_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L607" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -292,7 +292,7 @@ A handler that forwards the elicitation request from the remote server to the pr
 default_log_handler(cls, message: LogMessage) -> None
 ```
 
-A handler that forwards the log notification from the remote server to the proxy's connected clients.
+一个处理程序，将来自远程服务器的日志通知转发给代理的已连接客户端。
 
 
 #### `default_progress_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L617" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -301,22 +301,22 @@ A handler that forwards the log notification from the remote server to the proxy
 default_progress_handler(cls, progress: float, total: float | None, message: str | None) -> None
 ```
 
-A handler that forwards the progress notification from the remote server to the proxy's connected clients.
+一个处理程序，将来自远程服务器的进度通知转发给代理的已连接客户端。
 
 
 ### `StatefulProxyClient` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L630" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-A proxy client that provides a stateful client factory for the proxy server.
+为代理服务器提供有状态客户端工厂的代理客户端。
 
-The stateful proxy client bound its copy to the server session.
-And it will be disconnected when the session is exited.
+有状态代理客户端将其副本绑定到服务器会话。
+当会话退出时，它将被断开连接。
 
-This is useful to proxy a stateful mcp server such as the Playwright MCP server.
-Note that it is essential to ensure that the proxy server itself is also stateful.
+这对于代理有状态的 MCP 服务器（如 Playwright MCP 服务器）很有用。
+请注意，确保代理服务器本身也是有状态的是非常重要的。
 
 
-**Methods:**
+**方法：**
 
 #### `clear` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L652" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -324,7 +324,7 @@ Note that it is essential to ensure that the proxy server itself is also statefu
 clear(self)
 ```
 
-Clear all cached clients and force disconnect them.
+清除所有缓存的客户端并强制断开它们的连接。
 
 
 #### `new_stateful` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/proxy.py#L660" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -333,7 +333,7 @@ Clear all cached clients and force disconnect them.
 new_stateful(self) -> Client[ClientTransportT]
 ```
 
-Create a new stateful proxy client instance with the same configuration.
+使用相同配置创建新的有状态代理客户端实例。
 
-Use this method as the client factory for stateful proxy server.
+将此方法用作有状态代理服务器的客户端工厂。
 

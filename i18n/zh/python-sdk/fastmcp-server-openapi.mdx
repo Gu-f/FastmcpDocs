@@ -6,37 +6,37 @@ sidebarTitle: openapi
 # `fastmcp.server.openapi`
 
 
-FastMCP server implementation for OpenAPI integration.
+用于 OpenAPI 集成的 FastMCP 服务器实现。
 
-## Classes
+## 类
 
 ### `MCPType` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/openapi.py#L78" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Type of FastMCP component to create from a route.
+从路由创建的 FastMCP 组件类型。
 
 
 ### `RouteType` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/openapi.py#L97" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Deprecated: Use MCPType instead.
+已弃用：请使用 MCPType。
 
-This enum is kept for backward compatibility and will be removed in a future version.
+此枚举保留以保持向后兼容性，将在未来版本中移除。
 
 
 ### `RouteMap` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/openapi.py#L111" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Mapping configuration for HTTP routes to FastMCP component types.
+HTTP 路由到 FastMCP 组件类型的映射配置。
 
 
 ### `OpenAPITool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/openapi.py#L229" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Tool implementation for OpenAPI endpoints.
+OpenAPI 端点的工具实现。
 
 
-**Methods:**
+**方法：**
 
 #### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/openapi.py#L262" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -44,16 +44,16 @@ Tool implementation for OpenAPI endpoints.
 run(self, arguments: dict[str, Any]) -> ToolResult
 ```
 
-Execute the HTTP request based on the route configuration.
+根据路由配置执行 HTTP 请求。
 
 
 ### `OpenAPIResource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/openapi.py#L523" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Resource implementation for OpenAPI endpoints.
+OpenAPI 端点的资源实现。
 
 
-**Methods:**
+**方法：**
 
 #### `read` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/openapi.py#L552" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -61,16 +61,16 @@ Resource implementation for OpenAPI endpoints.
 read(self) -> str | bytes
 ```
 
-Fetch the resource data by making an HTTP request.
+通过发起 HTTP 请求获取资源数据。
 
 
 ### `OpenAPIResourceTemplate` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/openapi.py#L642" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Resource template implementation for OpenAPI endpoints.
+OpenAPI 端点的资源模板实现。
 
 
-**Methods:**
+**方法：**
 
 #### `create_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/openapi.py#L671" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -78,14 +78,14 @@ Resource template implementation for OpenAPI endpoints.
 create_resource(self, uri: str, params: dict[str, Any], context: Context | None = None) -> Resource
 ```
 
-Create a resource with the given parameters.
+使用给定参数创建资源。
 
 
 ### `FastMCPOpenAPI` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/openapi.py#L696" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-FastMCP server implementation that creates components from an OpenAPI schema.
+从 OpenAPI 架构创建组件的 FastMCP 服务器实现。
 
-This class parses an OpenAPI specification and creates appropriate FastMCP components
-(Tools, Resources, ResourceTemplates) based on route mappings.
+此类解析 OpenAPI 规范，并基于路由映射创建适当的 FastMCP 组件
+（工具、资源、资源模板）。
 

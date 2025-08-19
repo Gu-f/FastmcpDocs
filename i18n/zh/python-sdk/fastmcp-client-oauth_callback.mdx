@@ -7,13 +7,13 @@ sidebarTitle: oauth_callback
 
 
 
-OAuth callback server for handling authorization code flows.
+用于处理授权码流的 OAuth 回调服务器。
 
-This module provides a reusable callback server that can handle OAuth redirects
-and display styled responses to users.
+此模块提供了一个可重用的回调服务器，可以处理 OAuth 重定向
+并向用户显示样式化的响应。
 
 
-## Functions
+## 函数
 
 ### `create_callback_html` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/oauth_callback.py#L25" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -22,7 +22,7 @@ create_callback_html(message: str, is_success: bool = True, title: str = 'FastMC
 ```
 
 
-Create a styled HTML response for OAuth callbacks.
+为 OAuth 回调创建样式化的 HTML 响应。
 
 
 ### `create_oauth_callback_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/oauth_callback.py#L197" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -32,23 +32,23 @@ create_oauth_callback_server(port: int, callback_path: str = '/callback', server
 ```
 
 
-Create an OAuth callback server.
+创建 OAuth 回调服务器。
 
-**Args:**
-- `port`: The port to run the server on
-- `callback_path`: The path to listen for OAuth redirects on
-- `server_url`: Optional server URL to display in success messages
-- `response_future`: Optional future to resolve when OAuth callback is received
+**参数：**
+- `port`: 运行服务器的端口
+- `callback_path`: 监听 OAuth 重定向的路径
+- `server_url`: 可选的服务器 URL，用于在成功消息中显示
+- `response_future`: 可选的 future，在收到 OAuth 回调时解析
 
-**Returns:**
-- Configured uvicorn Server instance (not yet running)
+**返回值：**
+- 配置好的 uvicorn 服务器实例（尚未运行）
 
 
-## Classes
+## 类
 
 ### `CallbackResponse` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/oauth_callback.py#L183" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
-**Methods:**
+**方法：**
 
 #### `from_dict` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/oauth_callback.py#L190" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 

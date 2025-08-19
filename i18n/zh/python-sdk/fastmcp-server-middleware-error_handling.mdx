@@ -6,20 +6,20 @@ sidebarTitle: error_handling
 # `fastmcp.server.middleware.error_handling`
 
 
-Error handling middleware for consistent error responses and tracking.
+用于一致错误响应和跟踪的错误处理中间件。
 
-## Classes
+## 类
 
 ### `ErrorHandlingMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/error_handling.py#L15" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Middleware that provides consistent error handling and logging.
+提供一致错误处理和日志记录的中间件。
 
-Catches exceptions, logs them appropriately, and converts them to
-proper MCP error responses. Also tracks error patterns for monitoring.
+捕获异常，适当地记录它们，并将它们转换为
+适当的 MCP 错误响应。还跟踪错误模式以进行监控。
 
 
-**Methods:**
+**方法：**
 
 #### `on_message` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/error_handling.py#L110" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -27,7 +27,7 @@ proper MCP error responses. Also tracks error patterns for monitoring.
 on_message(self, context: MiddlewareContext, call_next: CallNext) -> Any
 ```
 
-Handle errors for all messages.
+处理所有消息的错误。
 
 
 #### `get_error_stats` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/error_handling.py#L121" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -36,19 +36,19 @@ Handle errors for all messages.
 get_error_stats(self) -> dict[str, int]
 ```
 
-Get error statistics for monitoring.
+获取用于监控的错误统计信息。
 
 
 ### `RetryMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/error_handling.py#L126" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Middleware that implements automatic retry logic for failed requests.
+实现失败请求自动重试逻辑的中间件。
 
-Retries requests that fail with transient errors, using exponential
-backoff to avoid overwhelming the server or external dependencies.
+重试因瞬时错误而失败的请求，使用指数退避
+以避免压倒服务器或外部依赖。
 
 
-**Methods:**
+**方法：**
 
 #### `on_request` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/error_handling.py#L182" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -56,5 +56,5 @@ backoff to avoid overwhelming the server or external dependencies.
 on_request(self, context: MiddlewareContext, call_next: CallNext) -> Any
 ```
 
-Implement retry logic for requests.
+为请求实现重试逻辑。
 

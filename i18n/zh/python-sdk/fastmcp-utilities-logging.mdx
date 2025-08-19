@@ -6,9 +6,9 @@ sidebarTitle: logging
 # `fastmcp.utilities.logging`
 
 
-Logging utilities for FastMCP.
+FastMCP 的日志实用程序。
 
-## Functions
+## 函数
 
 ### `get_logger` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/logging.py#L10" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -17,13 +17,13 @@ get_logger(name: str) -> logging.Logger
 ```
 
 
-Get a logger nested under FastMCP namespace.
+获取嵌套在 FastMCP 命名空间下的日志记录器。
 
-**Args:**
-- `name`: the name of the logger, which will be prefixed with 'FastMCP.'
+**参数：**
+- `name`: 日志记录器的名称，将以 'FastMCP.' 为前缀
 
-**Returns:**
-- a configured logger instance
+**返回值：**
+- 配置的日志记录器实例
 
 
 ### `configure_logging` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/logging.py#L22" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -33,9 +33,9 @@ configure_logging(level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
 ```
 
 
-Configure logging for FastMCP.
+为 FastMCP 配置日志记录。
 
-**Args:**
-- `logger`: the logger to configure
-- `level`: the log level to use
+**参数：**
+- `logger`: 要配置的日志记录器
+- `level`: 要使用的日志级别
 

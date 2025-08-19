@@ -5,7 +5,7 @@ sidebarTitle: http
 
 # `fastmcp.server.http`
 
-## Functions
+## 函数
 
 ### `set_http_request` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/http.py#L80" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -20,16 +20,16 @@ create_base_app(routes: list[BaseRoute], middleware: list[Middleware], debug: bo
 ```
 
 
-Create a base Starlette app with common middleware and routes.
+创建一个带有公共中间件和路由的基础 Starlette 应用程序。
 
-**Args:**
-- `routes`: List of routes to include in the app
-- `middleware`: List of middleware to include in the app
-- `debug`: Whether to enable debug mode
-- `lifespan`: Optional lifespan manager for the app
+**参数：**
+- `routes`: 应用程序中包含的路由列表
+- `middleware`: 应用程序中包含的中间件列表
+- `debug`: 是否启用调试模式
+- `lifespan`: 应用程序的可选生命周期管理器
 
-**Returns:**
-- A Starlette application
+**返回值：**
+- Starlette 应用程序
 
 
 ### `create_sse_app` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/http.py#L132" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -39,19 +39,19 @@ create_sse_app(server: FastMCP[LifespanResultT], message_path: str, sse_path: st
 ```
 
 
-Return an instance of the SSE server app.
+返回 SSE 服务器应用程序的实例。
 
-**Args:**
-- `server`: The FastMCP server instance
-- `message_path`: Path for SSE messages
-- `sse_path`: Path for SSE connections
-- `auth`: Optional authentication provider (AuthProvider)
-- `debug`: Whether to enable debug mode
-- `routes`: Optional list of custom routes
-- `middleware`: Optional list of middleware
+**参数：**
+- `server`: FastMCP 服务器实例
+- `message_path`: SSE 消息的路径
+- `sse_path`: SSE 连接的路径
+- `auth`: 可选的身份验证提供者 (AuthProvider)
+- `debug`: 是否启用调试模式
+- `routes`: 可选的自定义路由列表
+- `middleware`: 可选的中间件列表
 
-Returns:
-    A Starlette application with RequestContextMiddleware
+**返回值：**
+    带有 RequestContextMiddleware 的 Starlette 应用程序
 
 
 ### `create_streamable_http_app` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/http.py#L251" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -61,34 +61,34 @@ create_streamable_http_app(server: FastMCP[LifespanResultT], streamable_http_pat
 ```
 
 
-Return an instance of the StreamableHTTP server app.
+返回 StreamableHTTP 服务器应用程序的实例。
 
-**Args:**
-- `server`: The FastMCP server instance
-- `streamable_http_path`: Path for StreamableHTTP connections
-- `event_store`: Optional event store for session management
-- `auth`: Optional authentication provider (AuthProvider)
-- `json_response`: Whether to use JSON response format
-- `stateless_http`: Whether to use stateless mode (new transport per request)
-- `debug`: Whether to enable debug mode
-- `routes`: Optional list of custom routes
-- `middleware`: Optional list of middleware
+**参数：**
+- `server`: FastMCP 服务器实例
+- `streamable_http_path`: StreamableHTTP 连接的路径
+- `event_store`: 用于会话管理的可选事件存储
+- `auth`: 可选的身份验证提供者 (AuthProvider)
+- `json_response`: 是否使用 JSON 响应格式
+- `stateless_http`: 是否使用无状态模式（每个请求使用新传输）
+- `debug`: 是否启用调试模式
+- `routes`: 可选的自定义路由列表
+- `middleware`: 可选的中间件列表
 
-**Returns:**
-- A Starlette application with StreamableHTTP support
+**返回值：**
+- 支持 StreamableHTTP 的 Starlette 应用程序
 
 
-## Classes
+## 类
 
 ### `StreamableHTTPASGIApp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/http.py#L35" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-ASGI application wrapper for Streamable HTTP server transport.
+用于 Streamable HTTP 服务器传输的 ASGI 应用程序包装器。
 
 
 ### `StarletteWithLifespan` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/http.py#L73" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
-**Methods:**
+**方法：**
 
 #### `lifespan` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/http.py#L75" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -99,5 +99,5 @@ lifespan(self) -> Lifespan[Starlette]
 ### `RequestContextMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/http.py#L88" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Middleware that stores each request in a ContextVar
+在 ContextVar 中存储每个请求的中间件
 

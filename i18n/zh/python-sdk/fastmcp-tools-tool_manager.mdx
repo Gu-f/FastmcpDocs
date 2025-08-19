@@ -5,15 +5,15 @@ sidebarTitle: tool_manager
 
 # `fastmcp.tools.tool_manager`
 
-## Classes
+## 类
 
 ### `ToolManager` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L25" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Manages FastMCP tools.
+管理 FastMCP 工具。
 
 
-**Methods:**
+**方法：**
 
 #### `mount` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L51" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -21,7 +21,7 @@ Manages FastMCP tools.
 mount(self, server: MountedServer) -> None
 ```
 
-Adds a mounted server as a source for tools.
+将挂载的服务器添加为工具的来源。
 
 
 #### `has_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L101" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -30,7 +30,7 @@ Adds a mounted server as a source for tools.
 has_tool(self, key: str) -> bool
 ```
 
-Check if a tool exists.
+检查工具是否存在。
 
 
 #### `get_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L106" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -39,7 +39,7 @@ Check if a tool exists.
 get_tool(self, key: str) -> Tool
 ```
 
-Get tool by key.
+按键获取工具。
 
 
 #### `get_tools` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L113" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -48,7 +48,7 @@ Get tool by key.
 get_tools(self) -> dict[str, Tool]
 ```
 
-Gets the complete, unfiltered inventory of all tools.
+获取所有工具的完整、未过滤的清单。
 
 
 #### `list_tools` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L119" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -57,7 +57,7 @@ Gets the complete, unfiltered inventory of all tools.
 list_tools(self) -> list[Tool]
 ```
 
-Lists all tools, applying protocol filtering.
+列出所有工具，应用协议过滤。
 
 
 #### `add_tool_from_fn` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L135" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -66,7 +66,7 @@ Lists all tools, applying protocol filtering.
 add_tool_from_fn(self, fn: Callable[..., Any], name: str | None = None, description: str | None = None, tags: set[str] | None = None, annotations: ToolAnnotations | None = None, serializer: Callable[[Any], str] | None = None, exclude_args: list[str] | None = None) -> Tool
 ```
 
-Add a tool to the server.
+向服务器添加工具。
 
 
 #### `add_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L164" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -75,7 +75,7 @@ Add a tool to the server.
 add_tool(self, tool: Tool) -> Tool
 ```
 
-Register a tool with the server.
+向服务器注册工具。
 
 
 #### `add_tool_transformation` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L181" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -84,7 +84,7 @@ Register a tool with the server.
 add_tool_transformation(self, tool_name: str, transformation: ToolTransformConfig) -> None
 ```
 
-Add a tool transformation.
+添加工具转换。
 
 
 #### `get_tool_transformation` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L187" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -93,7 +93,7 @@ Add a tool transformation.
 get_tool_transformation(self, tool_name: str) -> ToolTransformConfig | None
 ```
 
-Get a tool transformation.
+获取工具转换。
 
 
 #### `remove_tool_transformation` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L191" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -102,7 +102,7 @@ Get a tool transformation.
 remove_tool_transformation(self, tool_name: str) -> None
 ```
 
-Remove a tool transformation.
+移除工具转换。
 
 
 #### `remove_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L196" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -111,13 +111,13 @@ Remove a tool transformation.
 remove_tool(self, key: str) -> None
 ```
 
-Remove a tool from the server.
+从服务器移除工具。
 
-**Args:**
-- `key`: The key of the tool to remove
+**参数：**
+- `key`: 要移除的工具的键
 
-**Raises:**
-- `NotFoundError`: If the tool is not found
+**异常：**
+- `NotFoundError`: 如果未找到工具
 
 
 #### `call_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_manager.py#L210" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -126,6 +126,6 @@ Remove a tool from the server.
 call_tool(self, key: str, arguments: dict[str, Any]) -> ToolResult
 ```
 
-Internal API for servers: Finds and calls a tool, respecting the
-filtered protocol path.
+服务器内部 API：查找并调用工具，遵守
+过滤的协议路径。
 

@@ -6,20 +6,20 @@ sidebarTitle: logging
 # `fastmcp.server.middleware.logging`
 
 
-Comprehensive logging middleware for FastMCP servers.
+FastMCP 服务器的全面日志中间件。
 
-## Classes
+## 类
 
 ### `LoggingMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L10" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Middleware that provides comprehensive request and response logging.
+提供全面请求和响应日志记录的中间件。
 
-Logs all MCP messages with configurable detail levels. Useful for debugging,
-monitoring, and understanding server usage patterns.
+以可配置的详细级别记录所有 MCP 消息。适用于调试、
+监控和理解服务器使用模式。
 
 
-**Methods:**
+**方法：**
 
 #### `on_message` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L71" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -27,19 +27,19 @@ monitoring, and understanding server usage patterns.
 on_message(self, context: MiddlewareContext, call_next: CallNext) -> Any
 ```
 
-Log all messages.
+记录所有消息。
 
 
 ### `StructuredLoggingMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L92" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Middleware that provides structured JSON logging for better log analysis.
+为更好的日志分析提供结构化 JSON 日志记录的中间件。
 
-Outputs structured logs that are easier to parse and analyze with log
-aggregation tools like ELK stack, Splunk, or cloud logging services.
+输出结构化日志，更容易使用日志聚合工具（如 ELK 堆栈、
+Splunk 或云日志服务）进行解析和分析。
 
 
-**Methods:**
+**方法：**
 
 #### `on_message` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L149" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -47,5 +47,5 @@ aggregation tools like ELK stack, Splunk, or cloud logging services.
 on_message(self, context: MiddlewareContext, call_next: CallNext) -> Any
 ```
 
-Log structured message information.
+记录结构化消息信息。
 

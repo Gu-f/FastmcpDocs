@@ -6,9 +6,9 @@ sidebarTitle: registry
 # `fastmcp.server.auth.registry`
 
 
-Provider registry for FastMCP auth providers.
+FastMCP 认证提供者的提供者注册表。
 
-## Functions
+## 函数
 
 ### `register_provider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/registry.py#L19" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -17,13 +17,13 @@ register_provider(name: str) -> Callable[[type[T]], type[T]]
 ```
 
 
-Decorator to register an auth provider with a given name.
+用于以给定名称注册认证提供者的装饰器。
 
-**Args:**
-- `name`: The name to register the provider under (e.g., 'AUTHKIT')
+**参数：**
+- `name`: 注册提供者的名称（例如，'AUTHKIT'）
 
-**Returns:**
-- The decorated class
+**返回值：**
+- 被装饰的类
 
 
 ### `get_registered_provider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/registry.py#L41" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -33,11 +33,11 @@ get_registered_provider(name: str) -> type[AuthProvider]
 ```
 
 
-Get a registered provider by name.
+按名称获取已注册的提供者。
 
-**Args:**
-- `name`: The provider name (case-insensitive)
+**参数：**
+- `name`: 提供者名称（不区分大小写）
 
-**Returns:**
-- The provider class if found, None otherwise
+**返回值：**
+- 如果找到则返回提供者类，否则返回 None
 
