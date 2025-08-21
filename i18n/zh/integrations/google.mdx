@@ -1,0 +1,215 @@
+---
+title: Google OAuth 🤝 FastMCP
+sidebarTitle: Google
+description: 使用 Google OAuth 保护您的 FastMCP 服务器
+icon: google
+tag: NEW
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+<VersionBadge version="2.12.0" />
+
+本指南将向您展示如何使用 **Google OAuth** 保护您的 FastMCP 服务器。由于 Google 不支持动态客户端注册，此集成使用 [**OAuth 代理**](/servers/auth/oauth-proxy) 模式来连接 Google 的传统 OAuth 与 MCP 的身份验证要求。
+
+## 配置
+
+### 先决条件
+
+在开始之前，您需要：
+1. 一个具有创建 OAuth 2.0 客户端 ID 权限的 **[Google Cloud 账户](https://console.cloud.google.com/)**
+2. 您的 FastMCP 服务器 URL（开发时可以是 localhost，例如 `http://localhost:8000`）
+
+### 第 1 步：创建 Google OAuth 2.0 客户端 ID
+
+在您的 Google Cloud 控制台中创建 OAuth 2.0 客户端 ID 以获取身份验证所需的凭据：
+
+<Steps>
+<Step title="导航到 OAuth 同意屏">
+    转到 [Google Cloud 控制台](https://console.cloud.google.com/apis/credentials)并选择您的项目（或创建新项目）。
+    
+    首先，通过导航到 **API 和服务 → OAuth 同意屏** 来配置 OAuth 同意屏。选择 "外部" 进行测试或为 G Suite 组织选择 "内部"。
+</Step>
+
+<Step title="创建 OAuth 2.0 客户端 ID">
+    导航到 **API 和服务 → 凭据** 并点击 **"+ 创建凭据"** → **"OAuth 客户端 ID"。
+    
+    配置您的 OAuth 客户端：
+    
+    - **应用程序类型**：Web 应用程序
+    - **名称**：选择描述性名称（例如，"FastMCP 服务器"）
+    - **授权的 JavaScript 源**：添加您服务器的基本 URL（例如，`http://localhost:8000`）
+    - **授权的重定向 URI**：添加您的服务器 URL + `/auth/callback`（例如，`http://localhost:8000/auth/callback`）
+    
+    <Warning>
+    重定向 URI 必须完全匹配。默认路径是 `/auth/callback`，但您可以使用 `redirect_path` 参数进行自定义。对于本地开发，Google 允许不同端口的 `http://localhost` URL。对于生产环境，您必须使用 HTTPS。
+    </Warning>
+    
+    <Tip>
+    如果您想使用自定义回调路径（例如，`/auth/google/callback`），请确保在 Google OAuth 客户端设置和配置 GoogleProvider 时的 `redirect_path` 参数中设置相同的路径。
+    </Tip>
+</Step>
+
+<Step title="保存您的凭据">
+    创建客户端后，您将收到：
+    
+    - **客户端 ID**：以 `.apps.googleusercontent.com` 结尾的字符串
+    - **客户端密钥**：以 `GOCSPX-` 开头的字符串
+    
+    下载 JSON 凭据或安全复制这些值。
+    
+    <Tip>
+    安全存储这些凭据。永远不要将它们提交到版本控制。在生产环境中使用环境变量或密钥管理器。
+    </Tip>
+</Step>
+</Steps>
+
+### 第 2 步：FastMCP 配置
+
+使用 `GoogleProvider` 创建您的 FastMCP 服务器，它会自动处理 Google 的 OAuth 流程：
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.google import GoogleProvider
+
+# GoogleProvider 处理 Google 的令牌格式和验证
+auth_provider = GoogleProvider(
+    client_id="123456789.apps.googleusercontent.com",  # 您的 Google OAuth 客户端 ID
+    client_secret="GOCSPX-abc123...",                  # 您的 Google OAuth 客户端密钥
+    base_url="http://localhost:8000",                  # 必须与您的 OAuth 配置匹配
+    required_scopes=["openid", "email", "profile"],    # 请求用户信息
+    # redirect_path="/auth/callback"                  # 默认值，如需可自定义
+)
+
+mcp = FastMCP(name="Google Secured App", auth=auth_provider)
+
+# 添加受保护的工具来测试身份验证
+@mcp.tool
+async def get_user_info() -> dict:
+    """返回经过身份验证的 Google 用户信息。"""
+    from fastmcp.server.dependencies import get_access_token
+    
+    token = get_access_token()
+    # GoogleProvider 在令牌声明中存储用户数据
+    return {
+        "google_id": token.claims.get("sub"),
+        "email": token.claims.get("email"),
+        "name": token.claims.get("name"),
+        "picture": token.claims.get("picture"),
+        "locale": token.claims.get("locale")
+    }
+```
+
+## 测试
+
+### 运行服务器
+
+使用 HTTP 传输启动您的 FastMCP 服务器以启用 OAuth 流程：
+
+```bash
+fastmcp run server.py --transport http --port 8000
+```
+
+您的服务器现在正在运行并受到 Google OAuth 身份验证的保护。
+
+### 使用客户端测试
+
+创建一个与您的 Google 保护服务器进行身份验证的测试客户端：
+
+```python test_client.py
+from fastmcp import Client
+import asyncio
+
+async def main():
+    # 客户端将自动处理 Google OAuth
+    async with Client("http://localhost:8000/mcp/", auth="oauth") as client:
+        # 首次连接将在浏览器中打开 Google 登录
+        print("✓ 已通过 Google 身份验证！")
+        
+        # 测试受保护的工具
+        result = await client.call_tool("get_user_info")
+        print(f"Google 用户：{result['email']}")
+        print(f"姓名：{result['name']}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+当您首次运行客户端时：
+1. 您的浏览器将打开 Google 的授权页面
+2. 使用您的 Google 账户登录并授予请求的权限
+3. 授权后，您将被重定向回去
+4. 客户端接收令牌并可以发出经过身份验证的请求
+
+<Info>
+客户端在本地缓存令牌，因此除非令牌过期或您显式清除缓存，否则您无需为后续运行重新进行身份验证。
+</Info>
+
+## 环境变量
+
+对于生产部署，请使用环境变量而不是硬编码凭据。
+
+<Info>
+要使用注册的 Google 提供程序，您必须设置 `FASTMCP_SERVER_AUTH=GOOGLE`。了解更多关于 [注册提供程序](/servers/auth/authentication#registered-providers) 的信息。
+</Info>
+
+### 提供程序选择
+
+<ParamField path="FASTMCP_SERVER_AUTH" default="Not set" required>
+设置为 `GOOGLE` 以使用具有默认配置的注册 GoogleProvider。
+</ParamField>
+
+### Google 特定配置
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_ID" required>
+您的 Google OAuth 2.0 客户端 ID（例如，`123456789.apps.googleusercontent.com`）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_SECRET" required>
+您的 Google OAuth 2.0 客户端密钥（例如，`GOCSPX-abc123...`）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_BASE_URL" default="http://localhost:8000">
+用于 OAuth 回调的 FastMCP 服务器公共 URL
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_REDIRECT_PATH" default="/auth/callback">
+在您的 Google OAuth 客户端中配置的重定向路径
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_REQUIRED_SCOPES" default="[]">
+需要的 Google 范围的逗号分隔列表（例如，`openid`）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_TIMEOUT_SECONDS" default="10">
+Google API 调用的 HTTP 请求超时
+</ParamField>
+</Card>
+
+Example `.env` file:
+```bash
+# 使用注册的 Google 提供程序
+FASTMCP_SERVER_AUTH=GOOGLE
+
+# Google OAuth 凭据
+FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_ID=123456789.apps.googleusercontent.com
+FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_SECRET=GOCSPX-abc123...
+FASTMCP_SERVER_AUTH_GOOGLE_BASE_URL=https://your-server.com
+FASTMCP_SERVER_AUTH_GOOGLE_REQUIRED_SCOPES=openid,email,profile
+```
+
+设置环境变量后，您的服务器代码简化为：
+
+```python server.py
+from fastmcp import FastMCP
+
+# 身份验证从环境中自动配置
+mcp = FastMCP(name="Google Secured App")
+
+@mcp.tool
+async def protected_tool(query: str) -> str:
+    """需要 Google 身份验证才能访问的工具。"""
+    # 您的工具实现在这里
+    return f"处理经过身份验证的请求：{query}"
+```

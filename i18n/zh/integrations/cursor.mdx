@@ -47,6 +47,21 @@ if __name__ == "__main__":
 fastmcp install cursor server.py
 ```
 
+#### 工作区安装
+<VersionBadge version="2.12.0" />
+
+默认情况下，FastMCP 为 Cursor 全局安装服务器。您也可以使用 `--workspace` 标志将服务器安装到项目特定的工作区：
+
+```bash
+# 安装到当前目录的 .cursor/ 文件夹
+fastmcp install cursor server.py --workspace .
+
+# 安装到特定工作区
+fastmcp install cursor server.py --workspace /path/to/project
+```
+
+这会在指定的工作区目录中创建一个 `.cursor/mcp.json` 配置文件，允许不同的项目拥有自己的 MCP 服务器配置。
+
 安装命令支持与 `run` 命令相同的 `file.py:object` 表示法。如果未指定对象，它将自动在您的文件中查找名为 `mcp`、`server` 或 `app` 的 FastMCP 服务器对象：
 
 ```bash
@@ -84,16 +99,21 @@ fastmcp install cursor server.py --with-requirements requirements.txt
 fastmcp install cursor server.py --with-editable ./my-local-package
 ```
 
-或者，您可以在服务器代码中直接指定依赖：
+或者，您也可以使用一个名为 `fastmcp.json` 的配置文件（推荐使用）：
 
-```python server.py
-from fastmcp import FastMCP
-
-mcp = FastMCP(
-    name="Dice Roller",
-    dependencies=["pandas", "requests"]
-)
+```json fastmcp.json
+{
+  "$schema": "https://gofastmcp.com/schemas/fastmcp_config/v1.json",
+  "entrypoint": {
+    "file": "server.py",
+    "object": "mcp"
+  },
+  "environment": {
+    "dependencies": ["pandas", "requests"]
+  }
+}
 ```
+
 
 #### Python 版本和项目配置
 

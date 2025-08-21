@@ -33,13 +33,15 @@ run_server_in_process(server_fn: Callable[..., None], *args, **kwargs) -> Genera
 - `server_fn`: 运行 FastMCP 服务器的函数。FastMCP 服务器不可 pickle 化，因此我们需要一个创建并运行服务器的函数。
 - `*args`: 传递给服务器函数的参数。
 - `provide_host_and_port`: 是否将主机和端口作为关键字参数提供给服务器函数。
+- `host`: 要绑定的服务器地址 (默认\: "127.0.0.1").
+- `port`: 要绑定的服务器端口 (默认\: 自动发现有效端口).
 - `**kwargs`: 传递给服务器函数的关键字参数。
 
 **返回值：**
 - 服务器 URL。
 
 
-### `caplog_for_fastmcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L136" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `caplog_for_fastmcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L141" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 caplog_for_fastmcp(caplog)
@@ -51,7 +53,7 @@ caplog_for_fastmcp(caplog)
 
 ## 类
 
-### `HeadlessOAuth` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L147" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `HeadlessOAuth` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L152" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 用于绕过浏览器交互进行测试的 OAuth 提供程序。
@@ -61,7 +63,7 @@ caplog_for_fastmcp(caplog)
 
 **方法：**
 
-#### `redirect_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L160" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `redirect_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L165" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 redirect_handler(self, authorization_url: str) -> None
@@ -70,7 +72,7 @@ redirect_handler(self, authorization_url: str) -> None
 向授权 URL 发出 HTTP 请求并为回调处理程序存储响应。
 
 
-#### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L166" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L171" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 callback_handler(self) -> tuple[str, str | None]

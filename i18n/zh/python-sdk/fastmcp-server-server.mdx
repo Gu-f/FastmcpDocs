@@ -277,7 +277,7 @@ custom_route(self, path: str, methods: list[str], name: str | None = None, inclu
 处理函数必须是接受 Starlette Request 并返回 Response 的异步函数。
 
 **参数：**
-- `path`: 路由的 URL 路径（例如 "/oauth/callback"）
+- `path`: 路由的 URL 路径（例如 "/auth/callback"）
 - `methods`: 要支持的 HTTP 方法列表（例如 ["GET", "POST"]）
 - `name`: 路由的可选名称（用于 Starlette 的反向 URL 查找功能）
 - `include_in_schema`: 是否包含在 OpenAPI 架构中，默认为 True

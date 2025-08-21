@@ -5,36 +5,94 @@ sidebarTitle: workos
 
 # `fastmcp.server.auth.providers.workos`
 
+
+FastMCP 的 WorkOS 身份认证提供器。
+
+本模块提供两种 WorkOS 身份认证策略：
+
+1. WorkOSProvider - WorkOS Connect 应用程序的 OAuth 代理（非 DCR）
+2. AuthKitProvider - WorkOS AuthKit 的 DCR 兼容提供器
+
+请根据您的 WorkOS 设置和身份认证要求选择合适的策略。
+
+
 ## 类
 
-### `AuthKitProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L18" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-### `AuthKitProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L31" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `WorkOSProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L29" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-用于 DCR（动态客户端注册）的 AuthKit 元数据提供者。
+WorkOS OAuth 提供器的设置。
 
-此提供者使用元数据转发而非 OAuth 代理来实现 AuthKit 集成。
+
+### `WorkOSTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L47" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+WorkOS OAuth 令牌验证器。
+
+WorkOS AuthKit 令牌是不透明的，因此我们通过调用 
+/oauth2/userinfo 端点来验证令牌有效性并获取用户信息。
+
+
+**方法：**
+
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L72" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+verify_token(self, token: str) -> AccessToken | None
+```
+
+通过调用用户信息端点验证 WorkOS OAuth 令牌。
+
+
+### `WorkOSProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L120" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+FastMCP 完整的 WorkOS OAuth 提供器。
+
+该提供器使用 OAuth 代理模式实现 WorkOS AuthKit OAuth。
+它通过 WorkOS Connect 应用程序为用户提供 OAuth2 身份认证。
+
+功能特性：
+- 到 WorkOS AuthKit 的透明 OAuth 代理
+- 通过用户信息端点自动验证令牌
+- 从 ID 令牌中提取用户信息
+- 支持标准的 OAuth 范围（openid、profile、email）
+
+设置要求：
+1. 在您的控制台中创建一个 WorkOS Connect 应用程序
+2. 记录您的 AuthKit 域名（例如："https://your-app.authkit.app"）
+3. 配置重定向 URI 为：http://localhost:8000/auth/callback
+4. 记录您的客户端 ID 和客户端密钥
+
+
+### `AuthKitProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L247" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+### `AuthKitProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L260" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+用于 DCR（动态客户端注册）的 AuthKit 元数据提供器。
+
+该提供器使用元数据转发而不是 OAuth 代理来实现 AuthKit 集成。
 这是 WorkOS DCR 的推荐方法，因为它允许 WorkOS 直接处理 OAuth 流程，
 而 FastMCP 作为资源服务器。
 
-重要的设置要求：
+重要设置要求：
 
-1. 在 WorkOS 仪表板中启用动态客户端注册：
-   - 转到应用程序 → 配置
-   - 将“动态客户端注册”切换为启用
+1. 在 WorkOS 控制台中启用动态客户端注册：
+   - 转到 Applications → Configuration
+   - 将"Dynamic Client Registration"切换为启用状态
 
-2. 将您的 FastMCP 服务器 URL 配置为回调：
-   - 在 WorkOS 仪表板的重定向选项卡中添加您的服务器 URL
+2. 配置您的 FastMCP 服务器 URL 作为回调地址：
+   - 在 WorkOS 控制台的 Redirects 选项卡中添加您的服务器 URL
    - 示例：https://your-fastmcp-server.com/oauth2/callback
 
-有关详细设置说明，请参阅：
+详细设置说明请参阅：
 https://workos.com/docs/authkit/mcp/integrating/token-verification
 
 
 **方法：**
 
-#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L114" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/workos.py#L343" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_routes(self) -> list[Route]
@@ -42,6 +100,5 @@ get_routes(self) -> list[Route]
 
 获取包括 AuthKit 授权服务器元数据转发的 OAuth 路由。
 
-这返回标准的受保护资源路由，加上一个授权服务器
-元数据端点，该端点向客户端转发 AuthKit 的 OAuth 元数据。
+这返回标准的受保护资源路由，以及一个将 AuthKit 的 OAuth 元数据转发给客户端的授权服务器元数据端点。
 

@@ -18,10 +18,10 @@ fastmcp --help
 
 | Command | Purpose | Dependency Management |
 | ------- | ------- | --------------------- |
-| `run` | Run a FastMCP server directly | **Supports:** Local files, factory functions, URLs, MCP configs. **Deps:** Uses your local environment directly. With `--python`, `--with`, `--project`, or `--with-requirements`: Runs via `uv run` subprocess |
-| `dev` | Run a server with the MCP Inspector for testing | **Supports:** Local files only. **Deps:** Always runs via `uv run` subprocess (never uses your local environment); dependencies must be specified or available in a uv-managed project |
-| `install` | Install a server in MCP client applications | **Supports:** Local files only. **Deps:** Creates an isolated environment; dependencies must be explicitly specified with `--with` and/or `--with-editable` |
-| `inspect` | Generate a JSON report about a FastMCP server | **Supports:** Local files only. **Deps:** Uses your current environment; you are responsible for ensuring all dependencies are available |
+| `run` | Run a FastMCP server directly | **Supports:** Local files, factory functions, URLs, fastmcp.json configs, MCP configs. **Deps:** Uses your local environment directly. With `--python`, `--with`, `--project`, or `--with-requirements`: Runs via `uv run` subprocess. With fastmcp.json: Automatically manages dependencies based on configuration |
+| `dev` | Run a server with the MCP Inspector for testing | **Supports:** Local files and fastmcp.json configs. **Deps:** Always runs via `uv run` subprocess (never uses your local environment); dependencies must be specified or available in a uv-managed project. With fastmcp.json: Uses configured dependencies |
+| `install` | Install a server in MCP client applications | **Supports:** Local files and fastmcp.json configs. **Deps:** Creates an isolated environment; dependencies must be explicitly specified with `--with` and/or `--with-editable`. With fastmcp.json: Uses configured dependencies |
+| `inspect` | Generate a JSON report about a FastMCP server | **Supports:** Local files and fastmcp.json configs. **Deps:** Uses your current environment; you are responsible for ensuring all dependencies are available |
 | `version` | Display version information | N/A |
 
 ## `fastmcp run`

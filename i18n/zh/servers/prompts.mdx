@@ -188,10 +188,10 @@ FastMCP 智能地处理您提示函数的不同返回类型：
 -   **`Any`**：如果返回类型不是上述之一，则尝试将返回值转换为字符串并用作 `PromptMessage`。
 
 ```python
-from fastmcp.prompts.prompt import Message
+from fastmcp.prompts.prompt import Message, PromptResult
 
 @mcp.prompt
-def roleplay_scenario(character: str, situation: str) -> list[Message]:
+def roleplay_scenario(character: str, situation: str) -> PromptResult:
     """设置带有初始消息的角色扮演场景。"""
     return [
         Message(f"Let's roleplay. You are {character}. The situation is: {situation}"),

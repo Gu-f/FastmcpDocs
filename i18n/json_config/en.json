@@ -2,7 +2,6 @@
   "language": "${LANGUAGE_CODE}",
   "tabs": [
     {
-      "tab": "Documentation",
       "anchors": [
         {
           "anchor": "Documentation",
@@ -47,8 +46,9 @@
                   "icon": "shield-check",
                   "pages": [
                     "${LANGUAGE_CODE}/servers/auth/authentication",
-                    "${LANGUAGE_CODE}/servers/auth/remote-oauth",
                     "${LANGUAGE_CODE}/servers/auth/token-verification",
+                    "${LANGUAGE_CODE}/servers/auth/remote-oauth",
+                    "${LANGUAGE_CODE}/servers/auth/oauth-proxy",
                     "${LANGUAGE_CODE}/servers/auth/full-oauth-server"
                   ]
                 },
@@ -57,6 +57,7 @@
                   "icon": "rocket",
                   "pages": [
                     "${LANGUAGE_CODE}/deployment/running-server",
+                    "${LANGUAGE_CODE}/deployment/server-configuration",
                     "${LANGUAGE_CODE}/deployment/testing",
                     "${LANGUAGE_CODE}/deployment/self-hosted",
                     "${LANGUAGE_CODE}/deployment/fastmcp-cloud"
@@ -70,10 +71,7 @@
                 {
                   "group": "Essentials",
                   "icon": "cube",
-                  "pages": [
-                    "${LANGUAGE_CODE}/clients/client",
-                    "${LANGUAGE_CODE}/clients/transports"
-                  ]
+                  "pages": ["${LANGUAGE_CODE}/clients/client", "${LANGUAGE_CODE}/clients/transports"]
                 },
                 {
                   "group": "Core Operations",
@@ -99,31 +97,61 @@
                 {
                   "group": "Authentication",
                   "icon": "user-shield",
-                  "pages": [
-                    "${LANGUAGE_CODE}/clients/auth/oauth",
-                    "${LANGUAGE_CODE}/clients/auth/bearer"
-                  ]
+                  "pages": ["${LANGUAGE_CODE}/clients/auth/oauth", "${LANGUAGE_CODE}/clients/auth/bearer"]
                 }
               ]
             },
             {
               "group": "Integrations",
               "pages": [
-                "${LANGUAGE_CODE}/integrations/anthropic",
-                "${LANGUAGE_CODE}/integrations/authkit",
-                "${LANGUAGE_CODE}/integrations/chatgpt",
-                "${LANGUAGE_CODE}/integrations/claude-code",
-                "${LANGUAGE_CODE}/integrations/claude-desktop",
-                "${LANGUAGE_CODE}/integrations/cursor",
-                "${LANGUAGE_CODE}/integrations/eunomia-authorization",
-                "${LANGUAGE_CODE}/integrations/fastapi",
-                "${LANGUAGE_CODE}/deployment/fastmcp-cloud",
-                "${LANGUAGE_CODE}/integrations/gemini",
-                "${LANGUAGE_CODE}/integrations/mcp-json-configuration",
-                "${LANGUAGE_CODE}/integrations/openai",
-                "${LANGUAGE_CODE}/integrations/openapi",
-                "${LANGUAGE_CODE}/integrations/permit",
-                "${LANGUAGE_CODE}/integrations/starlette"
+                {
+                  "group": "Authentication",
+                  "icon": "key",
+                  "pages": [
+                    "${LANGUAGE_CODE}/integrations/authkit",
+                    "${LANGUAGE_CODE}/integrations/azure",
+                    "${LANGUAGE_CODE}/integrations/github",
+                    "${LANGUAGE_CODE}/integrations/google",
+                    "${LANGUAGE_CODE}/integrations/workos-oauth"
+                  ]
+                },
+                {
+                  "group": "Authorization",
+                  "icon": "shield-check",
+                  "pages": [
+                    "${LANGUAGE_CODE}/integrations/eunomia-authorization",
+                    "${LANGUAGE_CODE}/integrations/permit"
+                  ]
+                },
+                {
+                  "group": "AI Assistants",
+                  "icon": "robot",
+                  "pages": [
+                    "${LANGUAGE_CODE}/integrations/chatgpt",
+                    "${LANGUAGE_CODE}/integrations/claude-code",
+                    "${LANGUAGE_CODE}/integrations/claude-desktop",
+                    "${LANGUAGE_CODE}/integrations/cursor",
+                    "${LANGUAGE_CODE}/integrations/mcp-json-configuration"
+                  ]
+                },
+                {
+                  "group": "AI SDKs",
+                  "icon": "code",
+                  "pages": [
+                    "${LANGUAGE_CODE}/integrations/anthropic",
+                    "${LANGUAGE_CODE}/integrations/gemini",
+                    "${LANGUAGE_CODE}/integrations/openai"
+                  ]
+                },
+                {
+                  "group": "Web Frameworks",
+                  "icon": "globe",
+                  "pages": [
+                    "${LANGUAGE_CODE}/integrations/asgi",
+                    "${LANGUAGE_CODE}/integrations/fastapi",
+                    "${LANGUAGE_CODE}/integrations/openapi"
+                  ]
+                }
               ]
             },
             {
@@ -148,22 +176,17 @@
         },
         {
           "anchor": "What's New",
-          "pages": [
-            "${LANGUAGE_CODE}/updates",
-            "${LANGUAGE_CODE}/changelog"
-          ]
+          "pages": ["${LANGUAGE_CODE}/updates", "${LANGUAGE_CODE}/changelog"]
         },
         {
           "anchor": "Community",
           "icon": "users",
-          "pages": [
-            "${LANGUAGE_CODE}/community/showcase"
-          ]
+          "pages": ["${LANGUAGE_CODE}/community/showcase"]
         }
-      ]
+      ],
+      "tab": "Documentation"
     },
     {
-      "tab": "SDK Reference",
       "anchors": [
         {
           "anchor": "Python SDK",
@@ -242,11 +265,15 @@
                   "pages": [
                     "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-__init__",
                     "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-auth",
+                    "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-oauth_proxy",
                     {
                       "group": "providers",
                       "pages": [
                         "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-__init__",
+                        "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-azure",
                         "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-bearer",
+                        "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-github",
+                        "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-google",
                         "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-in_memory",
                         "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-jwt",
                         "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-workos"
@@ -305,7 +332,8 @@
             }
           ]
         }
-      ]
+      ],
+      "tab": "SDK Reference"
     }
   ]
 }

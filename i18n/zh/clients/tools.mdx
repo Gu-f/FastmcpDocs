@@ -26,8 +26,8 @@ async with client:
         if tool.inputSchema:
             print(f"参数: {tool.inputSchema}")
         # 访问标签和其他元数据
-        if hasattr(tool, '_meta') and tool._meta:
-            fastmcp_meta = tool._meta.get('_fastmcp', {})
+        if hasattr(tool, 'meta') and tool.meta:
+            fastmcp_meta = tool.meta.get('_fastmcp', {})
             print(f"标签: {fastmcp_meta.get('tags', [])}")
 ```
 
@@ -44,16 +44,16 @@ async with client:
     # 按标签筛选工具
     analysis_tools = [
         tool for tool in tools 
-        if hasattr(tool, '_meta') and tool._meta and
-           tool._meta.get('_fastmcp', {}) and
-           'analysis' in tool._meta.get('_fastmcp', {}).get('tags', [])
+        if hasattr(tool, 'meta') and tool.meta and
+           tool.meta.get('_fastmcp', {}) and
+           'analysis' in tool.meta.get('_fastmcp', {}).get('tags', [])
     ]
     
     print(f"找到 {len(analysis_tools)} 个分析工具")
 ```
 
 <Note>
-`_meta` 字段是标准 MCP 规范的一部分。FastMCP 服务器在 `_fastmcp` 命名空间内包含标签和其他元数据（例如 `_meta._fastmcp.tags`）以避免与用户定义的元数据冲突。这种行为可以通过服务器的 `include_fastmcp_meta` 设置控制 - 如果禁用，将不会包含 `_fastmcp` 命名空间。其他 MCP 服务器实现可能不提供此元数据结构。
+`meta` 字段是标准 MCP 规范的一部分。FastMCP 服务器在 `_fastmcp` 命名空间内包含标签和其他元数据（例如 `meta._fastmcp.tags`）以避免与用户定义的元数据冲突。这种行为可以通过服务器的 `include_fastmcp_meta` 设置控制 - 如果禁用，将不会包含 `_fastmcp` 命名空间。其他 MCP 服务器实现可能不提供此元数据结构。
 </Note>
 
 ## 执行工具

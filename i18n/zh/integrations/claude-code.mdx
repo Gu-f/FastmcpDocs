@@ -81,16 +81,21 @@ fastmcp install claude-code server.py --with-requirements requirements.txt
 fastmcp install claude-code server.py --with-editable ./my-local-package
 ```
 
-或者，您可以在服务器代码中直接指定依赖：
+或者，您也可以使用一个名为 `fastmcp.json` 的配置文件（推荐使用）：
 
-```python server.py
-from fastmcp import FastMCP
-
-mcp = FastMCP(
-    name="骰子投掷器",
-    dependencies=["pandas", "requests"]
-)
+```json fastmcp.json
+{
+  "$schema": "https://gofastmcp.com/schemas/fastmcp_config/v1.json",
+  "entrypoint": {
+    "file": "server.py",
+    "object": "mcp"
+  },
+  "environment": {
+    "dependencies": ["pandas", "requests"]
+  }
+}
 ```
+
 
 #### Python 版本和项目配置
 

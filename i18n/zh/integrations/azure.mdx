@@ -1,0 +1,250 @@
+---
+title: Azure (Microsoft Entra) OAuth 🤝 FastMCP
+sidebarTitle: Azure
+description: 使用 Azure/Microsoft Entra OAuth 保护您的 FastMCP 服务器
+icon: microsoft
+tag: NEW
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+<VersionBadge version="2.12.0" />
+
+本指南将向您展示如何使用 **Azure OAuth**（Microsoft Entra ID）保护您的 FastMCP 服务器。由于 Azure 不支持动态客户端注册，此集成使用 [**OAuth 代理**](/zh/servers/auth/oauth-proxy) 模式来连接 Azure 的传统 OAuth 与 MCP 的身份验证要求。
+
+## 配置
+
+### 先决条件
+
+在开始之前，您需要：
+1. 一个具有创建应用注册权限的 **[Azure 账户](https://portal.azure.com/)**
+2. 您的 FastMCP 服务器 URL（开发时可以是 localhost，例如 `http://localhost:8000`）
+3. 您的 Azure 租户 ID（在 Azure 门户的 Microsoft Entra ID 下可以找到）
+
+### 第 1 步：创建 Azure 应用注册
+
+在 Azure 门户中创建应用注册以获取身份验证所需的凭据：
+
+<Steps>
+<Step title="导航到应用注册">
+    转到 [Azure 门户](https://portal.azure.com)并导航到 **Microsoft Entra ID → 应用注册**。
+    
+    点击 **"新注册"** 创建新应用程序。
+</Step>
+
+<Step title="配置您的应用程序">
+    填写应用程序详细信息：
+    
+    - **名称**：选择用户可以识别的名称（例如，"我的 FastMCP 服务器"）
+    - **支持的账户类型**：根据您的需要选择：
+      - **单租户**：仅您组织中的用户
+      - **多租户**：任何 Microsoft Entra 目录中的用户
+      - **多租户 + 个人账户**：任何 Microsoft 账户
+    - **重定向 URI**：选择 "Web" 并输入您的服务器 URL + `/auth/callback`（例如，`http://localhost:8000/auth/callback`）
+    
+    <Warning>
+    重定向 URI 必须完全匹配。默认路径是 `/auth/callback`，但您可以使用 `redirect_path` 参数进行自定义。对于本地开发，Azure 允许 `http://localhost` URL。对于生产环境，您必须使用 HTTPS。
+    </Warning>
+    
+    <Tip>
+    如果您想使用自定义回调路径（例如，`/auth/azure/callback`），请确保在 Azure 应用注册和配置 AzureProvider 时的 `redirect_path` 参数中设置相同的路径。
+    </Tip>
+</Step>
+
+<Step title="创建客户端密钥">
+    注册后，在您的应用设置中导航到 **证书和密钥**。
+    
+    - 点击 **"新客户端密钥"**
+    - 添加描述（例如，"FastMCP 服务器"）
+    - 选择过期时间
+    - 点击 **"添加"**
+    
+    <Warning>
+    立即复制密钥值 - 它不会再次显示！如果丢失，您需要创建新的密钥。
+    </Warning>
+</Step>
+
+<Step title="记录您的凭据">
+    从您的应用注册的 **概览** 页面，记录：
+    
+    - **应用程序（客户端）ID**：像 `835f09b6-0f0f-40cc-85cb-f32c5829a149` 这样的 UUID
+    - **目录（租户）ID**：像 `08541b6e-646d-43de-a0eb-834e6713d6d5` 这样的 UUID
+    - **客户端密钥**：您在上一步中复制的值
+    
+    <Tip>
+    安全存储这些凭据。永远不要将它们提交到版本控制。在生产环境中使用环境变量或密钥管理器。
+    </Tip>
+</Step>
+</Steps>
+
+### 第 2 步：FastMCP 配置
+
+使用 `AzureProvider` 创建您的 FastMCP 服务器，它会自动处理 Azure 的 OAuth 流程：
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.azure import AzureProvider
+
+# AzureProvider 处理 Azure 的令牌格式和验证
+auth_provider = AzureProvider(
+    client_id="835f09b6-0f0f-40cc-85cb-f32c5829a149",  # 您的 Azure 应用客户端 ID
+    client_secret="your-client-secret",                 # 您的 Azure 应用客户端密钥
+    tenant_id="08541b6e-646d-43de-a0eb-834e6713d6d5", # 您的 Azure 租户 ID（必需）
+    base_url="http://localhost:8000",                   # 必须与您的应用注册匹配
+    required_scopes=["User.Read", "email", "openid", "profile"],  # Microsoft Graph 权限
+    # redirect_path="/auth/callback"                  # 默认值，如需可自定义
+)
+
+mcp = FastMCP(name="Azure Secured App", auth=auth_provider)
+
+# 添加受保护的工具来测试身份验证
+@mcp.tool
+async def get_user_info() -> dict:
+    """返回经过身份验证的 Azure 用户信息。"""
+    from fastmcp.server.dependencies import get_access_token
+    
+    token = get_access_token()
+    # AzureProvider 在令牌声明中存储用户数据
+    return {
+        "azure_id": token.claims.get("sub"),
+        "email": token.claims.get("email"),
+        "name": token.claims.get("name"),
+        "job_title": token.claims.get("job_title"),
+        "office_location": token.claims.get("office_location")
+    }
+```
+
+<Note>
+**重要**：`tenant_id` 参数是 **必需的**。由于安全要求，Azure 不再支持为新应用程序使用 "common"。您必须使用以下之一：
+
+- **您的特定租户 ID**：在 Azure 门户中找到（例如，`08541b6e-646d-43de-a0eb-834e6713d6d5`）
+- **"organizations"**：仅限工作和学校账户
+- **"consumers"**：仅限个人 Microsoft 账户
+
+推荐使用您的特定租户 ID 以获得更好的安全性和控制。
+</Note>
+
+## 测试
+
+### 运行服务器
+
+使用 HTTP 传输启动您的 FastMCP 服务器以启用 OAuth 流程：
+
+```bash
+fastmcp run server.py --transport http --port 8000
+```
+
+您的服务器现在正在运行并受到 Azure OAuth 身份验证的保护。
+
+### 使用客户端测试
+
+创建一个与您的 Azure 保护服务器进行身份验证的测试客户端：
+
+```python test_client.py
+from fastmcp import Client
+import asyncio
+
+async def main():
+    # 客户端将自动处理 Azure OAuth
+    async with Client("http://localhost:8000/mcp/", auth="oauth") as client:
+        # 首次连接将在浏览器中打开 Azure 登录
+        print("✓ 已通过 Azure 身份验证！")
+        
+        # 测试受保护的工具
+        result = await client.call_tool("get_user_info")
+        print(f"Azure 用户：{result['email']}")
+        print(f"姓名：{result['name']}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+当您首次运行客户端时：
+1. 您的浏览器将打开 Microsoft 的授权页面
+2. 使用您的 Microsoft 账户登录（根据您的租户配置，可以是工作、学校或个人账户）
+3. 授予请求的权限
+4. 授权后，您将被重定向回去
+5. 客户端接收令牌并可以发出经过身份验证的请求
+
+<Info>
+客户端在本地缓存令牌，因此除非令牌过期或您显式清除缓存，否则您无需为后续运行重新进行身份验证。
+</Info>
+
+## 环境变量
+
+对于生产部署，请使用环境变量而不是硬编码凭据。
+
+<Info>
+要使用注册的 Azure 提供程序，您必须设置 `FASTMCP_SERVER_AUTH=AZURE`。了解更多关于 [注册提供程序](/zh/servers/auth/authentication#registered-providers) 的信息。
+</Info>
+
+### 提供程序选择
+
+<ParamField path="FASTMCP_SERVER_AUTH" default="Not set" required>
+设置为 `AZURE` 以使用具有默认配置的注册 AzureProvider。
+</ParamField>
+
+### Azure 特定配置
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_CLIENT_ID" required>
+您的 Azure 应用注册客户端 ID（例如，`835f09b6-0f0f-40cc-85cb-f32c5829a149`）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_CLIENT_SECRET" required>
+您的 Azure 应用注册客户端密钥
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_TENANT_ID" required>
+您的 Azure 租户 ID（特定 ID、"organizations" 或 "consumers"）
+
+<Note>
+这是 **必需的**。在 Azure 门户的 Microsoft Entra ID → 概览 下找到您的租户 ID。
+</Note>
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_BASE_URL" default="http://localhost:8000">
+用于 OAuth 回调的 FastMCP 服务器公共 URL
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_REDIRECT_PATH" default="/auth/callback">
+在您的 Azure 应用注册中配置的重定向路径
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_REQUIRED_SCOPES" default='["User.Read", "email", "openid", "profile"]'>
+需要的 Microsoft Graph 范围的逗号分隔列表
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_TIMEOUT_SECONDS" default="10">
+Microsoft Graph API 调用的 HTTP 请求超时
+</ParamField>
+</Card>
+
+Example `.env` file:
+```bash
+# 使用注册的 Azure 提供程序
+FASTMCP_SERVER_AUTH=AZURE
+
+# Azure OAuth 凭据
+FASTMCP_SERVER_AUTH_AZURE_CLIENT_ID=835f09b6-0f0f-40cc-85cb-f32c5829a149
+FASTMCP_SERVER_AUTH_AZURE_CLIENT_SECRET=your-client-secret-here
+FASTMCP_SERVER_AUTH_AZURE_TENANT_ID=08541b6e-646d-43de-a0eb-834e6713d6d5
+FASTMCP_SERVER_AUTH_AZURE_BASE_URL=https://your-server.com
+FASTMCP_SERVER_AUTH_AZURE_REQUIRED_SCOPES=User.Read,email,profile
+```
+
+With environment variables set, your server code simplifies to:
+
+```python server.py
+from fastmcp import FastMCP
+
+# 身份验证从环境中自动配置
+mcp = FastMCP(name="Azure Secured App")
+
+@mcp.tool
+async def protected_tool(query: str) -> str:
+    """需要 Azure 身份验证才能访问的工具。"""
+    # 您的工具实现在这里
+    return f"处理经过身份验证的请求：{query}"
+```
+

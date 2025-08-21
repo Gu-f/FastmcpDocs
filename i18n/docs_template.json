@@ -4,20 +4,12 @@
     "default": "system",
     "strict": false
   },
-  "logo": {
-    "light": "/assets/brand/logo-wordmark.svg",
-    "dark": "/assets/brand/logo-wordmark-dark.svg"
-  },
   "background": {
     "color": {
       "dark": "#222831",
       "light": "#EEEEEE"
     },
     "decoration": "windows"
-  },
-  "thumbnails": {
-    "appearance": "light",
-    "background": "/assets/brand/card-background.png"
   },
   "banner": {
     "content": "Remote MCP that just works:  [FastMCP Cloud is here!](https://fastmcp.link/IhmBxWn) "
@@ -44,6 +36,10 @@
     "ga4": {
       "measurementId": "G-64R5W1TJXG"
     }
+  },
+  "logo": {
+    "dark": "/assets/brand/logo-wordmark-dark.svg",
+    "light": "/assets/brand/logo-wordmark.svg"
   },
   "name": "FastMCP",
   "navbar": {
@@ -74,5 +70,9 @@
   "search": {
     "prompt": "Search the docs..."
   },
-  "theme": "mint"
+  "theme": "mint",
+  "thumbnails": {
+    "appearance": "light",
+    "background": "/assets/brand/card-background.png"
+  }
 }

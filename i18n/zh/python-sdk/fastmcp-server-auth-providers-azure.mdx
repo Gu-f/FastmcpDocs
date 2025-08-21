@@ -1,0 +1,59 @@
+---
+title: azure
+sidebarTitle: azure
+---
+
+# `fastmcp.server.auth.providers.azure`
+
+
+FastMCP 的 Azure（Microsoft Entra）OAuth 提供程序。
+
+此提供程序使用 OAuth 代理模式为非 DCR OAuth 流程实现 Azure/Microsoft Entra ID OAuth 身份验证。
+
+
+## 类
+
+### `AzureProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L22" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Azure OAuth 提供程序的设置。
+
+
+### `AzureTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L40" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Azure OAuth 令牌的令牌验证器。
+
+Azure 令牌是 JWT，但我们通过调用 Microsoft Graph API 来获取用户信息并验证令牌。
+
+
+**方法：**
+
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L62" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+verify_token(self, token: str) -> AccessToken | None
+```
+
+通过调用 Microsoft Graph API 验证 Azure OAuth 令牌。
+
+
+### `AzureProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L112" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+FastMCP 的 Azure（Microsoft Entra）OAuth 提供程序。
+
+此提供程序使用 OAuth 代理模式实现 Azure/Microsoft Entra ID 身份验证。根据租户配置，它支持组织账户和个人 Microsoft 账户。
+
+功能：
+- 到 Azure/Microsoft 身份平台的透明 OAuth 代理
+- 通过 Microsoft Graph API 进行自动令牌验证
+- 用户信息提取
+- 支持不同的租户配置（common、organizations、consumers）
+
+设置要求：
+1. 在 Azure 门户（portal.azure.com）中注册应用程序
+2. 将重定向 URI 配置为：http://localhost:8000/auth/callback
+3. 记录您的应用程序（客户端）ID 并创建客户端密钥
+4. 可选地为单租户应用记录您的目录（租户）ID
+
