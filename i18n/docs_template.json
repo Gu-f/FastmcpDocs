@@ -4,6 +4,9 @@
     "default": "system",
     "strict": false
   },
+  "interaction": {
+    "drilldown": false
+  },
   "background": {
     "color": {
       "dark": "#222831",

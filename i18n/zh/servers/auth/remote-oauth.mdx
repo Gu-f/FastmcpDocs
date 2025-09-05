@@ -30,9 +30,9 @@ RemoteAuthProvider 与支持**动态客户端注册（DCR）**的身份提供商
 | **凭据** | 每个客户端动态生成 | 固定的应用凭据 |
 | **配置** | 零客户端配置 | 预共享凭据 |
 | **示例** | WorkOS AuthKit，现代 OIDC | GitHub，Google，Azure |
-| **FastMCP 类** | `RemoteAuthProvider` | [`OAuthProxy`](/servers/auth/oauth-proxy) |
+| **FastMCP 类** | `RemoteAuthProvider` | [`OAuthProxy`](/zh/servers/auth/oauth-proxy) |
 
-如果您的提供商不支持 DCR（大多数传统的 OAuth 提供商），您需要使用 [`OAuth 代理`](/servers/auth/oauth-proxy) 代替，它弥合了 MCP 的 DCR 期望与固定 OAuth 凭据之间的差距。
+如果您的提供商不支持 DCR（大多数传统的 OAuth 提供商），您需要使用 [`OAuth 代理`](/zh/servers/auth/oauth-proxy) 代替，它弥合了 MCP 的 DCR 期望与固定 OAuth 凭据之间的差距。
 
 ## 远程 OAuth 挑战
 
@@ -100,26 +100,28 @@ from fastmcp.server.auth import RemoteAuthProvider
 from fastmcp.server.auth.providers.jwt import JWTVerifier
 from pydantic import AnyHttpUrl
 
-# 为您的身份提供商配置令牌验证
+# Configure token validation for your identity provider
 token_verifier = JWTVerifier(
     jwks_uri="https://auth.yourcompany.com/.well-known/jwks.json",
     issuer="https://auth.yourcompany.com",
     audience="mcp-production-api"
 )
 
-# 创建远程身份验证提供商
+# Create the remote auth provider
 auth = RemoteAuthProvider(
     token_verifier=token_verifier,
     authorization_servers=[AnyHttpUrl("https://auth.yourcompany.com")],
-    resource_server_url="https://api.yourcompany.com"
+    base_url="https://api.yourcompany.com",  # Your server base URL
+    # Optional: customize allowed client redirect URIs (defaults to localhost only)
+    allowed_client_redirect_uris=["http://localhost:*", "http://127.0.0.1:*"]
 )
 
-mcp = FastMCP(name="公司 API", auth=auth)
+mcp = FastMCP(name="Company API", auth=auth)
 ```
 
 此配置创建一个接受由 `auth.yourcompany.com` 发行的令牌的服务器，并提供 MCP 客户端所需的 OAuth 发现元数据。`JWTVerifier` 使用您的身份提供商的公钥处理令牌验证，而 `RemoteAuthProvider` 生成所需的 OAuth 端点。
 
-`authorization_servers` 列表告诉 MCP 客户端您信任哪些身份提供商。`resource_server_url` 在 OAuth 元数据中标识您的服务器，启用适当的令牌受众验证。
+The `authorization_servers` list tells MCP clients which identity providers you trust. The `base_url` identifies your server in OAuth metadata, enabling proper token audience validation. **Important**: The `base_url` should point to your server base URL - for example, if your MCP server is accessible at `https://api.yourcompany.com/mcp`, use `https://api.yourcompany.com` as the base URL.
 
 ### 自定义端点
 
@@ -141,7 +143,7 @@ class CompanyAuthProvider(RemoteAuthProvider):
         super().__init__(
             token_verifier=token_verifier,
             authorization_servers=[AnyHttpUrl("https://auth.yourcompany.com")],
-            resource_server_url="https://api.yourcompany.com"
+            base_url="https://api.yourcompany.com"  # Your server base URL
         )
     
     def get_routes(self) -> list[Route]:
@@ -191,6 +193,18 @@ mcp = FastMCP(name="受保护的应用程序", auth=auth)
 WorkOS 对动态客户端注册的支持使其特别适合 MCP 应用程序。客户端可以自动向您的 WorkOS 项目注册自己，并获得身份验证所需的凭据，无需手动干预。
 
 → **完整 WorkOS 教程**：[AuthKit 集成指南](/zh/integrations/authkit)
+
+## Client Redirect URI Security
+
+<Note>
+`RemoteAuthProvider` also supports the `allowed_client_redirect_uris` parameter for controlling which redirect URIs are accepted from MCP clients during DCR:
+
+- `None` (default): Only localhost patterns allowed
+- Custom list: Specify allowed patterns with wildcard support
+- Empty list `[]`: Allow all (not recommended)
+
+This provides defense-in-depth even though DCR providers typically validate redirect URIs themselves.
+</Note>
 
 ## 实现考虑因素
 

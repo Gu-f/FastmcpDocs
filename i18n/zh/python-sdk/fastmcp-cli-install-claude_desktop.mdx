@@ -10,7 +10,7 @@ sidebarTitle: claude_desktop
 
 ## 函数
 
-### `get_claude_config_path` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_desktop.py#L19" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `get_claude_config_path` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_desktop.py#L20" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_claude_config_path() -> Path | None
@@ -20,7 +20,7 @@ get_claude_config_path() -> Path | None
 根据平台获取 Claude 配置目录。
 
 
-### `install_claude_desktop` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_desktop.py#L37" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `install_claude_desktop` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_desktop.py#L38" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 install_claude_desktop(file: Path, server_object: str | None, name: str) -> bool
@@ -33,7 +33,7 @@ install_claude_desktop(file: Path, server_object: str | None, name: str) -> bool
 - `file`: 服务器文件的路径
 - `server_object`: 可选的服务器对象名称（用于 \:object 后缀）
 - `name`: 在 Claude 配置中的服务器名称
-- `with_editable`: 可选的目录，以可编辑模式安装
+- `with_editable`: Optional list of directories to install in editable mode
 - `with_packages`: 可选的附加包列表，用于安装
 - `env_vars`: 可选的环境变量字典
 - `python_version`: 可选的要使用的 Python 版本
@@ -44,7 +44,7 @@ install_claude_desktop(file: Path, server_object: str | None, name: str) -> bool
 - 如果安装成功则返回 True，否则返回 False
 
 
-### `claude_desktop_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_desktop.py#L143" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `claude_desktop_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_desktop.py#L133" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 claude_desktop_command(server_spec: str) -> None

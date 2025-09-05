@@ -191,49 +191,57 @@ FastMCP 支持编程式配置（以获得最大灵活性）和基于环境的配
 
 ### 环境配置
 
-基于环境的配置将身份验证设置与应用程序代码分离，使得相同的代码库可以在不同的部署环境中无需修改即可工作。
+<VersionBadge version="2.12.1" />
 
-当未提供显式的 `auth` 参数时，FastMCP 会自动从环境变量中检测身份验证配置。配置系统支持所有身份验证提供商及其各种选项。
+Environment-based configuration separates authentication settings from application code, enabling the same codebase to work across different deployment environments without modification.
 
-#### 注册提供商
+FastMCP automatically detects authentication configuration from environment variables when no explicit `auth` parameter is provided. The configuration system supports all authentication providers and their various options.
 
-FastMCP 包含针对流行 OAuth 服务的预配置提供商，可通过单个环境变量激活：
+#### Provider Configuration
+
+Authentication providers are configured by specifying the full module path to the provider class:
 
 <ParamField path="FASTMCP_SERVER_AUTH" type="string">
-要使用的身份验证提供商。支持的值：
-- `GITHUB` - GitHub OAuth（需要额外的 GitHub 特定环境变量）
-- `GOOGLE` - Google OAuth（需要额外的 Google 特定环境变量）
-- `JWT` - JWT 令牌验证
-- `WORKOS` - WorkOS AuthKit
-- 自定义提供商类名
+The full module path to the authentication provider class. Examples:
+- `fastmcp.server.auth.providers.github.GitHubProvider` - GitHub OAuth
+- `fastmcp.server.auth.providers.google.GoogleProvider` - Google OAuth
+- `fastmcp.server.auth.providers.jwt.JWTVerifier` - JWT token verification
+- `fastmcp.server.auth.providers.workos.WorkOSProvider` - WorkOS OAuth
+- `fastmcp.server.auth.providers.workos.AuthKitProvider` - WorkOS AuthKit
+- `mycompany.auth.CustomProvider` - Your custom provider class
 </ParamField>
 
-使用 GitHub 或 Google 等注册提供商时，您需要设置提供商特定的环境变量：
+When using providers like GitHub or Google, you'll need to set provider-specific environment variables:
 
 ```bash
 # GitHub OAuth
-export FASTMCP_SERVER_AUTH=GITHUB
+export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.github.GitHubProvider
 export FASTMCP_SERVER_AUTH_GITHUB_CLIENT_ID="Ov23li..."
 export FASTMCP_SERVER_AUTH_GITHUB_CLIENT_SECRET="github_pat_..."
 
 # Google OAuth
-export FASTMCP_SERVER_AUTH=GOOGLE
+export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.google.GoogleProvider
 export FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_ID="123456.apps.googleusercontent.com"
 export FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_SECRET="GOCSPX-..."
 ```
 
-#### 自定义提供商配置
+#### Provider-Specific Configuration
 
-对于未预注册的提供商，请指定提供商类及其配置：
+Each provider has its own configuration options set through environment variables:
 
 ```bash
-export FASTMCP_SERVER_AUTH=JWT
+# JWT Token Verification
+export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.jwt.JWTVerifier
 export FASTMCP_SERVER_AUTH_JWT_JWKS_URI="https://auth.example.com/jwks"
 export FASTMCP_SERVER_AUTH_JWT_ISSUER="https://auth.example.com"
 export FASTMCP_SERVER_AUTH_JWT_AUDIENCE="mcp-server"
+
+# Custom Provider
+export FASTMCP_SERVER_AUTH=mycompany.auth.CustomProvider
+# Plus any environment variables your custom provider expects
 ```
 
-设置这些环境变量后，创建身份验证的 FastMCP 服务器不需要额外配置：
+With these environment variables set, creating an authenticated FastMCP server requires no additional configuration:
 
 ```python
 from fastmcp import FastMCP
@@ -246,12 +254,14 @@ mcp = FastMCP(name="我的服务器")
 
 ## 选择您的实现
 
-您选择的身份验证方法取决于您现有的基础设施、安全要求和运营约束。
+The authentication approach you choose depends on your existing infrastructure, security requirements, and operational constraints.
 
-**对于大多数生产应用程序，外部身份提供商提供了安全性、功能和简单性的最佳平衡。**这种方法提供企业级身份验证，无需实现复杂性，并且随着应用程序的增长具有良好的扩展性。主要的权衡是需要用户在您选择的身份提供商处注册，但这也带来了专业用户管理、安全监控和合规功能等好处。
+**For OAuth providers without DCR support (GitHub, Google, Azure, most enterprise systems), use OAuth Proxy.** These providers require manual app registration through their developer consoles. OAuth Proxy bridges the gap by presenting a DCR-compliant interface to MCP clients while using your fixed credentials with the provider. The proxy's callback forwarding pattern enables dynamic client ports to work with providers that require fixed redirect URIs.
 
-**令牌验证在您已经拥有可发行结构化令牌的身份验证基础设施时效果很好。**如果您的组织已经使用基于 JWT 的系统、API 网关或可以生成令牌的企业 SSO，这种方法将无缝集成，同时让您的 MCP 服务器专注于其核心功能。简单性来自于利用现有的身份验证基础设施投资。
+**For identity providers with DCR support (WorkOS AuthKit, modern auth platforms), use RemoteAuthProvider.** These providers allow clients to dynamically register and obtain credentials without manual configuration. This enables the fully automated authentication flow that MCP is designed for, providing the best user experience and simplest implementation.
 
-**除非您有外部提供商无法解决的令人信服的理由，否则应该避免完整的 OAuth 实现。**空隙环境、专门的合规要求或独特的组织约束可能会证明这种方法的合理性，但它需要显著的安全专业知识和持续的维护承诺。复杂性远超初始实现，还包括威胁监控、安全更新和跟上不断发展的攻击向量。
+**Token validation works well when you already have authentication infrastructure that issues structured tokens.** If your organization already uses JWT-based systems, API gateways, or enterprise SSO that can generate tokens, this approach integrates seamlessly while keeping your MCP server focused on its core functionality. The simplicity comes from leveraging existing investment in authentication infrastructure.
 
-FastMCP 的架构支持随着您需求的发展在这些方法之间迁移。您可以初始与现有的令牌系统集成，并在应用程序扩展时迁移到外部身份提供商，或者在您的需求超出标准模式时实现自定义解决方案。
+**Full OAuth implementation should be avoided unless you have compelling reasons that external providers cannot address.** Air-gapped environments, specialized compliance requirements, or unique organizational constraints might justify this approach, but it requires significant security expertise and ongoing maintenance commitment. The complexity extends far beyond initial implementation to include threat monitoring, security updates, and keeping pace with evolving attack vectors.
+
+FastMCP's architecture supports migration between these approaches as your requirements evolve. You can integrate with existing token systems initially and migrate to external identity providers as your application scales, or implement custom solutions when your requirements outgrow standard patterns.

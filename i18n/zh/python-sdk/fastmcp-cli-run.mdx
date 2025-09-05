@@ -10,7 +10,7 @@ sidebarTitle: run
 
 ## 函数
 
-### `is_url` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L25" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `is_url` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L28" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 is_url(path: str) -> bool
@@ -20,128 +20,99 @@ is_url(path: str) -> bool
 检查字符串是否为 URL。
 
 
-### `parse_file_path` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L31" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `run_with_uv` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L34" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-parse_file_path(server_spec: str) -> tuple[Path, str | None]
+run_with_uv(server_spec: str, python_version: str | None = None, with_packages: list[str] | None = None, with_requirements: Path | None = None, project: Path | None = None, transport: TransportType | None = None, host: str | None = None, port: int | None = None, path: str | None = None, log_level: LogLevelType | None = None, show_banner: bool = True, editable: str | list[str] | None = None) -> None
 ```
 
 
 解析可能包含服务器对象规范的文件路径。
 
-**参数：**
-- `server_spec`: 文件路径，可选择性地带有 \:object 后缀
-
-**返回值：**
-- (file_path, server_object) 的元组
-
-
-### `import_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L62" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-import_server(file: Path, server_or_factory: str | None = None) -> Any
-```
-
-
-从文件导入 MCP 服务器。
+This function is called when we need to set up a Python environment with specific
+dependencies before running the server. The config parsing and merging should already
+be done by the caller.
 
 **参数：**
-- `file`: 文件路径
-- `server_or_factory`: 可选的对象名称，格式为 "module\:object" 或仅 "object"
-
-**返回值：**
-- 服务器对象（或调用工厂函数的结果）
-
-
-### `run_with_uv` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L174" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-run_with_uv(server_spec: str, python_version: str | None = None, with_packages: list[str] | None = None, with_requirements: Path | None = None, project: Path | None = None, transport: TransportType | None = None, host: str | None = None, port: int | None = None, path: str | None = None, log_level: LogLevelType | None = None, show_banner: bool = True) -> None
-```
-
-
-使用 uv run 子进程运行 MCP 服务器。
-
-**参数：**
-- `server_spec`: Python 文件、对象规范 (file\:obj) 或 URL
-- `python_version`: 要使用的 Python 版本（例如 "3.10"）
-- `with_packages`: 要安装的附加包
-- `with_requirements`: 要使用的需求文件
-- `project`: 在给定的项目目录中运行命令
-- `transport`: 要使用的传输协议
-- `host`: 使用 http 传输时绑定的主机
-- `port`: 使用 http 传输时绑定的端口
-- `path`: 使用 http 传输时绑定的路径
-- `log_level`: 日志级别
-- `show_banner`: 是否显示服务器标语
+- `server_spec`: Python file, object specification (file\:obj), config file, or URL
+- `python_version`: Python version to use (e.g. "3.10")
+- `with_packages`: Additional packages to install
+- `with_requirements`: Requirements file to use
+- `project`: Run the command within the given project directory
+- `transport`: Transport protocol to use
+- `host`: Host to bind to when using http transport
+- `port`: Port to bind to when using http transport
+- `path`: Path to bind to when using http transport
+- `log_level`: Log level
+- `show_banner`: Whether to show the server banner
+- `editable`: Editable package paths
 
 
-### `create_client_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L252" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `create_client_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L115" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 create_client_server(url: str) -> Any
 ```
 
 
-从客户端 URL 创建 FastMCP 服务器。
+Create a FastMCP server from a client URL.
 
-**参数：**
-- `url`: 要连接的 URL
+**Args:**
+- `url`: The URL to connect to
 
-**返回值：**
-- FastMCP 服务器实例
+**Returns:**
+- A FastMCP server instance
 
 
-### `create_mcp_config_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L272" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `create_mcp_config_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L135" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 create_mcp_config_server(mcp_config_path: Path) -> FastMCP[None]
 ```
 
 
-从 MCPConfig 创建 FastMCP 服务器。
+Create a FastMCP server from a MCPConfig.
 
 
-### `import_server_with_args` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L283" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `load_mcp_server_config` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L146" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-import_server_with_args(file: Path, server_or_factory: str | None = None, server_args: list[str] | None = None) -> Any
+load_mcp_server_config(config_path: Path) -> MCPServerConfig
 ```
 
 
-导入带有可选命令行参数的服务器。
+Load a FastMCP configuration from a fastmcp.json file.
 
-**参数：**
-- `file`: 服务器文件路径
-- `server_or_factory`: 可选的服务器对象或工厂函数名称
-- `server_args`: 可选的要注入的命令行参数
+**Args:**
+- `config_path`: Path to fastmcp.json file
 
-**返回值：**
-- 导入的服务器对象
+**Returns:**
+- MCPServerConfig object
 
 
-### `run_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L309" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `run_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L163" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-run_command(server_spec: str, transport: TransportType | None = None, host: str | None = None, port: int | None = None, path: str | None = None, log_level: LogLevelType | None = None, server_args: list[str] | None = None, show_banner: bool = True, use_direct_import: bool = False) -> None
+run_command(server_spec: str, transport: TransportType | None = None, host: str | None = None, port: int | None = None, path: str | None = None, log_level: LogLevelType | None = None, server_args: list[str] | None = None, show_banner: bool = True, use_direct_import: bool = False, skip_source: bool = False) -> None
 ```
 
 
-运行 MCP 服务器或连接到远程服务器。
+Run a MCP server or connect to a remote one.
 
-**参数：**
-- `server_spec`: Python 文件、对象规范 (file\:obj)、MCPConfig 文件或 URL
-- `transport`: 要使用的传输协议
-- `host`: 使用 http 传输时绑定的主机
-- `port`: 使用 http 传输时绑定的端口
-- `path`: 使用 http 传输时绑定的路径
-- `log_level`: 日志级别
-- `server_args`: 传递给服务器的附加参数
-- `show_banner`: 是否显示服务器标语
-- `use_direct_import`: 是否使用直接导入而不是子进程
+**Args:**
+- `server_spec`: Python file, object specification (file\:obj), config file, or URL
+- `transport`: Transport protocol to use
+- `host`: Host to bind to when using http transport
+- `port`: Port to bind to when using http transport
+- `path`: Path to bind to when using http transport
+- `log_level`: Log level
+- `server_args`: Additional arguments to pass to the server
+- `show_banner`: Whether to show the server banner
+- `use_direct_import`: Whether to use direct import instead of subprocess
+- `skip_source`: Whether to skip source preparation step
 
 
-### `run_v1_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L374" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `run_v1_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L284" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 run_v1_server(server: FastMCP1x, host: str | None = None, port: int | None = None, transport: TransportType | None = None) -> None

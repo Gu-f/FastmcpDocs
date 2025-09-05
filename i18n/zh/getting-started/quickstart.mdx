@@ -3,15 +3,15 @@ title: 快速开始
 icon: rocket-launch
 ---
 
-欢迎！本指南将帮助您快速设置 FastMCP 并运行您的第一个 MCP 服务器。
+Welcome! This guide will help you quickly set up FastMCP, run your first MCP server, and deploy a server to FastMCP Cloud.
 
-如果您还没有安装 FastMCP，请按照[安装说明](/zh/getting-started/installation)进行操作。
+If you haven't already installed FastMCP, follow the [installation instructions](/zh/getting-started/installation).
 
-## 创建 FastMCP 服务端
+## Create a FastMCP Server
 
-FastMCP 服务端是工具、资源和其他 MCP 组件的集合。要创建服务端，首先实例化 `FastMCP` 类。
+A FastMCP server is a collection of tools, resources, and other MCP components. To create a server, start by instantiating the `FastMCP` class.
 
-创建一个名为 `my_server.py` 的新文件，并添加以下代码：
+Create a new file called `my_server.py` and add the following code:
 
 ```python my_server.py
 from fastmcp import FastMCP
@@ -20,12 +20,12 @@ mcp = FastMCP("My MCP Server")
 ```
 
 
-就是这样！您已经创建了一个 FastMCP 服务，尽管是一个非常无聊的服务。让我们添加一个工具来让它更有趣。
+That's it! You've created a FastMCP server, albeit a very boring one. Let's add a tool to make it more interesting.
 
 
-## 添加工具
+## Add a Tool
 
-要添加一个返回简单问候的工具，编写一个函数并用 `@mcp.tool` 装饰器装饰它以将其注册到服务端：
+To add a tool that returns a simple greeting, write a function and decorate it with `@mcp.tool` to register it with the server:
 
 ```python my_server.py {5-7}
 from fastmcp import FastMCP
@@ -38,40 +38,13 @@ def greet(name: str) -> str:
 ```
 
 
-## 测试服务器
+## Run the Server
 
+The simplest way to run your FastMCP server is to call its `run()` method. You can choose between different transports, like `stdio` for local servers, or `http` for remote access:
 
-要测试服务端，创建一个 FastMCP 客户端并将其指向服务对象。
+<CodeGroup>
 
-```python my_server.py {1-2, 10-17}
-import asyncio
-from fastmcp import FastMCP, Client
-
-mcp = FastMCP("My MCP Server")
-
-@mcp.tool
-def greet(name: str) -> str:
-    return f"Hello, {name}!"
-
-client = Client(mcp)
-
-async def call_tool(name: str):
-    async with client:
-        result = await client.call_tool("greet", {"name": name})
-        print(result)
-
-asyncio.run(call_tool("Ford"))
-```
-
-这里有几个要注意的点：
-- 客户端是异步的，所以我们需要使用 `asyncio.run` 来运行客户端。
-- 在使用客户端之前，我们必须进入客户端上下文（`async with client:`）。您可以在同一个上下文中进行多个客户端调用。
-
-## 运行服务端
-
-为了用 Python 运行服务，我们需要在服务器文件的 `__main__` 块中添加一个 `run` 语句。
-
-```python my_server.py {9-10}
+```python my_server.py (stdio) {9, 10}
 from fastmcp import FastMCP
 
 mcp = FastMCP("My MCP Server")
@@ -84,25 +57,52 @@ if __name__ == "__main__":
     mcp.run()
 ```
 
-这让我们可以使用 `python my_server.py` 运行服务，使用默认的 `stdio` 传输，这是向客户端暴露 MCP 服务器的标准方式。
+```python my_server.py (HTTP) {9, 10}
+from fastmcp import FastMCP
+
+mcp = FastMCP("My MCP Server")
+
+@mcp.tool
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+
+if __name__ == "__main__":
+    mcp.run(transport="http", port=8000)
+```
+
+</CodeGroup>
+
+This lets us run the server with `python my_server.py`. The stdio transport is the traditional way to connect MCP servers to clients, while the HTTP transport enables remote connections.
 
 <Tip>
-为什么我们需要 `if __name__ == "__main__":` 块？
+Why do we need the `if __name__ == "__main__":` block?
 
-在 FastMCP 生态系统中，这行可能是不必要的。但是，包含它可以确保您的 FastMCP 服务端为所有用户和客户端以一致的方式运行，因此建议作为最佳实践。
+The `__main__` block is recommended for consistency and compatibility, ensuring your server works with all MCP clients that execute your server file as a script. Users who will exclusively run their server with the FastMCP CLI can omit it, as the CLI imports the server object directly.
 </Tip>
 
-### 与 Python 服务器交互
+### Using the FastMCP CLI
 
-现在服务器可以用 `python my_server.py` 执行，我们可以像与任何其他 MCP 服务器一样与它交互。
+You can also use the `fastmcp run` command to start your server. Note that the FastMCP CLI **does not** execute the `__main__` block of your server file. Instead, it imports your server object and runs it with whatever transport and options you provide.
 
-在新文件中，创建一个客户端并将其指向服务文件：
+For example, to run this server with the default stdio transport (no matter how you called `mcp.run()`), you can use the following command:
+```bash
+fastmcp run my_server.py:mcp
+```
+
+To run this server with the HTTP transport, you can use the following command:
+```bash
+fastmcp run my_server.py:mcp --transport http --port 8000
+```
+
+## Call Your Server
+
+Once your server is running with HTTP transport, you can connect to it with a FastMCP client or any LLM client that supports the MCP protocol:
 
 ```python my_client.py
 import asyncio
 from fastmcp import Client
 
-client = Client("my_server.py")
+client = Client("http://localhost:8000")
 
 async def call_tool(name: str):
     async with client:
@@ -112,18 +112,26 @@ async def call_tool(name: str):
 asyncio.run(call_tool("Ford"))
 ```
 
+Note that:
+- FastMCP clients are asynchronous, so we need to use `asyncio.run` to run the client
+- We must enter a client context (`async with client:`) before using the client
+- You can make multiple client calls within the same context
+
+## Deploy to FastMCP Cloud
 
 
-### 使用 FastMCP CLI
+[FastMCP Cloud](https://fastmcp.cloud) is a hosting service run by the FastMCP team at [Prefect](https://www.prefect.io/fastmcp). It is optimized to deploy authenticated FastMCP servers as quickly as possible, giving you a secure URL that you can plug into any LLM client.
 
-要让 FastMCP 为我们运行服务器，我们可以使用 `fastmcp run` 命令。这将启动服务器并保持运行直到停止。默认情况下，它将使用 `stdio` 传输，这是一个用于与服务器交互的简单基于文本的协议。
+<Info>
+Please note that FastMCP Cloud is a commercial service, though it is completely free for most personal servers.
+</Info>
 
-```bash
-fastmcp run my_server.py:mcp
-```
+To deploy your server, you'll need a [GitHub account](https://github.com). Once you have one, you can deploy your server in three steps:
 
-请注意，FastMCP *不*需要服务文件中的 `__main__` 块，如果存在它会忽略它。相反，它会查找 CLI 命令中提供的服务器对象（这里是 `mcp`）。如果没有提供服务器对象，`fastmcp run` 将自动搜索文件中名为 "mcp"、"app" 或 "server" 的服务。
+1. Push your `my_server.py` file to a GitHub repository
+2. Sign in to [FastMCP Cloud](https://fastmcp.cloud) with your GitHub account
+3. Create a new project from your repository and enter `my_server.py:mcp` as the server entrypoint
 
-<Tip>
-我们将客户端指向服务文件，它被识别为 Python MCP 服务，默认情况下用 `python my_server.py` 执行。这会执行服务文件的 `__main__` 块。还有其他运行服务器的方式，在[服务器配置](/zh/servers/server#running-the-server)指南中有描述。
-</Tip>
+That's it! FastMCP Cloud will build and deploy your server, making it available at a URL like `https://your-project.fastmcp.app/mcp`. You can chat with it to test its functionality, or connect to it from any LLM client that supports the MCP protocol.
+
+For more details, see the [FastMCP Cloud guide](/zh/deployment/fastmcp-cloud).

@@ -1,300 +1,322 @@
 ---
 title: OAuth 代理
 sidebarTitle: OAuth 代理
-description: 支持与不支持动态客户端注册的 OAuth 提供商进行身份验证。
+description: Bridge traditional OAuth providers to work seamlessly with MCP's authentication flow.
 icon: share
 tag: NEW
 ---
 
-import { VersionBadge } from "/snippets/version-badge.mdx"
+import { VersionBadge } from "/snippets/version-badge.mdx";
 
 <VersionBadge version="2.12.0" />
 
-OAuth 代理使您的 FastMCP 服务器能够与**不支持动态客户端注册（DCR）**的 OAuth 提供商进行身份验证。这包括几乎所有传统的 OAuth 提供商：GitHub、Google、Azure、Facebook、Discord 和大多数企业身份系统。
+OAuth Proxy enables FastMCP servers to authenticate with OAuth providers that **don't support Dynamic Client Registration (DCR)**. This includes virtually all traditional OAuth providers: GitHub, Google, Azure, Discord, Facebook, and most enterprise identity systems. For providers that do support DCR (like WorkOS AuthKit), use [`RemoteAuthProvider`](/zh/servers/auth/remote-oauth) instead.
 
-虽然 MCP 客户端期望动态注册并获取凭据，但这些提供商需要通过其开发者控制台进行手动应用注册。OAuth 代理通过向 MCP 客户端提供符合 DCR 的接口，同时使用您在上游提供商处预注册的凭据来弥合这一差距。
+MCP clients expect to register automatically and obtain credentials on the fly, but traditional providers require manual app registration through their developer consoles. OAuth Proxy bridges this gap by presenting a DCR-compliant interface to MCP clients while using your pre-registered credentials with the upstream provider. When a client attempts to register, the proxy returns your fixed credentials. When a client initiates authorization, the proxy handles the complexity of callback forwarding—storing the client's dynamic callback URL, using its own fixed callback with the provider, then forwarding back to the client after token exchange.
 
-<Tip>
-**何时使用 OAuth 代理与远程身份验证提供商：**
-- **OAuth 代理**：用于不支持动态客户端注册的提供商（GitHub、Google、Azure 等）
-- **远程身份验证提供商**：用于支持动态客户端注册的提供商（WorkOS AuthKit 等）
+This approach enables any MCP client (whether using random localhost ports or fixed URLs like Claude.ai) to authenticate with any traditional OAuth provider, all while maintaining full OAuth 2.1 and PKCE security.
 
-OAuth 代理使传统 OAuth 提供商与 MCP 的自动化身份验证流程无缝配合。
-</Tip>
+## Implementation
 
-## 支持 DCR 与不支持 DCR 的提供商
+### Provider Setup Requirements
 
-MCP 身份验证中的关键区别是您的 OAuth 提供商是否支持**动态客户端注册（DCR）**：
+Before using OAuth Proxy, you need to register your application with your OAuth provider:
 
-- **支持 DCR 的提供商**（WorkOS、某些 OIDC 提供商）：使用 [`RemoteAuthProvider`](/zh/servers/auth/remote-oauth)
-  - 客户端可以自动注册自己
-  - 无需手动应用注册
-  - 真正的动态身份验证流程
+1. **Register your application** in the provider's developer console (GitHub Settings, Google Cloud Console, Azure Portal, etc.)
+2. **Configure the redirect URI** as your FastMCP server URL plus your chosen callback path:
+   - Default: `https://your-server.com/auth/callback`
+   - Custom: `https://your-server.com/your/custom/path` (if you set `redirect_path`)
+   - Development: `http://localhost:8000/auth/callback`
+3. **Obtain your credentials**: Client ID and Client Secret
+4. **Note the OAuth endpoints**: Authorization URL and Token URL (usually found in the provider's OAuth documentation)
 
-- **不支持 DCR 的提供商**（GitHub、Google、Azure、Discord 等）：使用 `OAuthProxy`（本指南）
-  - 需要在提供商控制台中手动注册应用
-  - 您获得固定的客户端 ID 和密钥
-  - OAuth 代理弥合 MCP 兼容性差距
+<Warning>
+  The redirect URI you configure with your provider must exactly match your
+  FastMCP server's URL plus the callback path. If you customize `redirect_path`
+  in OAuth Proxy, update your provider's redirect URI accordingly.
+</Warning>
 
-OAuth 代理通过实现始终返回您预注册凭据的本地 DCR 接口，使不支持 DCR 的提供商与 MCP 无缝配合。
+### Basic Setup
 
-## 理解 DCR 差距
-
-**动态客户端注册（DCR）**允许 OAuth 客户端自动向授权服务器注册自己并获取凭据，无需手动干预。MCP 规范围绕此功能设计，期望客户端动态注册。
-
-然而，大多数 OAuth 提供商不支持 DCR：
-
-| 提供商类型 | DCR 支持 | 注册方法 | 示例 |
-|-----------|----------|---------|------|
-| 现代身份验证平台 | ✅ 是 | 通过 API 自动 | WorkOS AuthKit、某些 OIDC 提供商 |
-| 传统 OAuth | ❌ 否 | 通过控制台手动 | GitHub、Google、Azure、Discord、Facebook |
-| 企业 SSO | ❌ 否 | IT 管理员 | Okta、AD FS、PingIdentity |
-
-不支持 DCR 的提供商要求您：
-- 通过其开发者控制台手动注册应用程序
-- 获取永不更改的固定客户端 ID 和密钥
-- 预配置特定的重定向 URI
-- 通过其 Web 界面管理凭据
-
-这造成了根本的不兼容性：MCP 客户端期望调用注册端点并接收凭据，但传统提供商只能与预注册的应用配合使用。OAuth 代理通过接受任何客户端注册请求并返回您的固定上游凭据来解决此问题。
-
-## OAuth 代理工作原理
-
-OAuth 代理实现了智能回调转发模式，同时解决了 DCR 问题和重定向 URI 不匹配问题：
-
-```mermaid
-sequenceDiagram
-    participant Client as MCP 客户端<br/>(localhost:随机端口)
-    participant Proxy as FastMCP OAuth 代理<br/>(服务器:8000)
-    participant Provider as OAuth 提供商<br/>(GitHub 等)
-
-    Note over Client, Proxy: 动态注册（本地）
-    Client->>Proxy: 1. POST /register<br/>redirect_uri: localhost:54321/callback
-    Proxy-->>Client: 2. 返回固定的上游凭据
-
-    Note over Client, Proxy: 带回调转发的授权
-    Client->>Proxy: 3. GET /authorize<br/>redirect_uri=localhost:54321/callback
-    Note over Proxy: 存储带有客户端回调的事务
-    Proxy->>Provider: 4. 重定向到提供商<br/>redirect_uri=server:8000/auth/callback
-    
-    Note over Provider, Proxy: 提供商回调
-    Provider->>Proxy: 5. GET /auth/callback<br/>携带授权码
-    Proxy->>Provider: 6. 交换代码获取令牌
-    Provider-->>Proxy: 7. 访问令牌和刷新令牌
-    
-    Note over Proxy, Client: 客户端回调转发
-    Proxy->>Client: 8. 重定向到 localhost:54321/callback<br/>携带新的授权码
-    
-    Note over Client, Proxy: 令牌交换
-    Client->>Proxy: 9. POST /token 携带代码
-    Proxy-->>Client: 10. 返回存储的提供商令牌
-```
-
-### 回调转发模式
-
-OAuth 代理实现了创新的回调转发模式，解决了重定向 URI 不匹配问题：
-
-**挑战：**
-- MCP 客户端监听随机的 localhost 端口（例如，`http://localhost:54321/callback`）
-- 每个客户端会话使用不同的端口
-- OAuth 提供商只接受预注册的固定重定向 URI
-- 注册每个可能的 localhost 端口是不可能的
-
-**解决方案：**
-
-代理充当中介回调处理器：
-
-1. **动态注册**：客户端在注册期间提供其 localhost 回调 URL
-2. **事务跟踪**：代理使用事务 ID 存储客户端的回调 URL
-3. **固定提供商回调**：代理对提供商使用自己的固定回调 URL
-4. **服务器端令牌交换**：代理接收提供商的回调并将授权码交换为令牌
-5. **客户端转发**：代理使用新的授权码重定向到客户端的原始 localhost 回调
-6. **令牌交付**：客户端与代理交换这个新代码以接收提供商的令牌
-
-这种模式保持完整的 OAuth 2.1 安全性（包括 PKCE），同时使动态客户端端口能够与固定提供商回调配合工作。客户端永远不知道它在与代理通信 - 它体验到的是标准的 DCR 流程。
-
-## 基本实现
-
-`OAuthProxy` 类提供完整的代理实现：
-
-<Card icon="code" title="OAuthProxy 构造函数参数">
-<ParamField body="upstream_authorization_endpoint" type="str" required>
-  您的 OAuth 提供商授权端点的 URL（例如，`https://github.com/login/oauth/authorize`）
-</ParamField>
-
-<ParamField body="upstream_token_endpoint" type="str" required>
-  您的 OAuth 提供商令牌端点的 URL（例如，`https://github.com/login/oauth/access_token`）
-</ParamField>
-
-<ParamField body="upstream_client_id" type="str" required>
-  来自您注册的 OAuth 应用程序的客户端 ID
-</ParamField>
-
-<ParamField body="upstream_client_secret" type="str" required>
-  来自您注册的 OAuth 应用程序的客户端密钥
-</ParamField>
-
-<ParamField body="token_verifier" type="TokenVerifier" required>
-  用于验证提供商令牌的 [`TokenVerifier`](/zh/servers/auth/token-verification) 实例
-</ParamField>
-
-<ParamField body="base_url" type="AnyHttpUrl | str" required>
-  您的 FastMCP 服务器的公共 URL（例如，`https://your-server.com`）
-</ParamField>
-
-<ParamField body="redirect_path" type="str" default="/auth/callback">
-  OAuth 回调的路径。必须与您在 OAuth 应用程序中配置的重定向 URI 匹配
-</ParamField>
-
-<ParamField body="upstream_revocation_endpoint" type="str | None">
-  提供商令牌撤销端点的可选 URL
-</ParamField>
-
-<ParamField body="issuer_url" type="AnyHttpUrl | str | None">
-  OAuth 元数据的发行者 URL（默认为 base_url）
-</ParamField>
-
-<ParamField body="service_documentation_url" type="AnyHttpUrl | str | None">
-  指向您的服务文档的可选 URL
-</ParamField>
-
-<ParamField body="resource_server_url" type="AnyHttpUrl | str | None">
-  资源服务器 URL（默认为 base_url）
-</ParamField>
-</Card>
+Here's how to implement OAuth Proxy with any provider:
 
 ```python
 from fastmcp import FastMCP
-from fastmcp.server.auth.proxy import OAuthProxy
+from fastmcp.server.auth import OAuthProxy
 from fastmcp.server.auth.providers.jwt import JWTVerifier
 
-# 为您的提供商配置令牌验证
+# Configure token verification for your provider
+# See the Token Verification guide for provider-specific setups
 token_verifier = JWTVerifier(
     jwks_uri="https://your-provider.com/.well-known/jwks.json",
     issuer="https://your-provider.com",
     audience="your-app-id"
 )
 
-# 创建 OAuth 代理（接受字符串形式的 URL）
+# Create the OAuth proxy
 auth = OAuthProxy(
-    # 上游提供商端点
-    upstream_authorization_endpoint="https://your-provider.com/oauth/authorize",
-    upstream_token_endpoint="https://your-provider.com/oauth/token",
-    
-    # 您注册的应用凭据
-    upstream_client_id="your-registered-client-id",
-    upstream_client_secret="your-registered-client-secret",
-    
-    # 令牌验证
+    # Provider's OAuth endpoints (from their documentation)
+    upstream_authorization_endpoint="https://provider.com/oauth/authorize",
+    upstream_token_endpoint="https://provider.com/oauth/token",
+
+    # Your registered app credentials
+    upstream_client_id="your-client-id",
+    upstream_client_secret="your-client-secret",
+
+    # Token validation (see Token Verification guide)
     token_verifier=token_verifier,
-    
-    # 您的 FastMCP 服务器 URL（字符串自动转换为 AnyHttpUrl）
+
+    # Your FastMCP server's public URL
     base_url="https://your-server.com",
-    
-    # 可选：自定义回调路径（默认为 "/auth/callback"）
-    redirect_path="/auth/callback"
+
+    # Optional: customize the callback path (default is "/auth/callback")
+    # redirect_path="/custom/callback",
 )
 
-mcp = FastMCP(name="我的服务器", auth=auth)
+mcp = FastMCP(name="My Server", auth=auth)
 ```
 
-### OAuth 提供商配置
+### Configuration Parameters
 
-在向您的 OAuth 提供商注册应用程序时，将重定向/回调 URL 配置为：
+<Card icon="code" title="OAuthProxy Parameters">
+<ParamField body="upstream_authorization_endpoint" type="str" required>
+  URL of your OAuth provider's authorization endpoint (e.g., `https://github.com/login/oauth/authorize`)
+</ParamField>
 
-```
-https://your-server.com/auth/callback
-```
+<ParamField body="upstream_token_endpoint" type="str" required>
+  URL of your OAuth provider's token endpoint (e.g., `https://github.com/login/oauth/access_token`)
+</ParamField>
 
-对于支持的提供商（如 GitHub）的本地开发：
+<ParamField body="upstream_client_id" type="str" required>
+  Client ID from your registered OAuth application
+</ParamField>
 
-```
-http://localhost:8000/auth/callback
-```
+<ParamField body="upstream_client_secret" type="str" required>
+  Client secret from your registered OAuth application
+</ParamField>
 
-代理自动：
-- 通过向任何注册的客户端返回您的固定凭据来实现 DCR
-- 处理动态客户端回调和您的固定提供商回调之间的回调转发
-- 在服务器端交换授权码以增强安全性
-- 使用提供商的公钥或 API 验证令牌
-- 在整个流程中保持 PKCE 安全性
+<ParamField body="token_verifier" type="TokenVerifier" required>
+  A [`TokenVerifier`](/zh/servers/auth/token-verification) instance to validate the provider's tokens
+</ParamField>
 
-## 客户端兼容性
+<ParamField body="base_url" type="AnyHttpUrl | str" required>
+  Public URL of your FastMCP server (e.g., `https://your-server.com`)
+</ParamField>
 
-<Tip>
-OAuth 代理的回调转发使**任何 MCP 客户端**都能与**任何 OAuth 提供商**进行身份验证，无论重定向 URI 限制如何。客户端可以使用动态 localhost 端口，而提供商看到的是他们期望的固定回调。
-</Tip>
+<ParamField body="redirect_path" type="str" default="/auth/callback">
+  Path for OAuth callbacks. Must match the redirect URI configured in your OAuth application
+</ParamField>
 
-这一突破意味着 MCP 客户端不再需要担心向 OAuth 提供商注册特定的回调 URL。代理处理动态客户端回调与提供商要求的固定 URL 之间的桥接复杂性。整个流程保持 OAuth 2.1 和 PKCE (RFC-7636) 合规性以确保安全。
+<ParamField body="upstream_revocation_endpoint" type="str | None">
+  Optional URL of provider's token revocation endpoint
+</ParamField>
 
-## 令牌验证策略
+<ParamField body="issuer_url" type="AnyHttpUrl | str | None">
+  Issuer URL for OAuth metadata (defaults to base_url)
+</ParamField>
 
-不同的 OAuth 提供商使用不同的令牌格式，需要适当的验证策略：
+<ParamField body="service_documentation_url" type="AnyHttpUrl | str | None">
+  Optional URL to your service documentation
+</ParamField>
 
-### 提供商令牌类型
+<ParamField body="forward_pkce" type="bool" default="True">
+  Whether to forward PKCE (Proof Key for Code Exchange) to the upstream OAuth provider. When enabled and the client uses PKCE, the proxy generates its own PKCE parameters to send upstream while separately validating the client's PKCE. This ensures end-to-end PKCE security at both layers (client-to-proxy and proxy-to-upstream).
+  - `True` (default): Forward PKCE for providers that support it (Google, Azure, GitHub, etc.)
+  - `False`: Disable only if upstream provider doesn't support PKCE
+</ParamField>
 
-| 提供商 | 令牌类型 | 验证方法 | 内置支持 |
-|-------|---------|---------|----------|
-| GitHub | 不透明 | API 验证（`/user` 端点） | ✅ `GitHubProvider` |
-| Google | JWT | JWKS 签名验证 | ✅ `GoogleProvider` |
-| Azure AD | JWT | JWKS 签名验证 | 配置 `JWTVerifier` |
-| Discord | 不透明 | API 验证 | ✅ `DiscordOAuthProxyProvider` |
-| 自定义 | 变化 | 实现 `TokenVerifier` | 扩展基类 |
+<ParamField body="token_endpoint_auth_method" type="str | None">
+  Token endpoint authentication method for the upstream OAuth server. Controls how the proxy authenticates when exchanging authorization codes and refresh tokens with the upstream provider.
+  - `"client_secret_basic"`: Send credentials in Authorization header (most common)
+  - `"client_secret_post"`: Send credentials in request body (required by some providers)
+  - `"none"`: No authentication (for public clients)
+  - `None` (default): Uses authlib's default (typically `"client_secret_basic"`)
 
-### 使用内置提供商
+  Set this if your provider requires a specific authentication method and the default doesn't work.
+</ParamField>
 
-FastMCP 包含预配置的提供商，可自动处理令牌验证：
+<ParamField body="allowed_client_redirect_uris" type="list[str] | None">
+  List of allowed redirect URI patterns for MCP clients. Patterns support wildcards (e.g., `"http://localhost:*"`, `"https://*.example.com/*"`).
+  - `None` (default): All redirect URIs allowed (for MCP/DCR compatibility)
+  - Empty list `[]`: No redirect URIs allowed
+  - Custom list: Only matching patterns allowed
+
+  These patterns apply to MCP client loopback redirects, NOT the upstream OAuth app redirect URI.
+</ParamField>
+
+<ParamField body="valid_scopes" type="list[str] | None">
+  List of all possible valid scopes for the OAuth provider. These are advertised to clients through the `/.well-known` endpoints. Defaults to `required_scopes` from your TokenVerifier if not specified.
+</ParamField>
+</Card>
+
+### Using Built-in Providers
+
+FastMCP includes pre-configured providers for common services:
 
 ```python
 from fastmcp.server.auth.providers.github import GitHubProvider
 
-# 具有自动基于 API 的令牌验证的 GitHub 提供商
 auth = GitHubProvider(
-    client_id="your-github-client-id",
-    client_secret="your-github-client-secret",
+    client_id="your-github-app-id",
+    client_secret="your-github-app-secret",
     base_url="https://your-server.com"
+)
+
+mcp = FastMCP(name="My Server", auth=auth)
+```
+
+Available providers include `GitHubProvider`, `GoogleProvider`, and others. These handle token verification automatically.
+
+### Scope Configuration
+
+OAuth scopes are configured through your `TokenVerifier`. Set `required_scopes` to automatically request the permissions your application needs:
+
+```python
+JWTVerifier(..., required_scopes = ["read:user", "write:data"])
+```
+
+Dynamic clients created by the proxy will automatically include these scopes in their authorization requests.
+
+## How It Works
+
+```mermaid
+sequenceDiagram
+    participant Client as MCP Client<br/>(localhost:random)
+    participant Proxy as FastMCP OAuth Proxy<br/>(server:8000)
+    participant Provider as OAuth Provider<br/>(GitHub, etc.)
+
+    Note over Client, Proxy: Dynamic Registration (Local)
+    Client->>Proxy: 1. POST /register<br/>redirect_uri: localhost:54321/callback
+    Proxy-->>Client: 2. Returns fixed upstream credentials
+
+    Note over Client, Proxy: Authorization with PKCE & Callback Forwarding
+    Client->>Proxy: 3. GET /authorize<br/>redirect_uri=localhost:54321/callback<br/>code_challenge=CLIENT_CHALLENGE
+    Note over Proxy: Store transaction with client PKCE<br/>Generate proxy PKCE pair
+    Proxy->>Provider: 4. Redirect to provider<br/>redirect_uri=server:8000/auth/callback<br/>code_challenge=PROXY_CHALLENGE
+
+    Note over Provider, Proxy: Provider Callback
+    Provider->>Proxy: 5. GET /auth/callback<br/>with authorization code
+    Proxy->>Provider: 6. Exchange code for tokens<br/>code_verifier=PROXY_VERIFIER
+    Provider-->>Proxy: 7. Access & refresh tokens
+
+    Note over Proxy, Client: Client Callback Forwarding
+    Proxy->>Client: 8. Redirect to localhost:54321/callback<br/>with new authorization code
+
+    Note over Client, Proxy: Token Exchange
+    Client->>Proxy: 9. POST /token with code<br/>code_verifier=CLIENT_VERIFIER
+    Proxy-->>Client: 10. Returns stored provider tokens
+```
+
+The flow diagram above illustrates the complete OAuth Proxy pattern. Let's understand each phase:
+
+### Registration Phase
+
+When an MCP client calls `/register` with its dynamic callback URL, the proxy responds with your pre-configured upstream credentials. The client stores these credentials believing it has registered a new app. Meanwhile, the proxy records the client's callback URL for later use.
+
+### Authorization Phase
+
+The client initiates OAuth by redirecting to the proxy's `/authorize` endpoint. The proxy:
+
+1. Stores the client's transaction with its PKCE challenge
+2. Generates its own PKCE parameters for upstream security
+3. Redirects to the upstream provider using the fixed callback URL
+
+This dual-PKCE approach maintains end-to-end security at both the client-to-proxy and proxy-to-provider layers.
+
+### Callback Phase
+
+After user authorization, the provider redirects back to the proxy's fixed callback URL. The proxy:
+
+1. Exchanges the authorization code for tokens with the provider
+2. Stores these tokens temporarily
+3. Generates a new authorization code for the client
+4. Redirects to the client's original dynamic callback URL
+
+### Token Exchange Phase
+
+Finally, the client exchanges its authorization code with the proxy to receive the provider's tokens. The proxy validates the client's PKCE verifier before returning the stored tokens.
+
+This entire flow is transparent to the MCP client—it experiences a standard OAuth flow with dynamic registration, unaware that a proxy is managing the complexity behind the scenes.
+
+### PKCE Forwarding
+
+OAuth Proxy automatically handles PKCE (Proof Key for Code Exchange) when working with providers that support or require it. The proxy generates its own PKCE parameters to send upstream while separately validating the client's PKCE, ensuring end-to-end security at both layers.
+
+This is enabled by default via the `forward_pkce` parameter and works seamlessly with providers like Google, Azure AD, and GitHub. Only disable it for legacy providers that don't support PKCE:
+
+```python
+# Disable PKCE forwarding only if upstream doesn't support it
+auth = OAuthProxy(
+    ...,
+    forward_pkce=False  # Default is True
 )
 ```
 
-### 自定义令牌验证
+### Redirect URI Validation
 
-对于没有内置支持的提供商，实现一个 [`TokenVerifier`](/zh/servers/auth/token-verification)：
+While OAuth Proxy accepts all redirect URIs by default (for DCR compatibility), you can restrict which clients can connect by specifying allowed patterns:
 
-- **JWT 令牌**：使用提供商的 JWKS 端点配合 `JWTVerifier`
-- **不透明令牌**：扩展 `TokenVerifier` 通过提供商的 API 验证
-- **混合方法**：根据需要组合多种验证方法
+```python
+# Allow only localhost clients (common for development)
+auth = OAuthProxy(
+    # ... other parameters ...
+    allowed_client_redirect_uris=[
+        "http://localhost:*",
+        "http://127.0.0.1:*"
+    ]
+)
 
-## 环境配置
-
-OAuth 代理支持基于环境的配置用于生产部署：
-
-```bash
-# 提供商选择
-export FASTMCP_SERVER_AUTH=OAUTH_PROXY
-
-# OAuth 端点
-export FASTMCP_SERVER_AUTH_OAUTH_PROXY_UPSTREAM_AUTHORIZATION_ENDPOINT="https://github.com/login/oauth/authorize"
-export FASTMCP_SERVER_AUTH_OAUTH_PROXY_UPSTREAM_TOKEN_ENDPOINT="https://github.com/login/oauth/access_token"
-
-# 凭据（在生产环境中使用密钥管理）
-export FASTMCP_SERVER_AUTH_OAUTH_PROXY_UPSTREAM_CLIENT_ID="Ov23li..."
-export FASTMCP_SERVER_AUTH_OAUTH_PROXY_UPSTREAM_CLIENT_SECRET="abc123..."
-
-# 令牌验证
-export FASTMCP_SERVER_AUTH_OAUTH_PROXY_TOKEN_VERIFIER="JWT"
-export FASTMCP_SERVER_AUTH_OAUTH_PROXY_JWKS_URI="https://provider.com/.well-known/jwks.json"
-export FASTMCP_SERVER_AUTH_OAUTH_PROXY_ISSUER="https://provider.com"
-export FASTMCP_SERVER_AUTH_OAUTH_PROXY_AUDIENCE="your-app-id"
-
-# 服务器 URL
-export FASTMCP_SERVER_AUTH_OAUTH_PROXY_BASE_URL="https://your-server.com"
+# Allow specific known clients
+auth = OAuthProxy(
+    # ... other parameters ...
+    allowed_client_redirect_uris=[
+        "http://localhost:*",
+        "https://claude.ai/api/mcp/auth_callback",
+        "https://*.mycompany.com/auth/*"  # Wildcard patterns supported
+    ]
+)
 ```
 
-配置环境变量后，您的代码变为：
+Check your server logs for "Client registered with redirect_uri" messages to identify what URLs your clients use.
+
+## Token Verification
+
+OAuth Proxy requires a compatible `TokenVerifier` to validate tokens from your provider. Different providers use different token formats:
+
+- **JWT tokens** (Google, Azure): Use `JWTVerifier` with the provider's JWKS endpoint
+- **Opaque tokens** (GitHub, Discord): Use provider-specific verifiers or implement custom validation
+
+See the [Token Verification guide](/zh/servers/auth/token-verification) for detailed setup instructions for your provider.
+
+## Environment Configuration
+
+<VersionBadge version="2.12.1" />
+
+For production deployments, configure OAuth Proxy through environment variables instead of hardcoding credentials:
+
+```bash
+# Specify the provider implementation
+export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.github.GitHubProvider
+
+# Provider-specific credentials
+export FASTMCP_SERVER_AUTH_GITHUB_CLIENT_ID="Ov23li..."
+export FASTMCP_SERVER_AUTH_GITHUB_CLIENT_SECRET="abc123..."
+export FASTMCP_SERVER_AUTH_GITHUB_BASE_URL="https://your-production-server.com"
+```
+
+With environment configuration, your server code simplifies to:
 
 ```python
 from fastmcp import FastMCP
 
-# 从环境中自动配置身份验证
-mcp = FastMCP(name="我的服务器")
+# Authentication automatically configured from environment
+mcp = FastMCP(name="My Server")
+
+@mcp.tool
+def protected_tool(data: str) -> str:
+    """This tool is now protected by OAuth."""
+    return f"Processed: {data}"
+
+if __name__ == "__main__":
+    mcp.run(transport="http", port=8000)
 ```

@@ -5,15 +5,67 @@ icon: "sparkles"
 tag: NEW
 ---
 
-<Update label="FastMCP 2.9" description="June 23, 2025" tags={["Releases", "Blog Posts"]}>
-<Card 
-title="FastMCP 2.9: MCP-Native Middleware" href="https://www.jlowin.dev/blog/fastmcp-2-9-middleware" 
-img="https://jlowin.dev/_image?href=%2F_astro%2Fhero.BkVTdeBk.jpg&w=1200&h=630&f=png" 
-cta="Read more"  
+<Update label="FastMCP 2.12" description="December 31, 2024" tags={["Releases"]}>
+<Card
+title="FastMCP 2.12: Auth to the Races"
+href="https://github.com/jlowin/fastmcp/releases/tag/v2.12.0"
+cta="Read the release notes"
 >
-FastMCP 2.9 is a major release that, among other things, introduces two important features that push beyond the basic MCP protocol. 
+FastMCP 2.12 represents one of our most significant releases to date. After extensive testing and iteration with the community, we're shipping major improvements to authentication, configuration, and MCP feature adoption.
 
-🤝 *MCP Middleware* brings a flexible middleware system for intercepting and controlling server operations - think authentication, logging, rate limiting, and custom business logic without touching core protocol code. 
+🔐 **OAuth Proxy** bridges the gap for providers that don't support Dynamic Client Registration, enabling authentication with GitHub, Google, WorkOS, and Azure through minimal configuration.
+
+📋 **Declarative JSON Configuration** introduces `fastmcp.json` as the single source of truth for server settings, making MCP servers as portable and shareable as container images.
+
+🧠 **Sampling API Fallback** tackles adoption challenges by letting servers generate completions server-side when clients don't support the feature, encouraging innovation while maintaining compatibility.
+</Card>
+</Update>
+
+<Update label="FastMCP 2.11" description="December 13, 2024" tags={["Releases"]}>
+<Card
+title="FastMCP 2.11: Auth to a Good Start"
+href="https://github.com/jlowin/fastmcp/releases/tag/v2.11.0"
+cta="Read the release notes"
+>
+FastMCP 2.11 brings enterprise-ready authentication and dramatic performance improvements.
+
+🔒 **Comprehensive OAuth 2.1 Support** with WorkOS AuthKit integration, Dynamic Client Registration, and support for separate resource and authorization servers.
+
+⚡ **Experimental OpenAPI Parser** delivers dramatic performance gains through single-pass schema processing and optimized memory usage (enable with environment variable).
+
+💾 **Enhanced State Management** provides persistent state across tool calls with a simple dictionary interface, improving context handling and type annotations.
+
+This release emphasizes speed and simplicity while setting the foundation for future enterprise features.
+</Card>
+</Update>
+
+<Update label="FastMCP 2.10" description="November 21, 2024" tags={["Releases"]}>
+<Card
+title="FastMCP 2.10: Great Spec-tations"
+href="https://github.com/jlowin/fastmcp/releases/tag/v2.10.0"
+cta="Read the release notes"
+>
+FastMCP 2.10 achieves full compliance with the 6/18/2025 MCP specification update, introducing powerful new communication patterns.
+
+💬 **Elicitation Support** enables dynamic server-client communication and "human-in-the-loop" workflows, allowing servers to request additional information during execution.
+
+📊 **Output Schemas** provide structured outputs for tools, making results more predictable and easier to parse programmatically.
+
+🛠️ **Enhanced HTTP Routing** with OpenAPI extensions support and configurable algorithms for more flexible API integration.
+
+This release includes a breaking change to `client.call_tool()` return signatures but significantly expands the interaction capabilities of MCP servers.
+</Card>
+</Update>
+
+<Update label="FastMCP 2.9" description="June 23, 2025" tags={["Releases", "Blog Posts"]}>
+<Card
+title="FastMCP 2.9: MCP-Native Middleware" href="https://www.jlowin.dev/blog/fastmcp-2-9-middleware"
+img="https://jlowin.dev/_image?href=%2F_astro%2Fhero.BkVTdeBk.jpg&w=1200&h=630&f=png"
+cta="Read more"
+>
+FastMCP 2.9 is a major release that, among other things, introduces two important features that push beyond the basic MCP protocol.
+
+🤝 *MCP Middleware* brings a flexible middleware system for intercepting and controlling server operations - think authentication, logging, rate limiting, and custom business logic without touching core protocol code.
 
 ✨ *Server-side type conversion* for prompts solves a major developer pain point: while MCP requires string arguments, your functions can now work with native Python types like lists and dictionaries, with automatic conversion handling the complexity.
 
@@ -22,10 +74,10 @@ These features transform FastMCP from a simple protocol implementation into a po
 </Update>
 
 <Update label="FastMCP 2.8" description="June 11, 2025" tags={["Releases", "Blog Posts"]}>
-<Card 
-title="FastMCP 2.8: Transform and Roll Out" href="https://www.jlowin.dev/blog/fastmcp-2-8-tool-transformation" 
-img="https://www.jlowin.dev/_image?href=%2F_astro%2Fhero.su3kspkP.png&w=1000&h=500&f=webp" 
-cta="Read more"  
+<Card
+title="FastMCP 2.8: Transform and Roll Out" href="https://www.jlowin.dev/blog/fastmcp-2-8-tool-transformation"
+img="https://www.jlowin.dev/_image?href=%2F_astro%2Fhero.su3kspkP.png&w=1000&h=500&f=webp"
+cta="Read more"
 >
 FastMCP 2.8 is here, and it's all about taking control of your tools.
 
@@ -49,8 +101,8 @@ Lastly, to ensure maximum compatibility with the ecosystem, we've made the pragm
 </Update>
 
 <Update label="FastMCP 2.7" description="June 6, 2025" tags={["Releases"]}>
-<Card 
-title="FastMCP 2.7: Pare Programming" href="https://github.com/jlowin/fastmcp/releases/tag/v2.7.0" 
+<Card
+title="FastMCP 2.7: Pare Programming" href="https://github.com/jlowin/fastmcp/releases/tag/v2.7.0"
 img="/assets/updates/release-2-7.png"
 cta="Read the release notes"  
 >

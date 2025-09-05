@@ -29,8 +29,9 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 | **方法** | `FastMCP.import_server(server, prefix=None)` | `FastMCP.mount(server, prefix=None)` |
 | **组合类型** | 一次性拷贝（静态） | 实时链接（动态） |
 | **更新** | 子服务器的更改不会反映 | 子服务器的更改立即反映 |
+| **Performance** | Fast - no runtime delegation | Slower - affected by slowest mounted server |
 | **前缀** | 可选 - 省略保持原始名称 | 可选 - 省略保持原始名称 |
-| **最适合** | 打包最终组件 | 模块化运行时组合 |
+| **Best For** | Bundling finalized components, performance-critical setups | Modular runtime composition |
 
 ### 代理服务器
 
@@ -204,6 +205,9 @@ if __name__ == "__main__":
     `prefix` 参数是可选的。如果省略，组件将不经修改地挂载。
 </Tip>
 
+#### Performance Considerations
+
+Due to the "live link", operations like `list_tools()` on the parent server will be impacted by the speed of the slowest mounted server. In particular, HTTP-based mounted servers can introduce significant latency (300-400ms vs 1-2ms for local tools), and this slowdown affects the whole server, not just interactions with the HTTP-proxied tools. If performance is important, importing tools via [`import_server()`](#importing-static-composition) may be a more appropriate solution as it copies components once at startup rather than delegating requests at runtime.
 
 #### 无前缀挂载
 

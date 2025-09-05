@@ -19,9 +19,11 @@ forward(**kwargs) -> ToolResult
 此函数只能从转换工具的自定义函数内部调用。它在调用父工具之前
 应用参数转换（重命名、验证）。
 
+
 例如，如果父工具有参数 `x` 和 `y`，但转换工具有参数 `a` 和 `b`，
 并且提供了将 `x` 映射到 `a` 和 `y` 到 `b` 的 `transform_args`，
 那么 `forward(a=1, b=2)` 将使用 `x=1` 和 `y=2` 调用父工具。
+
 
 **参数：**
 - `**kwargs`: 要转发到父工具的参数（使用转换后的名称）。
@@ -46,8 +48,9 @@ forward_raw(**kwargs) -> ToolResult
 此函数绕过所有参数转换和验证，直接使用提供的参数调用父工具。
 当您需要使用原始参数名称和结构调用父工具时使用此函数。
 
-例如，如果父工具有参数 `x` 和 `y`，那么 `forward_raw(x=1,
-y=2)` 将使用 `x=1` 和 `y=2` 调用父工具。
+
+例如，如果父工具有参数 `x` 和 `y`，那么 `forward_raw(x=1,y=2)`
+将使用 `x=1` 和 `y=2` 调用父工具。
 
 **参数：**
 - `**kwargs`: 直接传递给父工具的参数（使用原始名称）。
@@ -59,7 +62,7 @@ y=2)` 将使用 `x=1` 和 `y=2` 调用父工具。
 - `RuntimeError`: 如果在转换工具上下文外调用。
 
 
-### `apply_transformations_to_tools` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_transform.py#L915" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `apply_transformations_to_tools` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_transform.py#L933" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 apply_transformations_to_tools(tools: dict[str, Tool], transformations: dict[str, ToolTransformConfig]) -> dict[str, Tool]
@@ -79,6 +82,7 @@ apply_transformations_to_tools(tools: dict[str, Tool], transformations: dict[str
 
 此类允许在从现有工具创建新工具时对各个参数进行精细控制。
 您可以重命名参数、更改其描述、添加默认值，或在传递常量时对客户端隐藏它们。
+
 
 **示例：**
 
@@ -164,6 +168,7 @@ to_arg_transform(self) -> ArgTransform
 输出架构和结构化输出会自动从父工具继承，但可以被重写或禁用。
 
 
+
 **方法：**
 
 #### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_transform.py#L259" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -176,6 +181,7 @@ run(self, arguments: dict[str, Any]) -> ToolResult
 
 此方法在执行工具函数的同时设置上下文，
 使 forward() 和 forward_raw() 能够在自定义函数中正确工作。
+
 
 **参数：**
 - `arguments`: 传递给工具函数的参数字典。
@@ -196,6 +202,7 @@ from_tool(cls, tool: Tool, name: str | None = None, title: str | None | NotSetT 
 - `tool`: 要转换的父工具。
 - `transform_fn`: 可选的自定义函数。可以使用 forward() 和 forward_raw()
 来调用父工具。带有 **kwargs 的函数接收转换后的参数名称。
+
 - `name`: 工具的新名称。默认为父工具的名称。
 - `title`: 工具的新标题。默认为父工具的标题。
 - `transform_args`: 父工具参数的可选转换。
@@ -253,7 +260,7 @@ Tool.from_tool(parent, output_schema={
 })
 
 # 禁用结构化输出
-Tool.from_tool(parent, output_schema=False)
+Tool.from_tool(parent, output_schema=None)
 
 # 返回 ToolResult 以获得完全控制
 async def custom_output(**kwargs) -> ToolResult:
@@ -265,7 +272,7 @@ async def custom_output(**kwargs) -> ToolResult:
 ```
 
 
-### `ToolTransformConfig` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_transform.py#L869" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `ToolTransformConfig` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_transform.py#L887" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 提供转换工具的方法。
@@ -273,7 +280,7 @@ async def custom_output(**kwargs) -> ToolResult:
 
 **方法：**
 
-#### `apply` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_transform.py#L901" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `apply` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/tools/tool_transform.py#L919" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 apply(self, tool: Tool) -> TransformedTool

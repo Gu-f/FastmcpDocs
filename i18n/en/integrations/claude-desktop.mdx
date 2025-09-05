@@ -102,10 +102,10 @@ Alternatively, you can use a `fastmcp.json` configuration file (recommended):
 
 ```json fastmcp.json
 {
-  "$schema": "https://gofastmcp.com/schemas/fastmcp_config/v1.json",
-  "entrypoint": {
-    "file": "server.py",
-    "object": "mcp"
+  "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
+  "source": {
+    "path": "server.py",
+    "entrypoint": "mcp"
   },
   "environment": {
     "dependencies": ["pandas", "requests"]
@@ -194,7 +194,7 @@ When manually configuring dependencies, the recommended approach is to use `uv` 
         "run",
         "--with", "fastmcp",
         "--with", "pandas",
-        "--with", "requests", 
+        "--with", "requests",
         "fastmcp",
         "run",
         "path/to/your/server.py"
@@ -267,7 +267,7 @@ from fastmcp import FastMCP
 
 # Create a proxy to a remote server
 proxy = FastMCP.as_proxy(
-    "https://example.com/mcp/sse", 
+    "https://example.com/mcp/sse",
     name="Remote Server Proxy"
 )
 

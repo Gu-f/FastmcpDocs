@@ -7,7 +7,7 @@ sidebarTitle: transports
 
 ## 函数
 
-### `infer_transport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L950" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `infer_transport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L971" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 infer_transport(transport: ClientTransport | FastMCP | FastMCP1Server | AnyUrl | Path | MCPConfig | dict[str, Any] | str) -> ClientTransport
@@ -18,6 +18,7 @@ infer_transport(transport: ClientTransport | FastMCP | FastMCP1Server | AnyUrl |
 
 此函数尝试从提供的参数推断正确的传输类型，处理各种输入类型并将它们
 转换为适当的 ClientTransport 子类。
+
 
 该函数支持这些输入类型：
 - ClientTransport： 直接使用而不修改
@@ -56,13 +57,13 @@ transport = infer_transport(config)
 
 ## 类
 
-### `SessionKwargs` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L59" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `SessionKwargs` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L63" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 MCP ClientSession 构造函数的关键字参数。
 
 
-### `ClientTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L71" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `ClientTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L75" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 不同 MCP 客户端传输机制的抽象基类。
@@ -73,7 +74,7 @@ MCP ClientSession 构造函数的关键字参数。
 
 **方法：**
 
-#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L82" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L86" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[ClientSession]
@@ -86,12 +87,13 @@ ClientSession *不*期望在此上下文管理器中初始化。
 会话仅在异步上下文管理器的范围内保证有效。
 连接设置和拆卸在此上下文中处理。
 
+
 **参数：**
 - `**session_kwargs`: 传递给 ClientSession 构造函数的关键字参数
               （例如，回调函数、超时设置）。
 
 
-#### `close` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L108" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `close` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L112" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 close(self)
@@ -100,7 +102,7 @@ close(self)
 关闭传输。
 
 
-### `WSTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L117" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `WSTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L121" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 通过 WebSockets 连接到 MCP 服务器的传输实现。
@@ -108,13 +110,13 @@ close(self)
 
 **方法：**
 
-#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L135" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L139" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[ClientSession]
 ```
 
-### `SSETransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L156" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `SSETransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L160" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 通过服务器发送事件连接到 MCP 服务器的传输实现。
@@ -122,13 +124,13 @@ connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[
 
 **方法：**
 
-#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L192" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L196" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[ClientSession]
 ```
 
-### `StreamableHttpTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L228" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `StreamableHttpTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L230" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 通过可流式 HTTP 请求连接到 MCP 服务器的传输实现。
@@ -136,7 +138,7 @@ connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[
 
 **方法：**
 
-#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L264" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L266" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[ClientSession]
@@ -177,43 +179,43 @@ disconnect(self)
 close(self)
 ```
 
-### `PythonStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L465" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `PythonStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L463" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 用于运行 Python 脚本的传输。
 
 
-### `FastMCPStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L511" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `FastMCPStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L509" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 使用 FastMCP CLI 运行 FastMCP 服务器的传输。
 
 
-### `NodeStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L538" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `NodeStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L536" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 用于运行 Node.js 脚本的传输。
 
 
-### `UvStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L580" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `UvStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L578" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 通过 uv 工具运行命令的传输。
 
 
-### `UvxStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L637" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `UvxStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L657" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 通过 uvx 工具运行命令的传输。
 
 
-### `NpxStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L701" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `NpxStdioTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L721" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 通过 npx 工具运行命令的传输。
 
 
-### `FastMCPTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L763" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `FastMCPTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L783" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 FastMCP 服务器的内存传输。
@@ -226,13 +228,13 @@ FastMCP 服务器的内存传输。
 
 **方法：**
 
-#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L782" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L802" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[ClientSession]
 ```
 
-### `MCPConfigTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L817" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `MCPConfigTransport` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L837" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 用于连接到 MCPConfig 中定义的一个或多个 MCP 服务器的传输。
@@ -242,8 +244,7 @@ connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[
 
 1. 如果 MCPConfig 包含恰好一个服务器，它会创建到该服务器的直接传输。
 2. 如果 MCPConfig 包含多个服务器，它会通过在单个 FastMCP 实例上
-   挂载所有服务器来创建复合客户端，默认情况下每个服务器的名称
-   用作其挂载前缀。
+   挂载所有服务器来创建复合客户端，默认情况下每个服务器的名称用作其挂载前缀。
 
 在多服务器情况下，工具可通过前缀模式 `{server_name}_{tool_name}` 访问，
 资源可通过模式 `protocol://{server_name}/path/to/resource` 访问。
@@ -286,13 +287,13 @@ async with client:
 
 **方法：**
 
-#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L898" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `connect_session` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L919" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 connect_session(self, **session_kwargs: Unpack[SessionKwargs]) -> AsyncIterator[ClientSession]
 ```
 
-#### `close` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L904" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `close` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/transports.py#L925" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 close(self)

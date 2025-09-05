@@ -10,7 +10,7 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 <VersionBadge version="2.12.0" />
 
-This guide shows you how to secure your FastMCP server using **Google OAuth**. Since Google doesn't support Dynamic Client Registration, this integration uses the [**OAuth Proxy**](/servers/auth/oauth-proxy) pattern to bridge Google's traditional OAuth with MCP's authentication requirements.
+This guide shows you how to secure your FastMCP server using **Google OAuth**. Since Google doesn't support Dynamic Client Registration, this integration uses the [**OAuth Proxy**](/en/servers/auth/oauth-proxy) pattern to bridge Google's traditional OAuth with MCP's authentication requirements.
 
 ## Configuration
 
@@ -77,7 +77,10 @@ auth_provider = GoogleProvider(
     client_id="123456789.apps.googleusercontent.com",  # Your Google OAuth Client ID
     client_secret="GOCSPX-abc123...",                  # Your Google OAuth Client Secret
     base_url="http://localhost:8000",                  # Must match your OAuth configuration
-    required_scopes=["openid", "email", "profile"],    # Request user information
+    required_scopes=[                                  # Request user information
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.email",
+    ],
     # redirect_path="/auth/callback"                  # Default value, customize if needed
 )
 
@@ -88,7 +91,7 @@ mcp = FastMCP(name="Google Secured App", auth=auth_provider)
 async def get_user_info() -> dict:
     """Returns information about the authenticated Google user."""
     from fastmcp.server.dependencies import get_access_token
-    
+
     token = get_access_token()
     # The GoogleProvider stores user data in token claims
     return {
@@ -125,7 +128,7 @@ async def main():
     async with Client("http://localhost:8000/mcp/", auth="oauth") as client:
         # First-time connection will open Google login in your browser
         print("✓ Authenticated with Google!")
-        
+
         # Test the protected tool
         result = await client.call_tool("get_user_info")
         print(f"Google user: {result['email']}")
@@ -147,19 +150,23 @@ The client caches tokens locally, so you won't need to re-authenticate for subse
 
 ## Environment Variables
 
-For production deployments, use environment variables instead of hardcoding credentials.
+<VersionBadge version="2.12.1" />
 
-<Info>
-To use the registered Google provider, you must set `FASTMCP_SERVER_AUTH=GOOGLE`. Learn more about [registered providers](/servers/auth/authentication#registered-providers).
-</Info>
+For production deployments, use environment variables instead of hardcoding credentials.
 
 ### Provider Selection
 
-<ParamField path="FASTMCP_SERVER_AUTH" default="Not set" required>
-Set to `GOOGLE` to use the registered GoogleProvider with default configuration.
+Setting this environment variable allows the Google provider to be used automatically without explicitly instantiating it in code.
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH" default="Not set">
+Set to `fastmcp.server.auth.providers.google.GoogleProvider` to use Google authentication.
 </ParamField>
+</Card>
 
 ### Google-Specific Configuration
+
+These environment variables provide default values for the Google provider, whether it's instantiated manually or configured via `FASTMCP_SERVER_AUTH`.
 
 <Card>
 <ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_ID" required>
@@ -179,7 +186,7 @@ Redirect path configured in your Google OAuth Client
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_REQUIRED_SCOPES" default="[]">
-Comma-separated list of required Google scopes (e.g., `openid`)
+Comma-, space-, or JSON-separated list of required Google scopes (e.g., `"openid,https://www.googleapis.com/auth/userinfo.email"` or `["openid", "https://www.googleapis.com/auth/userinfo.email"]`)
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_TIMEOUT_SECONDS" default="10">
@@ -189,14 +196,14 @@ HTTP request timeout for Google API calls
 
 Example `.env` file:
 ```bash
-# Use the registered Google provider
-FASTMCP_SERVER_AUTH=GOOGLE
+# Use the Google provider
+FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.google.GoogleProvider
 
 # Google OAuth credentials
 FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_ID=123456789.apps.googleusercontent.com
 FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_SECRET=GOCSPX-abc123...
 FASTMCP_SERVER_AUTH_GOOGLE_BASE_URL=https://your-server.com
-FASTMCP_SERVER_AUTH_GOOGLE_REQUIRED_SCOPES=openid,email,profile
+FASTMCP_SERVER_AUTH_GOOGLE_REQUIRED_SCOPES=openid,https://www.googleapis.com/auth/userinfo.email
 ```
 
 With environment variables set, your server code simplifies to:

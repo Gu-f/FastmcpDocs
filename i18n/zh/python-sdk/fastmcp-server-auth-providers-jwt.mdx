@@ -66,26 +66,29 @@ create_token(self, subject: str = 'fastmcp-user', issuer: str = 'https://fastmcp
 JWT 令牌验证设置。
 
 
-### `JWTVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L160" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `JWTVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L164" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-使用公钥或 JWKS 的 JWT 令牌验证器。
+JWT token verifier supporting both asymmetric (RSA/ECDSA) and symmetric (HMAC) algorithms.
 
-此验证器验证由外部发行者签名的 JWT 令牌。适用于
-您有集中式身份提供者（如 Auth0、Okta 或
-您自己的 OAuth 服务器）颁发 JWT，而您的 FastMCP 服务器作为
-资源服务器验证这些令牌的情况。
+This verifier validates JWT tokens using various signing algorithms:
+- **Asymmetric algorithms** (RS256/384/512, ES256/384/512, PS256/384/512):
+  Uses public/private key pairs. Ideal for external clients and services where
+  only the authorization server has the private key.
+- **Symmetric algorithms** (HS256/384/512): Uses a shared secret for both
+  signing and verification. Perfect for internal microservices and trusted
+  environments where the secret can be securely shared.
 
-在以下情况下使用：
-- 您有由外部服务颁发的 JWT 令牌
-- 您需要非对称密钥验证（公钥/私钥对）
-- 您需要 JWKS 支持以实现自动密钥轮转
-- 您的令牌包含标准 OAuth 范围和声明
+Use this when:
+- You have JWT tokens issued by an external service (asymmetric)
+- You need JWKS support for automatic key rotation (asymmetric)
+- You have internal microservices sharing a secret key (symmetric)
+- Your tokens contain standard OAuth scopes and claims
 
 
 **方法：**
 
-#### `load_access_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L356" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `load_access_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L366" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 load_access_token(self, token: str) -> AccessToken | None
@@ -100,7 +103,7 @@ load_access_token(self, token: str) -> AccessToken | None
 - 如果有效则返回 AccessToken 对象，如果无效或过期则返回 None
 
 
-#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L458" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L468" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 verify_token(self, token: str) -> AccessToken | None
@@ -118,7 +121,7 @@ verify_token(self, token: str) -> AccessToken | None
 - 如果有效则返回 AccessToken 对象，如果无效或过期则返回 None
 
 
-### `StaticTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L474" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `StaticTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L484" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 用于测试和开发的简单静态令牌验证器。
@@ -126,6 +129,7 @@ verify_token(self, token: str) -> AccessToken | None
 此验证器根据预定义的有效令牌字符串及其相关声明的字典
 来验证令牌。当令牌字符串与字典中的键匹配时，
 验证器返回相应的声明，就像令牌由真正的授权服务器验证一样。
+
 
 在以下情况下使用：
 - 您在未使用真正 OAuth 服务器的情况下进行本地开发或测试
@@ -138,7 +142,7 @@ verify_token(self, token: str) -> AccessToken | None
 
 **方法：**
 
-#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L508" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L518" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 verify_token(self, token: str) -> AccessToken | None
