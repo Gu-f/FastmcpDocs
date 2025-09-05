@@ -117,7 +117,7 @@ If you already have a web application running, you can add MCP capabilities by m
 
 For detailed integration guides, see:
 - [FastAPI Integration](/en/integrations/fastapi)
-- [Starlette Integration](/en/integrations/starlette)
+- [ASGI / Starlette Integration](/en/integrations/asgi)
 
 Here's a quick example showing how to add MCP to an existing FastAPI application:
 
@@ -194,14 +194,14 @@ MCP_AUTH_TOKEN=secret uvicorn app:app --host 0.0.0.0 --port 8000
 
 ## Testing Your Deployment
 
-Once your server is deployed, you'll need to verify it's accessible and functioning correctly. For comprehensive testing strategies including connectivity tests, client testing, and authentication testing, see the [Testing Your Server](/en/deployment/testing) guide.
+Once your server is deployed, you'll need to verify it's accessible and functioning correctly. For comprehensive testing strategies including connectivity tests, client testing, and authentication testing, see the [Testing Your Server](/en/development/tests) guide.
 
 ## Hosting Your Server
 
 This guide has shown you how to create an HTTP-accessible MCP server, but you'll still need a hosting provider to make it available on the internet. Your FastMCP server can run anywhere that supports Python web applications:
 
 - **Cloud VMs** (AWS EC2, Google Compute Engine, Azure VMs)
-- **Container platforms** (Cloud Run, Container Instances, ECS)  
+- **Container platforms** (Cloud Run, Container Instances, ECS)
 - **Platform-as-a-Service** (Railway, Render, Vercel)
 - **Edge platforms** (Cloudflare Workers)
 - **Kubernetes clusters** (self-managed or managed)

@@ -52,9 +52,6 @@ mcp_with_instructions = FastMCP(
   要添加到服务器的工具列表（或要转换为工具的函数）。在某些情况下，以编程方式提供工具可能比使用 `@mcp.tool` 装饰器更方便
 </ParamField>
 
-<ParamField body="dependencies" type="list[str] | None">
-  带有包规范的可选服务器依赖列表
-</ParamField>
 
 <ParamField body="include_tags" type="set[str] | None">
   仅暴露至少有一个匹配标签的组件
@@ -202,13 +199,13 @@ if __name__ == "__main__":
     # 这会运行服务器，默认使用 STDIO 传输
     mcp.run()
     
-    # 要使用不同的传输，例如 Streamable HTTP：
+    # 要使用不同的传输，例如 HTTP：
     # mcp.run(transport="http", host="127.0.0.1", port=9000)
 ```
 
 FastMCP 支持几种传输选项：
 - STDIO（默认，用于本地工具）
-- Streamable HTTP（推荐用于 Web 服务）
+- Streamable HTTP（推荐用于 Web 服务，使用Streamable HTTP 协议）
 - SSE（传统 Web 传输，已弃用）
 
 服务器也可以使用 FastMCP CLI 运行。
@@ -319,7 +316,6 @@ from fastmcp import FastMCP
 # 配置服务器特定设置
 mcp = FastMCP(
     name="ConfiguredServer",
-    dependencies=["requests", "pandas>=2.0.0"],  # 可选的服务器依赖
     include_tags={"public", "api"},              # 只暴露这些标记的组件
     exclude_tags={"internal", "deprecated"},     # 隐藏这些标记的组件
     on_duplicate_tools="error",                  # 处理重复注册

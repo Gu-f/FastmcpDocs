@@ -29,7 +29,7 @@ get_logger(name: str) -> logging.Logger
 ### `configure_logging` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/logging.py#L22" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-configure_logging(level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] | int = 'INFO', logger: logging.Logger | None = None, enable_rich_tracebacks: bool = True) -> None
+configure_logging(level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] | int = 'INFO', logger: logging.Logger | None = None, enable_rich_tracebacks: bool = True, **rich_kwargs: Any) -> None
 ```
 
 
@@ -38,4 +38,5 @@ configure_logging(level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
 **参数：**
 - `logger`: 要配置的日志记录器
 - `level`: 要使用的日志级别
+- `rich_kwargs`: 用于创建 RichHandler 所使用的参数
 

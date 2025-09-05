@@ -1,0 +1,209 @@
+---
+title: GitHub OAuth 🤝 FastMCP
+sidebarTitle: GitHub
+description: 使用 GitHub OAuth 保护您的 FastMCP 服务器
+icon: github
+tag: NEW
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+<VersionBadge version="2.12.0" />
+
+本指南将向您展示如何使用 **GitHub OAuth** 保护您的 FastMCP 服务器。由于 GitHub 不支持动态客户端注册，此集成使用 [**OAuth 代理**](/zh/servers/auth/oauth-proxy) 模式来连接 GitHub 的传统 OAuth 与 MCP 的身份验证要求。
+
+## 配置
+
+### 先决条件
+
+在开始之前，您需要：
+1. 一个具有创建 OAuth 应用权限的 **[GitHub 账户](https://github.com/)**
+2. 您的 FastMCP 服务器 URL（开发时可以是 localhost，例如 `http://localhost:8000`）
+
+### 第 1 步：创建 GitHub OAuth 应用
+
+在您的 GitHub 设置中创建 OAuth 应用以获取身份验证所需的凭据：
+
+<Steps>
+<Step title="导航到 OAuth 应用">
+    在您的 GitHub 账户中转到 **设置 → 开发者设置 → OAuth 应用**，或访问 [github.com/settings/developers](https://github.com/settings/developers)。
+    
+    点击 **"新 OAuth 应用"** 创建新应用程序。
+</Step>
+
+<Step title="配置您的 OAuth 应用">
+    填写应用程序详细信息：
+    
+    - **应用名称**：选择用户可以识别的名称（例如，"我的 FastMCP 服务器"）
+    - **主页 URL**：您应用程序的主页或文档 URL
+    - **授权回调 URL**：您的服务器 URL + `/auth/callback`（例如，`http://localhost:8000/auth/callback`）
+    
+    <Warning>
+    回调 URL 必须完全匹配。默认路径是 `/auth/callback`，但您可以使用 `redirect_path` 参数进行自定义。对于本地开发，GitHub 允许 `http://localhost` URL。对于生产环境，您必须使用 HTTPS。
+    </Warning>
+    
+    <Tip>
+    如果您想使用自定义回调路径（例如，`/auth/github/callback`），请确保在 GitHub OAuth 应用设置和配置 GitHubProvider 时的 `redirect_path` 参数中设置相同的路径。
+    </Tip>
+</Step>
+
+<Step title="保存您的凭据">
+    创建应用后，您将看到：
+    
+    - **客户端 ID**：像 `Ov23liAbcDefGhiJkLmN` 这样的公共标识符
+    - **客户端密钥**：点击 "生成新客户端密钥" 并安全保存该值
+    
+    <Tip>
+    安全存储这些凭据。永远不要将它们提交到版本控制。在生产环境中使用环境变量或密钥管理器。
+    </Tip>
+</Step>
+</Steps>
+
+### 第 2 步：FastMCP 配置
+
+使用 `GitHubProvider` 创建您的 FastMCP 服务器，它会自动处理 GitHub 的 OAuth 特性：
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.github import GitHubProvider
+
+# GitHubProvider 处理 GitHub 的令牌格式和验证
+auth_provider = GitHubProvider(
+    client_id="Ov23liAbcDefGhiJkLmN",  # 您的 GitHub OAuth 应用客户端 ID
+    client_secret="github_pat_...",     # 您的 GitHub OAuth 应用客户端密钥
+    base_url="http://localhost:8000",   # 必须与您的 OAuth 应用配置匹配
+    # redirect_path="/auth/callback"   # 默认值，如需可自定义
+)
+
+mcp = FastMCP(name="GitHub Secured App", auth=auth_provider)
+
+# 添加受保护的工具来测试身份验证
+@mcp.tool
+async def get_user_info() -> dict:
+    """返回经过身份验证的 GitHub 用户信息。"""
+    from fastmcp.server.dependencies import get_access_token
+    
+    token = get_access_token()
+    # GitHubProvider 在令牌声明中存储用户数据
+    return {
+        "github_user": token.claims.get("login"),
+        "name": token.claims.get("name"),
+        "email": token.claims.get("email")
+    }
+```
+
+## 测试
+
+### 运行服务器
+
+使用 HTTP 传输启动您的 FastMCP 服务器以启用 OAuth 流程：
+
+```bash
+fastmcp run server.py --transport http --port 8000
+```
+
+您的服务器现在正在运行并受到 GitHub OAuth 身份验证的保护。
+
+### 使用客户端测试
+
+创建一个与您的 GitHub 保护服务器进行身份验证的测试客户端：
+
+```python test_client.py
+from fastmcp import Client
+import asyncio
+
+async def main():
+    # 客户端将自动处理 GitHub OAuth
+    async with Client("http://localhost:8000/mcp/", auth="oauth") as client:
+        # 首次连接将在浏览器中打开 GitHub 登录
+        print("✓ 已通过 GitHub 身份验证！")
+        
+        # 测试受保护的工具
+        result = await client.call_tool("get_user_info")
+        print(f"GitHub 用户：{result['github_user']}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+当您首次运行客户端时：
+1. 您的浏览器将打开 GitHub 的授权页面
+2. 在您授权应用后，您将被重定向回去
+3. 客户端接收令牌并可以发出经过身份验证的请求
+
+<Info>
+客户端在本地缓存令牌，因此除非令牌过期或您显式清除缓存，否则您无需为后续运行重新进行身份验证。
+</Info>
+
+## 环境变量
+
+<VersionBadge version="2.12.1" />
+
+For production deployments, use environment variables instead of hardcoding credentials.
+
+### Provider Selection
+
+Setting this environment variable allows the GitHub provider to be used automatically without explicitly instantiating it in code.
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH" default="Not set">
+Set to `fastmcp.server.auth.providers.github.GitHubProvider` to use GitHub authentication.
+</ParamField>
+</Card>
+
+### GitHub-Specific Configuration
+
+These environment variables provide default values for the GitHub provider, whether it's instantiated manually or configured via `FASTMCP_SERVER_AUTH`.
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH_GITHUB_CLIENT_ID" required>
+您的 GitHub OAuth 应用客户端 ID（例如，`Ov23liAbcDefGhiJkLmN`）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_GITHUB_CLIENT_SECRET" required>
+您的 GitHub OAuth 应用客户端密钥
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_GITHUB_BASE_URL" default="http://localhost:8000">
+用于 OAuth 回调的 FastMCP 服务器公共 URL
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_GITHUB_REDIRECT_PATH" default="/auth/callback">
+在您的 GitHub OAuth 应用中配置的重定向路径
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_GITHUB_REQUIRED_SCOPES" default='["user"]'>
+Comma-, space-, or JSON-separated list of required GitHub scopes (e.g., `user repo` or `["user","repo"]`)
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_GITHUB_TIMEOUT_SECONDS" default="10">
+GitHub API 调用的 HTTP 请求超时
+</ParamField>
+</Card>
+
+Example `.env` file:
+```bash
+# Use the GitHub provider
+FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.github.GitHubProvider
+
+# GitHub OAuth 凭据
+FASTMCP_SERVER_AUTH_GITHUB_CLIENT_ID=Ov23liAbcDefGhiJkLmN
+FASTMCP_SERVER_AUTH_GITHUB_CLIENT_SECRET=github_pat_...
+FASTMCP_SERVER_AUTH_GITHUB_BASE_URL=https://your-server.com
+FASTMCP_SERVER_AUTH_GITHUB_REQUIRED_SCOPES=user,repo
+```
+
+设置环境变量后，您的服务器代码简化为：
+
+```python server.py
+from fastmcp import FastMCP
+
+# 身份验证从环境中自动配置
+mcp = FastMCP(name="GitHub Secured App")
+
+@mcp.tool
+async def list_repos() -> list[str]:
+    """列出经过身份验证用户的仓库。"""
+    # 您的工具实现在这里
+    pass
+```

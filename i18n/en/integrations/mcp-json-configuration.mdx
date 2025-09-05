@@ -85,7 +85,7 @@ This format is widely adopted across the MCP ecosystem:
 The `fastmcp install mcp-json` command generates configuration in the standard `mcpServers` format used across the MCP ecosystem. This is useful when:
 
 - **Working with unsupported clients** - Any MCP client not directly integrated with FastMCP
-- **CI/CD environments** - Automated configuration generation for deployments  
+- **CI/CD environments** - Automated configuration generation for deployments
 - **Configuration sharing** - Easy distribution of server setups to team members
 - **Custom tooling** - Integration with your own MCP management tools
 - **Manual setup** - When you prefer to manually configure your MCP client
@@ -107,7 +107,7 @@ This outputs the server configuration JSON with the server name as the root key:
     "args": [
       "run",
       "--with",
-      "fastmcp", 
+      "fastmcp",
       "fastmcp",
       "run",
       "/absolute/path/to/server.py"
@@ -126,7 +126,7 @@ To use this in a client configuration file, add it to the `mcpServers` object in
       "args": [
         "run",
         "--with",
-        "fastmcp", 
+        "fastmcp",
         "fastmcp",
         "run",
         "/absolute/path/to/server.py"
@@ -164,7 +164,7 @@ Add Python packages your server needs:
 # Single package
 fastmcp install mcp-json server.py --with pandas
 
-# Multiple packages  
+# Multiple packages
 fastmcp install mcp-json server.py --with pandas --with requests --with httpx
 
 # Editable local package
@@ -174,16 +174,26 @@ fastmcp install mcp-json server.py --with-editable ./my-package
 fastmcp install mcp-json server.py --with-requirements requirements.txt
 ```
 
-You can also specify dependencies directly in your server code:
+You can also use a `fastmcp.json` configuration file (recommended):
 
-```python server.py
-from fastmcp import FastMCP
-
-mcp = FastMCP(
-    name="Data Analysis Server",
-    dependencies=["pandas", "matplotlib", "seaborn"]
-)
+```json fastmcp.json
+{
+  "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
+  "source": {
+    "path": "server.py",
+    "entrypoint": "mcp"
+  },
+  "environment": {
+    "dependencies": ["pandas", "matplotlib", "seaborn"]
+  }
+}
 ```
+
+Then simply install with:
+```bash
+fastmcp install mcp-json fastmcp.json
+```
+
 
 ### Environment Variables
 
@@ -250,7 +260,7 @@ Output:
       "run",
       "--with",
       "fastmcp",
-      "fastmcp", 
+      "fastmcp",
       "run",
       "/home/user/dice_server.py"
     ]
@@ -290,11 +300,11 @@ Output:
       "--with",
       "fastmcp",
       "--with",
-      "python-dotenv", 
+      "python-dotenv",
       "--with",
       "requests",
       "fastmcp",
-      "run", 
+      "run",
       "/home/user/api_server.py"
     ],
     "env": {

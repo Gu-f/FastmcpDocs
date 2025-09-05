@@ -10,7 +10,7 @@ Claude 应用程序集成实用工具。
 
 ## 函数
 
-### `get_claude_config_path` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/claude.py#L14" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `get_claude_config_path` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/claude.py#L15" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_claude_config_path() -> Path | None
@@ -20,7 +20,7 @@ get_claude_config_path() -> Path | None
 根据平台获取 Claude 配置目录。
 
 
-### `update_claude_config` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/claude.py#L32" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `update_claude_config` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/claude.py#L33" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 update_claude_config(file_spec: str, server_name: str) -> bool
@@ -32,7 +32,7 @@ update_claude_config(file_spec: str, server_name: str) -> bool
 **参数：**
 - `file_spec`: 服务器文件的路径，可选择性地带有 \:object 后缀
 - `server_name`: 在 Claude 配置中的服务器名称
-- `with_editable`: 可选的目录，以可编辑模式安装
+- `with_editable`: Optional list of directories to install in editable mode
 - `with_packages`: 可选的附加包列表，用于安装
 - `env_vars`: 可选的环境变量字典。这些变量会与现有变量合并，新值优先。
 

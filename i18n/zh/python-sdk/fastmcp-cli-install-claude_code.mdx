@@ -10,7 +10,7 @@ sidebarTitle: claude_code
 
 ## 函数
 
-### `find_claude_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_code.py#L19" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `find_claude_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_code.py#L20" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 find_claude_command() -> str | None
@@ -23,7 +23,7 @@ find_claude_command() -> str | None
 在子进程调用中无法正常工作。
 
 
-### `check_claude_code_available` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_code.py#L67" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `check_claude_code_available` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_code.py#L68" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 check_claude_code_available() -> bool
@@ -33,7 +33,7 @@ check_claude_code_available() -> bool
 检查 Claude Code CLI 是否可用。
 
 
-### `install_claude_code` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_code.py#L72" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `install_claude_code` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_code.py#L73" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 install_claude_code(file: Path, server_object: str | None, name: str) -> bool
@@ -46,7 +46,7 @@ install_claude_code(file: Path, server_object: str | None, name: str) -> bool
 - `file`: 服务器文件的路径
 - `server_object`: 可选的服务器对象名称（用于 \:object 后缀）
 - `name`: 在 Claude Code 中的服务器名称
-- `with_editable`: 可选的目录，以可编辑模式安装
+- `with_editable`: Optional list of directories to install in editable mode
 - `with_packages`: 可选的附加包列表，用于安装
 - `env_vars`: 可选的环境变量字典
 - `python_version`: 可选的要使用的 Python 版本
@@ -57,7 +57,7 @@ install_claude_code(file: Path, server_object: str | None, name: str) -> bool
 - 如果安装成功则返回 True，否则返回 False
 
 
-### `claude_code_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_code.py#L170" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `claude_code_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/claude_code.py#L162" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 claude_code_command(server_spec: str) -> None

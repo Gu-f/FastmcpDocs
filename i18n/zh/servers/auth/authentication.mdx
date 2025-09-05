@@ -34,7 +34,7 @@ MCP 中的身份验证提出了与传统 Web 应用程序不同的独特挑战�
 
 这些挑战意味着并不是所有的身份验证方法都适用于 MCP。可行的模式根据您的服务器承担的身份验证责任级别分为三类。
 
-## 理解身份验证责任
+## 身份验证责任
 
 身份验证责任存在于一个谱系上。您的 MCP 服务器可以验证在其他地方创建的令牌，与外部身份提供商协调，或在内部处理完整的身份验证生命周期。每种方法在简单性、安全性和控制力之间都涉及不同的权衡。
 
@@ -66,9 +66,9 @@ MCP 协议对动态客户端注册的支持使得这种模式特别强大。MCP 
 
 这种模式仅在您需要对身份验证过程完全控制、在空隙环境中运行或有外部提供商无法满足的专门要求时才有意义。
 
-## FastMCP 实现
+## FastMCP 身份验证提供者
 
-FastMCP 将这些身份验证责任级别转化为三个具体类，处理 MCP 协议集成的复杂性。
+FastMCP 将这些认证责任级别转换为多种具体类，用于处理 MCP 协议集成的复杂性。你可以基于这些类来处理 MCP 协议集成的复杂操作。
 
 ### 令牌验证器(TokenVerifier)
 
@@ -97,11 +97,13 @@ mcp = FastMCP(name="受保护的服务器", auth=auth)
 
 ### 远程身份验证提供者(RemoteAuthProvider)
 
-`RemoteAuthProvider` 将令牌验证与 OAuth 发现元数据相结合，使 MCP 客户端能够自动发现并与外部身份提供商进行身份验证。
+`RemoteAuthProvider` 允许与 **支持动态客户端注册（DCR）** 的身份提供者进行认证，例如 WorkOS AuthKit。通过 DCR，MCP 客户端可以自动向身份提供者注册自身并获取凭证，无需任何手动配置。
 
-此类通过添加 OAuth 2.0 受保护资源端点来扩展 `TokenVerifier` 功能，这些端点可以宣传您的身份验证要求。MCP 客户端可以检查这些端点来了解您信任哪些身份提供商以及如何获取有效令牌。
+此类将令牌验证与 OAuth 发现元数据结合起来。它通过添加 OAuth 2.0 受保护的资源端点来扩展 `TokenVerifier` 的功能，这些端点会声明你的认证要求。MCP 客户端会检查这些端点，以了解你信任哪些身份提供者以及如何获取有效令牌。
 
-实现处理 MCP 规范所需的 OAuth 元数据生成，同时将实际令牌验证委托给底层的 `TokenVerifier`。这种分离允许您使用不同的令牌验证策略，同时保持一致的 OAuth 发现行为。
+关键要求是你的身份提供者必须支持 DCR——即客户端能够动态注册并获取凭证的能力。这正是实现 MCP 所需的无缝自动化认证流程的前提。
+
+例如，内置的 `AuthKitProvider` 使用 WorkOS AuthKit，它完全支持 DCR：
 
 ```python
 from fastmcp import FastMCP
@@ -117,9 +119,40 @@ mcp = FastMCP(name="企业服务器", auth=auth)
 
 此示例使用 WorkOS AuthKit 作为外部身份提供商。`AuthKitProvider` 自动配置针对 WorkOS 的令牌验证，并提供 MCP 客户端自动身份验证所需的 OAuth 元数据。
 
-`RemoteAuthProvider` 在需要专业身份管理而不希望实现复杂性的生产应用程序中表现出色。
+当你的身份提供者支持动态客户端注册（DCR）时，`RemoteAuthProvider` 非常适合用于生产环境应用。这可以实现完全自动化的认证，无需手动配置客户端。
 
 → **完整指南**：[远程 OAuth](/zh/servers/auth/remote-oauth)
+
+### OAuth代理(OAuthProxy)
+
+<VersionBadge version="2.12.0" />
+
+`OAuthProxy` 支持与**不支持动态客户端注册（DCR）**的 OAuth 提供商进行身份验证，例如 GitHub、Google、Azure 和大多数传统企业身份系统。
+
+当身份提供商需要手动应用注册和固定凭据时，`OAuthProxy` 充当桥梁。它向 MCP 客户端提供符合 DCR 的接口（接受任何注册请求），同时使用您在上游提供商处预注册的凭据。代理处理回调转发的复杂性，使动态客户端回调能够与需要固定重定向 URI 的提供商配合使用。
+
+此类解决了 MCP 对动态注册期望与传统 OAuth 提供商手动应用注册要求之间的根本不兼容性。
+
+例如，内置的 `GitHubProvider` 扩展 `OAuthProxy` 以与 GitHub 的 OAuth 系统配合使用：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.github import GitHubProvider
+
+auth = GitHubProvider(
+    client_id="Ov23li...",  # 您的 GitHub OAuth 应用 ID
+    client_secret="abc123...",  # 您的 GitHub OAuth 应用密钥
+    base_url="https://your-server.com"
+)
+
+mcp = FastMCP(name="GitHub 保护的服务器", auth=auth)
+```
+
+此示例使用 GitHub 提供商，它使用 GitHub 特定的令牌验证扩展了 `OAuthProxy`。代理处理完整的 OAuth 流程，同时使 GitHub 的非 DCR 身份验证与 MCP 客户端无缝配合。
+
+当与不支持 DCR 的 OAuth 提供商集成时，`OAuthProxy` 是必不可少的。这包括大多数已建立的提供商，如 GitHub、Google 和 Azure，它们需要通过其开发者控制台进行手动应用注册。
+
+→ **完整指南**：[OAuth 代理](/zh/servers/auth/oauth-proxy)
 
 ### OAuth提供者(OAuthProvider)
 
@@ -158,18 +191,57 @@ FastMCP 支持编程式配置（以获得最大灵活性）和基于环境的配
 
 ### 环境配置
 
-基于环境的配置将身份验证设置与应用程序代码分离，使得相同的代码库可以在不同的部署环境中无需修改即可工作。
+<VersionBadge version="2.12.1" />
 
-当未提供显式的 `auth` 参数时，FastMCP 会自动从环境变量中检测身份验证配置。配置系统支持所有身份验证提供商及其各种选项。
+Environment-based configuration separates authentication settings from application code, enabling the same codebase to work across different deployment environments without modification.
+
+FastMCP automatically detects authentication configuration from environment variables when no explicit `auth` parameter is provided. The configuration system supports all authentication providers and their various options.
+
+#### Provider Configuration
+
+Authentication providers are configured by specifying the full module path to the provider class:
+
+<ParamField path="FASTMCP_SERVER_AUTH" type="string">
+The full module path to the authentication provider class. Examples:
+- `fastmcp.server.auth.providers.github.GitHubProvider` - GitHub OAuth
+- `fastmcp.server.auth.providers.google.GoogleProvider` - Google OAuth
+- `fastmcp.server.auth.providers.jwt.JWTVerifier` - JWT token verification
+- `fastmcp.server.auth.providers.workos.WorkOSProvider` - WorkOS OAuth
+- `fastmcp.server.auth.providers.workos.AuthKitProvider` - WorkOS AuthKit
+- `mycompany.auth.CustomProvider` - Your custom provider class
+</ParamField>
+
+When using providers like GitHub or Google, you'll need to set provider-specific environment variables:
 
 ```bash
-export FASTMCP_SERVER_AUTH=JWT
+# GitHub OAuth
+export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.github.GitHubProvider
+export FASTMCP_SERVER_AUTH_GITHUB_CLIENT_ID="Ov23li..."
+export FASTMCP_SERVER_AUTH_GITHUB_CLIENT_SECRET="github_pat_..."
+
+# Google OAuth
+export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.google.GoogleProvider
+export FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_ID="123456.apps.googleusercontent.com"
+export FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_SECRET="GOCSPX-..."
+```
+
+#### Provider-Specific Configuration
+
+Each provider has its own configuration options set through environment variables:
+
+```bash
+# JWT Token Verification
+export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.jwt.JWTVerifier
 export FASTMCP_SERVER_AUTH_JWT_JWKS_URI="https://auth.example.com/jwks"
 export FASTMCP_SERVER_AUTH_JWT_ISSUER="https://auth.example.com"
 export FASTMCP_SERVER_AUTH_JWT_AUDIENCE="mcp-server"
+
+# Custom Provider
+export FASTMCP_SERVER_AUTH=mycompany.auth.CustomProvider
+# Plus any environment variables your custom provider expects
 ```
 
-设置这些环境变量后，创建身份验证的 FastMCP 服务器不需要额外配置：
+With these environment variables set, creating an authenticated FastMCP server requires no additional configuration:
 
 ```python
 from fastmcp import FastMCP
@@ -182,12 +254,14 @@ mcp = FastMCP(name="我的服务器")
 
 ## 选择您的实现
 
-您选择的身份验证方法取决于您现有的基础设施、安全要求和运营约束。
+The authentication approach you choose depends on your existing infrastructure, security requirements, and operational constraints.
 
-**对于大多数生产应用程序，外部身份提供商提供了安全性、功能和简单性的最佳平衡。**这种方法提供企业级身份验证，无需实现复杂性，并且随着应用程序的增长具有良好的扩展性。主要的权衡是需要用户在您选择的身份提供商处注册，但这也带来了专业用户管理、安全监控和合规功能等好处。
+**For OAuth providers without DCR support (GitHub, Google, Azure, most enterprise systems), use OAuth Proxy.** These providers require manual app registration through their developer consoles. OAuth Proxy bridges the gap by presenting a DCR-compliant interface to MCP clients while using your fixed credentials with the provider. The proxy's callback forwarding pattern enables dynamic client ports to work with providers that require fixed redirect URIs.
 
-**令牌验证在您已经拥有可发行结构化令牌的身份验证基础设施时效果很好。**如果您的组织已经使用基于 JWT 的系统、API 网关或可以生成令牌的企业 SSO，这种方法将无缝集成，同时让您的 MCP 服务器专注于其核心功能。简单性来自于利用现有的身份验证基础设施投资。
+**For identity providers with DCR support (WorkOS AuthKit, modern auth platforms), use RemoteAuthProvider.** These providers allow clients to dynamically register and obtain credentials without manual configuration. This enables the fully automated authentication flow that MCP is designed for, providing the best user experience and simplest implementation.
 
-**除非您有外部提供商无法解决的令人信服的理由，否则应该避免完整的 OAuth 实现。**空隙环境、专门的合规要求或独特的组织约束可能会证明这种方法的合理性，但它需要显著的安全专业知识和持续的维护承诺。复杂性远超初始实现，还包括威胁监控、安全更新和跟上不断发展的攻击向量。
+**Token validation works well when you already have authentication infrastructure that issues structured tokens.** If your organization already uses JWT-based systems, API gateways, or enterprise SSO that can generate tokens, this approach integrates seamlessly while keeping your MCP server focused on its core functionality. The simplicity comes from leveraging existing investment in authentication infrastructure.
 
-FastMCP 的架构支持随着您需求的发展在这些方法之间迁移。您可以初始与现有的令牌系统集成，并在应用程序扩展时迁移到外部身份提供商，或者在您的需求超出标准模式时实现自定义解决方案。
+**Full OAuth implementation should be avoided unless you have compelling reasons that external providers cannot address.** Air-gapped environments, specialized compliance requirements, or unique organizational constraints might justify this approach, but it requires significant security expertise and ongoing maintenance commitment. The complexity extends far beyond initial implementation to include threat monitoring, security updates, and keeping pace with evolving attack vectors.
+
+FastMCP's architecture supports migration between these approaches as your requirements evolve. You can integrate with existing token systems initially and migrate to external identity providers as your application scales, or implement custom solutions when your requirements outgrow standard patterns.

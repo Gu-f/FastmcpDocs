@@ -1,0 +1,72 @@
+---
+title: google
+sidebarTitle: google
+---
+
+# `fastmcp.server.auth.providers.google`
+
+
+FastMCP 的 Google OAuth 提供程序。
+
+此模块提供了一个完整的 Google OAuth 集成，只需客户端 ID 和客户端密钥即可使用。它处理 Google OAuth 流程、令牌验证和用户管理的所有复杂性。
+
+
+
+示例：
+    ```python
+    from fastmcp import FastMCP
+    from fastmcp.server.auth.providers.google import GoogleProvider
+
+    # 简单的 Google OAuth 保护
+    auth = GoogleProvider(
+        client_id="your-google-client-id.apps.googleusercontent.com",
+        client_secret="your-google-client-secret"
+    )
+
+    mcp = FastMCP("My Protected Server", auth=auth)
+    ```
+
+
+## 类
+
+### `GoogleProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/google.py#L40" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Google OAuth 提供程序的设置。
+
+
+### `GoogleTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/google.py#L63" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Google OAuth 令牌的令牌验证器。
+
+Google OAuth 令牌是不透明的（不是 JWT），因此我们通过调用 Google 的 tokeninfo API 来检查它们是否有效并获取用户信息。
+
+
+
+**方法：**
+
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/google.py#L85" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+verify_token(self, token: str) -> AccessToken | None
+```
+
+通过调用 Google 的 tokeninfo API 验证 Google OAuth 令牌。
+
+
+### `GoogleProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/google.py#L182" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+完整的 FastMCP Google OAuth 提供程序。
+
+此提供程序使得为任何 FastMCP 服务器添加 Google OAuth 保护变得非常简单。只需提供您的 Google OAuth 应用凭据和基本 URL，您就可以开始了。
+
+
+
+功能：
+- 到 Google 的透明 OAuth 代理
+- 通过 Google 的 tokeninfo API 进行自动令牌验证
+- 从 Google API 提取用户信息
+- 最少的配置要求
+

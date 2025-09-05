@@ -7,22 +7,22 @@ sidebarTitle: mcp_config
 
 ## 函数
 
-### `composite_server_from_mcp_config` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_config.py#L7" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `mcp_config_to_servers_and_transports` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_config.py#L17" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-composite_server_from_mcp_config(config: MCPConfig, name_as_prefix: bool = True) -> FastMCP[None]
+mcp_config_to_servers_and_transports(config: MCPConfig) -> list[tuple[str, FastMCP[Any], ClientTransport]]
 ```
 
 
-从 MCPConfig 创建复合服务器的实用函数。
+一个工具函数，用于将 MCP 配置中的每个条目转换为传输(transport)和服务器(server)。
 
 
-### `mount_mcp_config_into_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_config.py#L18" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `mcp_server_type_to_servers_and_transports` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_config.py#L27" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-mount_mcp_config_into_server(config: MCPConfig, server: FastMCP[Any], name_as_prefix: bool = True) -> None
+mcp_server_type_to_servers_and_transports(name: str, mcp_server: MCPServerTypes) -> tuple[str, FastMCP[Any], ClientTransport]
 ```
 
 
-将 MCPConfig 中的服务器挂载到 FastMCP 服务器的实用函数。
+一个工具函数，用于将 MCP 配置中的每个条目转换为传输(transport)和服务器(server)。
 
