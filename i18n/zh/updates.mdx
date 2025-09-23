@@ -5,55 +5,55 @@ icon: "sparkles"
 tag: NEW
 ---
 
-<Update label="FastMCP 2.12" description="December 31, 2024" tags={["Releases"]}>
+<Update label="FastMCP 2.12" description="2024年12月31日" tags={["发布"]}>
 <Card
-title="FastMCP 2.12: Auth to the Races"
+title="FastMCP 2.12: 认证竞赛"
 href="https://github.com/jlowin/fastmcp/releases/tag/v2.12.0"
-cta="Read the release notes"
+cta="阅读发布说明"
 >
-FastMCP 2.12 represents one of our most significant releases to date. After extensive testing and iteration with the community, we're shipping major improvements to authentication, configuration, and MCP feature adoption.
+FastMCP 2.12 是迄今为止最重要的版本之一。经过与社区的广泛测试和迭代，我们推出了在身份验证、配置和 MCP 功能采用方面的重大改进。
 
-🔐 **OAuth Proxy** bridges the gap for providers that don't support Dynamic Client Registration, enabling authentication with GitHub, Google, WorkOS, and Azure through minimal configuration.
+🔐 **OAuth 代理**为不支持动态客户端注册的提供商弥合了差距，通过最少的配置实现与 GitHub、Google、WorkOS 和 Azure 的身份验证。
 
-📋 **Declarative JSON Configuration** introduces `fastmcp.json` as the single source of truth for server settings, making MCP servers as portable and shareable as container images.
+📋 **声明式 JSON 配置**引入 `fastmcp.json` 作为服务器设置的单一信任源，使 MCP 服务器像容器镜像一样便携和可共享。
 
-🧠 **Sampling API Fallback** tackles adoption challenges by letting servers generate completions server-side when clients don't support the feature, encouraging innovation while maintaining compatibility.
+🧠 **采样 API 回退**通过让服务器在客户端不支持该功能时在服务器端生成完成来解决采用挑战，在保持兼容性的同时鼓励创新。
 </Card>
 </Update>
 
-<Update label="FastMCP 2.11" description="December 13, 2024" tags={["Releases"]}>
+<Update label="FastMCP 2.11" description="2024年12月13日" tags={["发布"]}>
 <Card
-title="FastMCP 2.11: Auth to a Good Start"
+title="FastMCP 2.11: 认证好开端"
 href="https://github.com/jlowin/fastmcp/releases/tag/v2.11.0"
-cta="Read the release notes"
+cta="阅读发布说明"
 >
-FastMCP 2.11 brings enterprise-ready authentication and dramatic performance improvements.
+FastMCP 2.11 带来了企业级身份验证和显著的性能改进。
 
-🔒 **Comprehensive OAuth 2.1 Support** with WorkOS AuthKit integration, Dynamic Client Registration, and support for separate resource and authorization servers.
+🔒 **全面的 OAuth 2.1 支持**，包括 WorkOS AuthKit 集成、动态客户端注册，以及对独立资源和授权服务器的支持。
 
-⚡ **Experimental OpenAPI Parser** delivers dramatic performance gains through single-pass schema processing and optimized memory usage (enable with environment variable).
+⚡ **实验性 OpenAPI 解析器**通过单次模式处理和优化的内存使用提供显著的性能提升（通过环境变量启用）。
 
-💾 **Enhanced State Management** provides persistent state across tool calls with a simple dictionary interface, improving context handling and type annotations.
+💾 **增强的状态管理**通过简单的字典接口提供跨工具调用的持久状态，改进上下文处理和类型注释。
 
-This release emphasizes speed and simplicity while setting the foundation for future enterprise features.
+此版本强调速度和简单性，同时为未来的企业功能奠定基础。
 </Card>
 </Update>
 
-<Update label="FastMCP 2.10" description="November 21, 2024" tags={["Releases"]}>
+<Update label="FastMCP 2.10" description="2024年11月21日" tags={["发布"]}>
 <Card
-title="FastMCP 2.10: Great Spec-tations"
+title="FastMCP 2.10: 伟大的规范期望"
 href="https://github.com/jlowin/fastmcp/releases/tag/v2.10.0"
-cta="Read the release notes"
+cta="阅读发布说明"
 >
-FastMCP 2.10 achieves full compliance with the 6/18/2025 MCP specification update, introducing powerful new communication patterns.
+FastMCP 2.10 实现了与 2025年6月18日 MCP 规范更新的完全合规，引入了强大的新通信模式。
 
-💬 **Elicitation Support** enables dynamic server-client communication and "human-in-the-loop" workflows, allowing servers to request additional information during execution.
+💬 **引导支持**启用动态服务器-客户端通信和"人在回路"工作流，允许服务器在执行期间请求额外信息。
 
-📊 **Output Schemas** provide structured outputs for tools, making results more predictable and easier to parse programmatically.
+📊 **输出模式**为工具提供结构化输出，使结果更可预测且更易于程序化解析。
 
-🛠️ **Enhanced HTTP Routing** with OpenAPI extensions support and configurable algorithms for more flexible API integration.
+🛠️ **增强的 HTTP 路由**，支持 OpenAPI 扩展和可配置算法，实现更灵活的 API 集成。
 
-This release includes a breaking change to `client.call_tool()` return signatures but significantly expands the interaction capabilities of MCP servers.
+此版本包含对 `client.call_tool()` 返回签名的破坏性更改，但显著扩展了 MCP 服务器的交互能力。
 </Card>
 </Update>
 

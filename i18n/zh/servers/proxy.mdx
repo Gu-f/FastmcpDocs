@@ -38,11 +38,11 @@ sequenceDiagram
 - **安全性**：充当后端服务器的受控网关
 - **简单性**：即使后端位置或传输发生变化，仍然是单一端点
 
-### Performance Considerations
+### 性能考虑
 
-When using proxy servers, especially those connecting to HTTP-based backend servers, be aware that latency can be significant. Operations like `list_tools()` may take hundreds of milliseconds compared to 1-2ms for local tools. When mounting proxy servers, this latency affects all operations on the parent server, not just interactions with the proxied tools.
+使用代理服务器时，特别是连接到基于 HTTP 的后端服务器时，需要注意延迟可能很显著。像 `list_tools()` 这样的操作可能需要数百毫秒，而本地工具只需要 1-2ms。挂载代理服务器时，这种延迟会影响父服务器上的所有操作，而不仅仅是与代理工具的交互。
 
-If low latency is a requirement for your use-case, consider using [`import_server()`](/zh/servers/composition#importing-static-composition) to copy tools at startup rather than proxying them at runtime.
+如果低延迟是您用例的要求，请考虑使用 [`import_server()`](/zh/servers/composition#importing-static-composition) 在启动时复制工具，而不是在运行时代理它们。
 
 ## 快速开始
 

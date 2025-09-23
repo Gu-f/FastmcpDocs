@@ -151,17 +151,17 @@ client = Client(
 )
 ```
 
-## Sampling fallback
+## 采样回退
 
-Client support for sampling is optional, if the client does not support sampling, the server will report an error indicating
-that the client does not support sampling.
 
-A `sampling_handler` can also be provided to the FastMCP server, which will be used to handle sampling requests if the client
-does not support sampling. This sampling handler bypasses the client and sends sampling requests directly to the LLM provider.
+客户端对采样的支持是可选的，如果客户端不支持采样，服务器将报告错误，指示客户端不支持采样。
 
-Sampling handlers can be implemented using any LLM provider but a sample implementation for OpenAI is provided as a Contrib
-module. Sampling lacks the full capabilities of typical LLM completions. For this reason, the OpenAI sampling handler, pointed at
-a third-party provider's OpenAI-compatible API, is often sufficient to implement a sampling handler.
+
+也可以为 FastMCP 服务器提供 `sampling_handler`，当客户端不支持采样时，它将用于处理采样请求。此采样处理器绕过客户端，直接向 LLM 提供商发送采样请求。
+
+采样处理器可以使用任何 LLM 提供商来实现，但作为贡献模块提供了 OpenAI 的示例实现。采样缺乏典型 LLM 补全的完整功能。因此，指向第三方提供商的 OpenAI 兼容 API 的 OpenAI 采样处理器通常足以实现采样处理器。
+
+
 
 ```python
 import asyncio

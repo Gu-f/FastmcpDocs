@@ -1,187 +1,187 @@
 ---
-title: "Contributing"
-description: "Development workflow for FastMCP contributors"
+title: "贡献指南"
+description: "FastMCP 贡献者的开发工作流程"
 icon: code-pull-request
 ---
 
-Contributing to FastMCP means joining a community that values clean, maintainable code and thoughtful API design. All contributions are valued - from fixing typos in documentation to implementing major features.
+为 FastMCP 做贡献意味着加入一个重视简洁、可维护代码和深思熟虑的 API 设计的社区。所有贡献都是有价值的 - 从修复文档中的拼写错误到实现主要功能。
 
-## Issues
+## 问题（Issues）
 
-### Issue First, Code Second
+### 先提问题，后写代码
 
-**Every pull request requires a corresponding issue - no exceptions.** This requirement creates a collaborative space where approach, scope, and alignment are established before code is written. Issues serve as design documents where maintainers and contributors discuss implementation strategy, identify potential conflicts with existing patterns, and ensure proposed changes advance FastMCP's vision.
+**每个拉取请求都需要对应的问题 - 没有例外。** 这一要求创建了一个协作空间，在编写代码之前确定方法、范围和一致性。问题作为设计文档，维护者和贡献者在其中讨论实施策略，识别与现有模式的潜在冲突，并确保提议的更改推进 FastMCP 的愿景。
 
-**FastMCP is an opinionated framework, not a kitchen sink.** The maintainers have strong beliefs about what FastMCP should and shouldn't do. Just because something takes N lines of code and you want it in fewer lines doesn't mean FastMCP should take on the maintenance burden or endorse that pattern. This is judged at the maintainers' discretion.
+**FastMCP 是一个有主见的框架，而不是大杂烩。** 维护者对 FastMCP 应该做什么和不应该做什么有强烈的信念。仅仅因为某些功能需要 N 行代码而您希望用更少的行数实现，并不意味着 FastMCP 应该承担维护负担或认可该模式。这由维护者自行判断。
 
-Use issues to understand scope BEFORE opening PRs. The issue discussion determines whether a feature belongs in core, contrib, or not at all.
+在打开 PR 之前使用问题来了解范围。问题讨论决定了一个功能属于核心、贡献模块，还是根本不属于。
 
-### Writing Good Issues
+### 编写好的问题
 
-FastMCP is an extremely highly-trafficked repository maintained by a very small team. Issues that appear to transfer burden to maintainers without any effort to validate the problem will be closed. Please help the maintainers help you by always providing a minimal reproducible example and clearly describing the problem.
+FastMCP 是一个流量极高的仓库，由一个非常小的团队维护。那些看起来将负担转移给维护者而没有任何验证问题努力的问题将被关闭。请通过始终提供最小可重现示例和清楚地描述问题来帮助维护者帮助您。
 
-**LLM-generated issues will be closed immediately.** Issues that contain paragraphs of unnecessary explanation, verbose problem descriptions, or obvious LLM authorship patterns obfuscate the actual problem and transfer burden to maintainers.
+**LLM 生成的问题将立即关闭。** 包含不必要解释段落、冗长问题描述或明显 LLM 创作模式的问题会混淆实际问题并将负担转移给维护者。
 
-Write clear, concise issues that:
-- State the problem directly
-- Provide a minimal reproducible example
-- Skip unnecessary background or context
-- Take responsibility for clear communication
+编写清晰、简洁的问题：
+- 直接陈述问题
+- 提供最小可重现示例
+- 跳过不必要的背景或上下文
+- 为清晰沟通负责
 
-Issues may be labeled "Invalid" simply due to confusion caused by verbosity or not adhering to the guidelines outlined here.
+问题可能仅仅因为冗长造成的混乱或不遵守此处概述的指导原则而被标记为"Invalid"。
 
-## Pull Requests
+## 拉取请求（Pull Requests）
 
-PRs that deviate from FastMCP's core principles will be rejected regardless of implementation quality. **PRs are NOT for iterating on ideas** - they should only be opened for ideas that already have a bias toward acceptance based on issue discussion.
+偏离 FastMCP 核心原则的 PR 将被拒绝，无论实现质量如何。**PR 不是用来迭代想法的** - 它们应该只为基于问题讨论已经倾向于被接受的想法而打开。
 
 
-### Development Environment
+### 开发环境
 
-#### Installation
+#### 安装
 
-To contribute to FastMCP, you'll need to set up a development environment with all necessary tools and dependencies.
+要为 FastMCP 做贡献，您需要设置一个包含所有必要工具和依赖项的开发环境。
 
 ```bash
-# Clone the repository
+# 克隆仓库
 git clone https://github.com/jlowin/fastmcp.git
 cd fastmcp
 
-# Install all dependencies including dev tools
+# 安装所有依赖项，包括开发工具
 uv sync
 
-# Install pre-commit hooks
+# 安装预提交钩子
 uv run pre-commit install
 ```
 
-In addition, some development commands require [just](https://github.com/casey/just) to be installed.
+此外，一些开发命令需要安装 [just](https://github.com/casey/just)。
 
-Pre-commit hooks will run automatically on every commit to catch issues before they reach CI. If you see failures, fix them before committing - never commit broken code expecting to fix it later.
+预提交钩子将在每次提交时自动运行，以在问题到达 CI 之前捕获问题。如果您看到失败，请在提交前修复它们 - 永远不要提交损坏的代码期望稍后修复。
 
-### Development Standards
+### 开发标准
 
-#### Scope
+#### 范围
 
-Large pull requests create review bottlenecks and quality risks. Unless you're fixing a discrete bug or making an incredibly well-scoped change, keep PRs small and focused. 
+大型拉取请求会产生审查瓶颈和质量风险。除非您正在修复一个独立的错误或进行一个范围极其明确的更改，否则请保持 PR 小而专注。
 
-A PR that changes 50 lines across 3 files can be thoroughly reviewed in minutes. A PR that changes 500 lines across 20 files requires hours of careful analysis and often hides subtle issues.
+一个跨 3 个文件更改 50 行的 PR 可以在几分钟内得到彻底审查。一个跨 20 个文件更改 500 行的 PR 需要数小时的仔细分析，并且经常隐藏微妙的问题。
 
-Breaking large features into smaller PRs:
-- Creates better review experiences
-- Makes git history clear
-- Simplifies debugging with bisect
-- Reduces merge conflicts
-- Gets your code merged faster
+将大型功能分解为较小的 PR：
+- 创造更好的审查体验
+- 使 git 历史清晰
+- 简化使用 bisect 进行调试
+- 减少合并冲突
+- 让您的代码更快合并
 
-#### Code Quality
+#### 代码质量
 
-FastMCP values clarity over cleverness. Every line you write will be maintained by someone else - possibly years from now, possibly without context about your decisions.
+FastMCP 重视清晰性胜过巧妙性。您编写的每一行代码都将由其他人维护 - 可能是几年后，可能没有关于您决策的上下文。
 
-**PRs can be rejected for two opposing reasons:**
-1. **Insufficient quality** - Code that doesn't meet our standards for clarity, maintainability, or idiomaticity
-2. **Overengineering** - Code that is overbearing, unnecessarily complex, or tries to be too clever
+**PR 可能因为两个相反的原因被拒绝：**
+1. **质量不足** - 不符合我们的清晰性、可维护性或惯用性标准的代码
+2. **过度工程化** - 过于复杂、不必要复杂或试图过于巧妙的代码
 
-The focus is on idiomatic, high-quality Python. FastMCP uses patterns like `NotSet` type as an alternative to `None` in certain situations - follow existing patterns.
+重点是惯用的、高质量的 Python。FastMCP 使用诸如 `NotSet` 类型作为在某些情况下 `None` 的替代等模式 - 遵循现有模式。
 
-#### Required Practices
+#### 必需实践
 
-**Full type annotations** on all functions and methods. They catch bugs before runtime and serve as inline documentation.
+所有函数和方法的**完整类型注解**。它们在运行时之前捕获错误，并作为内联文档。
 
-**Async/await patterns** for all I/O operations. Even if your specific use case doesn't need concurrency, consistency means users can compose features without worrying about blocking operations.
+所有 I/O 操作的 **Async/await 模式**。即使您的特定用例不需要并发，一致性意味着用户可以组合功能而不必担心阻塞操作。
 
-**Descriptive names** make code self-documenting. `auth_token` is clear; `tok` requires mental translation.
+**描述性名称**使代码自文档化。`auth_token` 是清晰的；`tok` 需要心理翻译。
 
-**Specific exception types** make error handling predictable. Catching `ValueError` tells readers exactly what error you expect. Never use bare `except` clauses.
+**特定异常类型**使错误处理可预测。捕获 `ValueError` 告诉读者您期望的确切错误。永远不要使用裸露的 `except` 子句。
 
-#### Anti-Patterns to Avoid
+#### 要避免的反模式
 
-**Complex one-liners** are hard to debug and modify. Break operations into clear steps.
+**复杂的单行代码**难以调试和修改。将操作分解为清晰的步骤。
 
-**Mutable default arguments** cause subtle bugs. Use `None` as the default and create the mutable object inside the function.
+**可变默认参数**会导致微妙的错误。使用 `None` 作为默认值，并在函数内部创建可变对象。
 
-**Breaking established patterns** confuses readers. If you must deviate, discuss in the issue first.
+**破坏既定模式**会混淆读者。如果您必须偏离，请先在问题中讨论。
 
-### Pre-Commit Checks
+### 预提交检查
 
 ```bash
-# Runs automatically on commit, or manually:
+# 在提交时自动运行，或手动运行：
 uv run pre-commit run --all-files
 ```
 
-This runs three critical tools:
-- **Ruff**: Linting and formatting
-- **ty**: Static type checking  
-- **Pytest**: Core test suite
+这将运行三个关键工具：
+- **Ruff**：代码检查和格式化
+- **ty**：静态类型检查  
+- **Pytest**：核心测试套件
 
-CI will reject PRs that fail these checks. Always run them locally first.
+CI 将拒绝未通过这些检查的 PR。始终先在本地运行它们。
 
-### Testing
+### 测试
 
-Tests are documentation that shows how features work. Good tests give reviewers confidence and help future maintainers understand intent.
+测试是展示功能如何工作的文档。好的测试给审查者信心，并帮助未来的维护者理解意图。
 
 ```bash
-# Run specific test directory
+# 运行特定测试目录
 uv run pytest tests/server/ -v
 
-# Run all tests before submitting PR
+# 在提交 PR 之前运行所有测试
 uv run pytest
 ```
 
-Every new feature needs tests. See the [Testing Guide](/zh/development/tests) for patterns and requirements.
+每个新功能都需要测试。请参阅[测试指南](/zh/development/tests)了解模式和要求。
 
-### Documentation
+### 文档
 
-A feature doesn't exist unless it's documented. Note that FastMCP's hosted documentation always tracks the main branch - users who want historical documentation can clone the repo, checkout a specific tag, and host it themselves.
+除非有文档记录，否则功能不存在。请注意，FastMCP 的托管文档始终跟踪主分支 - 想要历史文档的用户可以克隆仓库，检出特定标签，并自己托管。
 
 ```bash
-# Preview documentation locally
+# 在本地预览文档
 just docs
 ```
 
-Documentation requirements:
-- **Explain concepts in prose first** - Code without context is just syntax
-- **Complete, runnable examples** - Every code block should be copy-pasteable
-- **Register in docs.json** - Makes pages appear in navigation
-- **Version badges** - Mark when features were added using `<VersionBadge />`
+文档要求：
+- **首先用散文解释概念** - 没有上下文的代码只是语法
+- **完整、可运行的示例** - 每个代码块都应该可以复制粘贴
+- **在 docs.json 中注册** - 使页面出现在导航中
+- **版本徽章** - 使用 `<VersionBadge />` 标记功能添加时间
 
-#### SDK Documentation
+#### SDK 文档
 
-FastMCP's SDK documentation is auto-generated from the source code docstrings and type annotations. It is automatically updated on every merge to main by a GitHub Actions workflow, so users are *not* responsible for keeping the documentation up to date. However, to generate it proactively, you can use the following command:
+FastMCP 的 SDK 文档是从源代码文档字符串和类型注解自动生成的。它通过 GitHub Actions 工作流在每次合并到主分支时自动更新，因此用户*无需*负责保持文档最新。但是，要主动生成它，您可以使用以下命令：
 
 ```bash
 just api-ref-all
 ```
 
-### Submitting Your PR
+### 提交您的 PR
 
-#### Before Submitting
+#### 提交前
 
-1. **Run all checks**: `uv run pre-commit run --all-files && uv run pytest`
-2. **Keep scope small**: One feature or fix per PR
-3. **Write clear description**: Your PR description becomes permanent documentation
-4. **Update docs**: Include documentation for API changes
+1. **运行所有检查**：`uv run pre-commit run --all-files && uv run pytest`
+2. **保持范围小**：每个 PR 一个功能或修复
+3. **编写清晰描述**：您的 PR 描述成为永久文档
+4. **更新文档**：包含 API 更改的文档
 
-#### PR Description
+#### PR 描述
 
-Write PR descriptions that explain:
-- What problem you're solving
-- Why you chose this approach  
-- Any trade-offs or alternatives considered
-- Migration path for breaking changes
+编写解释以下内容的 PR 描述：
+- 您正在解决什么问题
+- 为什么选择这种方法  
+- 考虑的任何权衡或替代方案
+- 破坏性更改的迁移路径
 
-Focus on the "why" - the code shows the "what". Keep it concise but complete.
+专注于"为什么" - 代码显示"什么"。保持简洁但完整。
 
-#### What We Look For
+#### 我们寻找什么
 
-**Framework Philosophy**: FastMCP is NOT trying to do all things or provide all shortcuts. Features are rejected when they don't align with the framework's vision, even if perfectly implemented. The burden of proof is on the PR to demonstrate value.
+**框架理念**：FastMCP 不试图做所有事情或提供所有快捷方式。当功能与框架愿景不一致时，即使实现完美也会被拒绝。PR 有责任证明其价值。
 
-**Code Quality**: We verify code follows existing patterns. Consistency reduces cognitive load. When every module works similarly, developers understand new code quickly.
+**代码质量**：我们验证代码遵循现有模式。一致性减少认知负担。当每个模块都以相似方式工作时，开发者可以快速理解新代码。
 
-**Test Coverage**: Not every line needs testing, but every behavior does. Tests document intent and protect against regressions.
+**测试覆盖**：不是每一行都需要测试，但每个行为都需要。测试记录意图并防止回归。
 
-**Breaking Changes**: May be acceptable in minor versions but must be clearly documented. See the [versioning policy](/zh/development/releases#versioning-policy).
+**破坏性更改**：在次要版本中可能是可接受的，但必须清楚地记录。请参阅[版本控制策略](/zh/development/releases#versioning-policy)。
 
-## Special Modules
+## 特殊模块
 
-**`contrib`**: Community-maintained patterns and utilities. Original authors maintain their contributions. Not representative of the core framework.
+**`社区贡献`**：社区维护的模式和工具。原作者维护他们的贡献。不代表核心框架。
 
-**`experimental`**: Maintainer-developed features that may preview future functionality. Can break or be deleted at any time without notice. Pin your FastMCP version when using these features.
+**`实验性功能`**：维护者开发的功能，可能预览未来功能。可能随时中断或删除，恕不另行通知。使用这些功能时请固定您的 FastMCP 版本。

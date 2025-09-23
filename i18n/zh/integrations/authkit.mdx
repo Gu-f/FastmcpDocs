@@ -78,56 +78,56 @@ if __name__ == "__main__":
 ```
 
 
-## Environment Variables
+## 环境变量
 
 <VersionBadge version="2.12.1" />
 
-For production deployments, use environment variables instead of hardcoding credentials.
+对于生产部署，请使用环境变量而不是硬编码凭据。
 
-### Provider Selection
+### 提供程序选择
 
-Setting this environment variable allows the AuthKit provider to be used automatically without explicitly instantiating it in code.
+设置此环境变量允许自动使用 AuthKit 提供程序，而无需在代码中显式实例化它。
 
 <Card>
-<ParamField path="FASTMCP_SERVER_AUTH" default="Not set">
-Set to `fastmcp.server.auth.providers.workos.AuthKitProvider` to use AuthKit authentication.
+<ParamField path="FASTMCP_SERVER_AUTH" default="未设置">
+设置为 `fastmcp.server.auth.providers.workos.AuthKitProvider` 以使用 AuthKit 身份验证。
 </ParamField>
 </Card>
 
-### AuthKit-Specific Configuration
+### AuthKit 特定配置
 
-These environment variables provide default values for the AuthKit provider, whether it's instantiated manually or configured via `FASTMCP_SERVER_AUTH`.
+这些环境变量为 AuthKit 提供程序提供默认值，无论它是手动实例化的还是通过 `FASTMCP_SERVER_AUTH` 配置的。
 
 <Card>
 <ParamField path="FASTMCP_SERVER_AUTH_AUTHKITPROVIDER_AUTHKIT_DOMAIN" required>
-Your AuthKit domain (e.g., `https://your-project-12345.authkit.app`)
+您的 AuthKit 域（例如，`https://your-project-12345.authkit.app`）
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_AUTHKITPROVIDER_BASE_URL" required>
-Public URL of your FastMCP server (e.g., `https://your-server.com` or `http://localhost:8000` for development)
+您的 FastMCP 服务器的公共 URL（例如，`https://your-server.com` 或开发时的 `http://localhost:8000`）
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_AUTHKITPROVIDER_REQUIRED_SCOPES" default="[]">
-Comma-, space-, or JSON-separated list of required OAuth scopes (e.g., `openid profile email` or `["openid", "profile", "email"]`)
+必需的 OAuth 作用域的逗号、空格或 JSON 分隔列表（例如，`openid profile email` 或 `["openid", "profile", "email"]`）
 </ParamField>
 </Card>
 
-Example `.env` file:
+示例 `.env` 文件：
 ```bash
-# Use the AuthKit provider
+# 使用 AuthKit 提供程序
 FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.workos.AuthKitProvider
 
-# AuthKit configuration
+# AuthKit 配置
 FASTMCP_SERVER_AUTH_AUTHKITPROVIDER_AUTHKIT_DOMAIN=https://your-project-12345.authkit.app
 FASTMCP_SERVER_AUTH_AUTHKITPROVIDER_BASE_URL=https://your-server.com
 FASTMCP_SERVER_AUTH_AUTHKITPROVIDER_REQUIRED_SCOPES=openid,profile,email
 ```
 
-With environment variables set, your server code simplifies to:
+设置环境变量后，您的服务器代码简化为：
 
 ```python server.py
 from fastmcp import FastMCP
 
-# Authentication is automatically configured from environment
-mcp = FastMCP(name="AuthKit Secured App")
+# 身份验证从环境中自动配置
+mcp = FastMCP(name="AuthKit 安全应用")
 ```

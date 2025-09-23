@@ -100,19 +100,19 @@ from fastmcp.server.auth import RemoteAuthProvider
 from fastmcp.server.auth.providers.jwt import JWTVerifier
 from pydantic import AnyHttpUrl
 
-# Configure token validation for your identity provider
+# 为您的身份提供程序配置令牌验证
 token_verifier = JWTVerifier(
     jwks_uri="https://auth.yourcompany.com/.well-known/jwks.json",
     issuer="https://auth.yourcompany.com",
     audience="mcp-production-api"
 )
 
-# Create the remote auth provider
+# 创建远程认证提供程序
 auth = RemoteAuthProvider(
     token_verifier=token_verifier,
     authorization_servers=[AnyHttpUrl("https://auth.yourcompany.com")],
-    base_url="https://api.yourcompany.com",  # Your server base URL
-    # Optional: customize allowed client redirect URIs (defaults to localhost only)
+    base_url="https://api.yourcompany.com",  # 您的服务器基础 URL
+    # 可选：自定义允许的客户端重定向 URI（默认仅为 localhost）
     allowed_client_redirect_uris=["http://localhost:*", "http://127.0.0.1:*"]
 )
 
@@ -121,7 +121,7 @@ mcp = FastMCP(name="Company API", auth=auth)
 
 此配置创建一个接受由 `auth.yourcompany.com` 发行的令牌的服务器，并提供 MCP 客户端所需的 OAuth 发现元数据。`JWTVerifier` 使用您的身份提供商的公钥处理令牌验证，而 `RemoteAuthProvider` 生成所需的 OAuth 端点。
 
-The `authorization_servers` list tells MCP clients which identity providers you trust. The `base_url` identifies your server in OAuth metadata, enabling proper token audience validation. **Important**: The `base_url` should point to your server base URL - for example, if your MCP server is accessible at `https://api.yourcompany.com/mcp`, use `https://api.yourcompany.com` as the base URL.
+`authorization_servers` 列表告诉 MCP 客户端您信任哪些身份提供程序。`base_url` 在 OAuth 元数据中标识您的服务器，启用正确的令牌受众验证。**重要**：`base_url` 应该指向您的服务器基础 URL - 例如，如果您的 MCP 服务器可以通过 `https://api.yourcompany.com/mcp` 访问，请使用 `https://api.yourcompany.com` 作为基础 URL。
 
 ### 自定义端点
 
@@ -194,16 +194,16 @@ WorkOS 对动态客户端注册的支持使其特别适合 MCP 应用程序。�
 
 → **完整 WorkOS 教程**：[AuthKit 集成指南](/zh/integrations/authkit)
 
-## Client Redirect URI Security
+## 客户端重定向 URI 安全
 
 <Note>
-`RemoteAuthProvider` also supports the `allowed_client_redirect_uris` parameter for controlling which redirect URIs are accepted from MCP clients during DCR:
+`RemoteAuthProvider` 还支持 `allowed_client_redirect_uris` 参数，用于控制在 DCR 期间从 MCP 客户端接受哪些重定向 URI：
 
-- `None` (default): Only localhost patterns allowed
-- Custom list: Specify allowed patterns with wildcard support
-- Empty list `[]`: Allow all (not recommended)
+- `None`（默认）：仅允许 localhost 模式
+- 自定义列表：指定支持通配符的允许模式
+- 空列表 `[]`：允许全部（不推荐）
 
-This provides defense-in-depth even though DCR providers typically validate redirect URIs themselves.
+这提供了深度防御，尽管 DCR 提供程序通常会自己验证重定向 URI。
 </Note>
 
 ## 实现考虑因素

@@ -139,21 +139,21 @@ if __name__ == "__main__":
 
 <VersionBadge version="2.12.1" />
 
-For production deployments, use environment variables instead of hardcoding credentials.
+对于生产部署，请使用环境变量而不是硬编码凭据。
 
-### Provider Selection
+### 提供程序选择
 
-Setting this environment variable allows the GitHub provider to be used automatically without explicitly instantiating it in code.
+设置此环境变量允许自动使用 GitHub 提供程序，而无需在代码中显式实例化它。
 
 <Card>
-<ParamField path="FASTMCP_SERVER_AUTH" default="Not set">
-Set to `fastmcp.server.auth.providers.github.GitHubProvider` to use GitHub authentication.
+<ParamField path="FASTMCP_SERVER_AUTH" default="未设置">
+设置为 `fastmcp.server.auth.providers.github.GitHubProvider` 以使用 GitHub 身份验证。
 </ParamField>
 </Card>
 
-### GitHub-Specific Configuration
+### GitHub 特定配置
 
-These environment variables provide default values for the GitHub provider, whether it's instantiated manually or configured via `FASTMCP_SERVER_AUTH`.
+这些环境变量为 GitHub 提供程序提供默认值，无论它是手动实例化的还是通过 `FASTMCP_SERVER_AUTH` 配置的。
 
 <Card>
 <ParamField path="FASTMCP_SERVER_AUTH_GITHUB_CLIENT_ID" required>
@@ -173,7 +173,7 @@ These environment variables provide default values for the GitHub provider, whet
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_GITHUB_REQUIRED_SCOPES" default='["user"]'>
-Comma-, space-, or JSON-separated list of required GitHub scopes (e.g., `user repo` or `["user","repo"]`)
+必需的 GitHub 作用域的逗号、空格或 JSON 分隔列表（例如，`user repo` 或 `["user","repo"]`）
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_GITHUB_TIMEOUT_SECONDS" default="10">
@@ -181,9 +181,9 @@ GitHub API 调用的 HTTP 请求超时
 </ParamField>
 </Card>
 
-Example `.env` file:
+示例 `.env` 文件：
 ```bash
-# Use the GitHub provider
+# 使用 GitHub 提供程序
 FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.github.GitHubProvider
 
 # GitHub OAuth 凭据
@@ -199,7 +199,7 @@ FASTMCP_SERVER_AUTH_GITHUB_REQUIRED_SCOPES=user,repo
 from fastmcp import FastMCP
 
 # 身份验证从环境中自动配置
-mcp = FastMCP(name="GitHub Secured App")
+mcp = FastMCP(name="GitHub 安全应用")
 
 @mcp.tool
 async def list_repos() -> list[str]:

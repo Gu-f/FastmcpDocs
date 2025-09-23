@@ -80,48 +80,48 @@ mcp = FastMCP(name="受保护的 API", auth=verifier)
 
 `issuer` 参数确保令牌来自您信任的身份验证系统，而 `audience` 验证防止专为其他服务设计的令牌被您的 MCP 服务器接受。
 
-#### Symmetric Key Verification (HMAC)
+#### 对称密钥验证 (HMAC)
 
-Symmetric key verification uses a shared secret for both signing and validation, making it ideal for internal microservices and trusted environments where the same secret can be securely distributed to both token issuers and validators.
+对称密钥验证使用共享密钥进行签名和验证，非常适合内部微服务和可信环境，在这些环境中可以安全地将同一密钥分发给令牌发行者和验证者。
 
-This approach is commonly used in microservices architectures where services share a secret key, or when your authentication service and MCP server are both managed by the same organization. The HMAC algorithms (HS256, HS384, HS512) provide strong security when the shared secret is properly managed.
+这种方法常用于微服务架构中，其中服务共享密钥，或者当您的身份验证服务和 MCP 服务器都由同一组织管理时。当共享密钥得到正确管理时，HMAC 算法（HS256、HS384、HS512）提供强大的安全性。
 
 ```python
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.jwt import JWTVerifier
 
-# Use a shared secret for symmetric key verification
+# 使用共享密钥进行对称密钥验证
 verifier = JWTVerifier(
-    public_key="your-shared-secret-key-minimum-32-chars",  # Despite the name, this accepts symmetric secrets
+    public_key="your-shared-secret-key-minimum-32-chars",  # 尽管名称如此，但它接受对称密钥
     issuer="internal-auth-service",
     audience="mcp-internal-api",
-    algorithm="HS256"  # or HS384, HS512 for stronger security
+    algorithm="HS256"  # 或 HS384、HS512 以获得更强的安全性
 )
 
 mcp = FastMCP(name="Internal API", auth=verifier)
 ```
 
-The verifier will validate tokens signed with the same secret using the specified HMAC algorithm. This approach offers several advantages for internal systems:
+验证器将使用指定的 HMAC 算法验证使用相同密钥签名的令牌。这种方法为内部系统提供了几个优势：
 
-- **Simplicity**: No key pair management or certificate distribution
-- **Performance**: HMAC operations are typically faster than RSA
-- **Compatibility**: Works well with existing microservice authentication patterns
+- **简单性**：无需密钥对管理或证书分发
+- **性能**：HMAC 操作通常比 RSA 更快
+- **兼容性**：与现有的微服务身份验证模式配合良好
 
 <Note>
-The parameter is named `public_key` for backwards compatibility, but when using HMAC algorithms (HS256/384/512), it accepts the symmetric secret string.
+为了向后兼容，参数名为 `public_key`，但在使用 HMAC 算法（HS256/384/512）时，它接受对称密钥字符串。
 </Note>
 
 <Warning>
-**Security Considerations for Symmetric Keys:**
-- Use a strong, randomly generated secret (minimum 32 characters recommended)
-- Never expose the secret in logs, error messages, or version control
-- Implement secure key distribution and rotation mechanisms
-- Consider using asymmetric keys (RSA/ECDSA) for external-facing APIs
+**对称密钥的安全注意事项：**
+- 使用强随机生成的密钥（建议最少 32 个字符）
+- 绝不在日志、错误消息或版本控制中暴露密钥
+- 实现安全的密钥分发和轮换机制
+- 对于面向外部的 API，考虑使用非对称密钥（RSA/ECDSA）
 </Warning>
 
 #### 静态公钥验证
 
-Static public key verification works when you have a fixed RSA or ECDSA signing key and don't need automatic key rotation. This approach is primarily useful for development environments or controlled deployments where JWKS endpoints aren't available.
+静态公钥验证在您有固定的 RSA 或 ECDSA 签名密钥且不需要自动密钥轮换时有效。这种方法主要适用于开发环境或不可用 JWKS 端点的受控部署。
 
 ```python
 from fastmcp import FastMCP
@@ -141,7 +141,7 @@ verifier = JWTVerifier(
 mcp = FastMCP(name="受保护的 API", auth=verifier)
 ```
 
-This configuration validates tokens using a specific RSA or ECDSA public key. The key must correspond to the private key used by your token issuer. While less flexible than JWKS endpoints, this approach can be useful in development environments or when testing with fixed keys.
+此配置使用特定的 RSA 或 ECDSA 公钥验证令牌。该密钥必须与您的令牌发行者使用的私钥相对应。尽管没有 JWKS 端点灵活，但这种方法在开发环境中或使用固定密钥进行测试时可能很有用。
 
 ### 开发和测试
 
@@ -221,15 +221,15 @@ FastMCP 支持令牌验证的编程式和基于环境的配置，实现跨不同
 # 启用 JWT 验证
 export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.jwt.JWTVerifier
 
-# For asymmetric verification with JWKS endpoint:
+# 使用 JWKS 端点进行非对称验证：
 export FASTMCP_SERVER_AUTH_JWT_JWKS_URI="https://auth.company.com/.well-known/jwks.json"
 export FASTMCP_SERVER_AUTH_JWT_ISSUER="https://auth.company.com"
 export FASTMCP_SERVER_AUTH_JWT_AUDIENCE="mcp-production-api"
 export FASTMCP_SERVER_AUTH_JWT_REQUIRED_SCOPES="read:data,write:data"
 
-# OR for symmetric key verification (HMAC):
+# 或者用于对称密钥验证 (HMAC)：
 export FASTMCP_SERVER_AUTH_JWT_PUBLIC_KEY="your-shared-secret-key-minimum-32-chars"
-export FASTMCP_SERVER_AUTH_JWT_ALGORITHM="HS256"  # or HS384, HS512
+export FASTMCP_SERVER_AUTH_JWT_ALGORITHM="HS256"  # 或 HS384、HS512
 export FASTMCP_SERVER_AUTH_JWT_ISSUER="internal-auth-service"
 export FASTMCP_SERVER_AUTH_JWT_AUDIENCE="mcp-internal-api"
 ```

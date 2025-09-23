@@ -1,79 +1,79 @@
 ---
-title: "Releases"
-description: "FastMCP versioning and release process"
+title: "发布"
+description: "FastMCP 版本控制和发布流程"
 icon: "truck-fast"
 ---
 
-FastMCP releases frequently to deliver features quickly in the rapidly evolving MCP ecosystem. We use semantic versioning pragmatically - the Model Context Protocol is young, patterns are still emerging, and waiting for perfect stability would mean missing opportunities to empower developers with better tools.
+FastMCP 频繁发布以在快速发展的 MCP 生态系统中快速交付功能。我们务实地使用语义化版本控制 - 模型上下文协议还很年轻，模式仍在形成，等待完美的稳定性意味着错失为开发者提供更好工具的机会。
 
-## Versioning Policy
+## 版本控制策略
 
-### Semantic Versioning
+### 语义化版本控制
 
-**Major (x.0.0)**: Complete API redesigns
+**主版本 (x.0.0)**：完整的 API 重新设计
 
-Major versions represent fundamental shifts. FastMCP 2.x is entirely different from 1.x in both implementation and design philosophy.
+主版本代表根本性转变。FastMCP 2.x 在实现和设计理念上与 1.x 完全不同。
 
-**Minor (2.x.0)**: New features and evolution
-
-<Warning>
-Unlike traditional semantic versioning, minor versions **may** include [breaking changes](#breaking-changes) when necessary for the ecosystem's evolution. This flexibility is essential in a young ecosystem where perfect backwards compatibility would prevent important improvements.
-</Warning>
-
-FastMCP always targets the most current MCP Protocol version. Breaking changes in the MCP spec or MCP SDK automatically flow through to FastMCP - we prioritize staying current with the latest features and conventions over maintaining compatibility with older protocol versions.
-
-**Patch (2.0.x)**: Bug fixes and refinements
-
-Patch versions contain only bug fixes without breaking changes. These are safe updates you can apply with confidence.
-
-### Breaking Changes
-
-We permit breaking changes in minor versions because the MCP ecosystem is rapidly evolving. Refusing to break problematic APIs would accumulate design debt that eventually makes the framework unusable. Each breaking change represents a deliberate decision to keep FastMCP aligned with the ecosystem's evolution.
-
-When breaking changes occur:
-- They only happen in minor versions (e.g., 2.3.x to 2.4.0)
-- Release notes explain what changed and how to migrate
-- We provide deprecation warnings at least 1 minor version in advance when possible
-- Changes must substantially benefit users to justify disruption
-
-The public API is what's covered by our compatibility guarantees - these are the parts of FastMCP you can rely on to remain stable within a minor version. The public API consists of:
-- `FastMCP` server class, `Client` class, and FastMCP `Context`
-- Core MCP components: `Tool`, `Prompt`, `Resource`, `ResourceTemplate`, and transports
-- Their public methods and documented behaviors
-
-Everything else (utilities, private methods, internal modules) may change without notice. This boundary lets us refactor internals and improve implementation details without breaking your code. For production stability, pin to specific versions.
+**次版本 (2.x.0)**：新功能和演进
 
 <Warning>
-The `fastmcp.server.auth` module was introduced in 2.12.0 and is exempted from this policy temporarily, meaning it is *expected* to have breaking changes even on patch versions. This is because auth is a rapidly evolving part of the MCP spec and it would be dangerous to be beholden to old decisions. Please pin your FastMCP version if using authentication in production.
-
-We expect this exemption to last through at least the 2.12.x and 2.13.x release series. 
+与传统的语义化版本控制不同，次版本在生态系统演进需要时**可能**包含[破坏性更改](#breaking-changes)。这种灵活性在年轻的生态系统中是必需的，完美的向后兼容性会阻止重要的改进。
 </Warning>
 
-### Production Use
+FastMCP 始终以最新的 MCP 协议版本为目标。MCP 规范或 MCP SDK 中的破坏性更改会自动传递到 FastMCP - 我们优先保持与最新功能和约定的同步，而不是维护与旧协议版本的兼容性。
 
-Pin to exact versions:
+**修订版 (2.0.x)**：错误修复和优化
+
+修订版仅包含不带破坏性更改的错误修复。这些是您可以放心应用的安全更新。
+
+### 破坏性更改
+
+我们允许在次版本中进行破坏性更改，因为 MCP 生态系统正在快速发展。拒绝破坏有问题的 API 会累积设计债务，最终使框架无法使用。每个破坏性更改都代表着保持 FastMCP 与生态系统演进保持一致的深思熟虑的决定。
+
+当发生破坏性更改时：
+- 它们只发生在次版本中（例如，从 2.3.x 到 2.4.0）
+- 发布说明解释了什么发生了变化以及如何迁移
+- 我们在可能的情况下至少提前 1 个次版本提供弃用警告
+- 更改必须为用户带来实质性好处以证明中断是合理的
+
+公共 API 是我们兼容性保证所涵盖的内容 - 这些是您可以依赖在次版本内保持稳定的 FastMCP 部分。公共 API 包括：
+- `FastMCP` 服务器类、`Client` 类和 FastMCP `Context`
+- 核心 MCP 组件：`Tool`、`Prompt`、`Resource`、`ResourceTemplate` 和传输
+- 它们的公共方法和已记录的行为
+
+其他一切（实用程序、私有方法、内部模块）可能会在不通知的情况下更改。这个边界让我们重构内部结构并改进实现细节，而不会破坏您的代码。为了生产稳定性，请固定到特定版本。
+
+<Warning>
+`fastmcp.server.auth` 模块在 2.12.0 中引入，暂时免于此策略，意味着它*预期*即使在修订版中也会有破坏性更改。这是因为身份验证是 MCP 规范中快速发展的部分，受制于旧决策将是危险的。如果在生产环境中使用身份验证，请固定您的 FastMCP 版本。
+
+我们预期此豁免至少持续到 2.12.x 和 2.13.x 发布系列。
+</Warning>
+
+### 生产使用
+
+固定到确切版本：
 ```
-fastmcp==2.11.0  # Good
-fastmcp>=2.11.0  # Bad - will install breaking changes
+fastmcp==2.11.0  # 正确
+fastmcp>=2.11.0  # 错误 - 会安装破坏性更改
 ```
 
-## Creating Releases
+## 创建发布
 
-Our release process is intentionally simple:
+我们的发布流程有意保持简单：
 
-1. Create GitHub release with tag `vMAJOR.MINOR.PATCH` (e.g., `v2.11.0`)
-2. Generate release notes automatically, and curate or add additional editorial information as needed
-3. GitHub releases automatically trigger PyPI deployments
+1. 使用标签 `vMAJOR.MINOR.PATCH`（例如，`v2.11.0`）创建 GitHub 发布
+2. 自动生成发布说明，并根据需要策划或添加额外的编辑信息
+3. GitHub 发布自动触发 PyPI 部署
 
-This automation lets maintainers focus on code quality rather than release mechanics.
+这种自动化让维护者专注于代码质量而不是发布机制。
 
-### Release Cadence
+### 发布节奏
 
-We follow a feature-driven release cadence rather than a fixed schedule. Minor versions ship approximately every 3-4 weeks when significant functionality is ready.
+我们遵循功能驱动的发布节奏而不是固定的时间表。当重要功能准备就绪时，次版本大约每 3-4 周发布一次。
 
-Patch releases ship promptly for:
-- Critical bug fixes
-- Security updates (immediate release)
-- Regression fixes
+修订版本会及时发布：
+- 关键错误修复
+- 安全更新（立即发布）
+- 回归修复
 
-This approach means you get improvements as soon as they're ready rather than waiting for arbitrary release dates.
+这种方法意味着您会在改进准备就绪时立即获得它们，而不是等待任意的发布日期。

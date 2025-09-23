@@ -170,25 +170,25 @@ if __name__ == "__main__":
 客户端在本地缓存令牌，因此除非令牌过期或您显式清除缓存，否则您无需为后续运行重新进行身份验证。
 </Info>
 
-## Environment Variables
+## 环境变量
 
 <VersionBadge version="2.12.1" />
 
-For production deployments, use environment variables instead of hardcoding credentials.
+对于生产部署，请使用环境变量而不是硬编码凭据。
 
-### Provider Selection
+### 提供程序选择
 
-Setting this environment variable allows the Azure provider to be used automatically without explicitly instantiating it in code.
+设置此环境变量允许自动使用 Azure 提供程序，而无需在代码中显式实例化它。
 
 <Card>
-<ParamField path="FASTMCP_SERVER_AUTH" default="Not set">
-Set to `fastmcp.server.auth.providers.azure.AzureProvider` to use Azure authentication.
+<ParamField path="FASTMCP_SERVER_AUTH" default="未设置">
+设置为 `fastmcp.server.auth.providers.azure.AzureProvider` 以使用 Azure 身份验证。
 </ParamField>
 </Card>
 
-### Azure-Specific Configuration
+### Azure 特定配置
 
-These environment variables provide default values for the Azure provider, whether it's instantiated manually or configured via `FASTMCP_SERVER_AUTH`.
+这些环境变量为 Azure 提供程序提供默认值，无论它是手动实例化的还是通过 `FASTMCP_SERVER_AUTH` 配置的。
 
 <Card>
 <ParamField path="FASTMCP_SERVER_AUTH_AZURE_CLIENT_ID" required>
@@ -216,7 +216,7 @@ These environment variables provide default values for the Azure provider, wheth
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_AZURE_REQUIRED_SCOPES" default='["User.Read", "email", "openid", "profile"]'>
-Comma-, space-, or JSON-separated list of required Microsoft Graph scopes
+必需的 Microsoft Graph 作用域的逗号、空格或 JSON 分隔列表
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_AZURE_TIMEOUT_SECONDS" default="10">
@@ -224,9 +224,9 @@ Microsoft Graph API 调用的 HTTP 请求超时
 </ParamField>
 </Card>
 
-Example `.env` file:
+示例 `.env` 文件：
 ```bash
-# Use the Azure provider
+# 使用 Azure 提供程序
 FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.azure.AzureProvider
 
 # Azure OAuth 凭据
@@ -237,13 +237,13 @@ FASTMCP_SERVER_AUTH_AZURE_BASE_URL=https://your-server.com
 FASTMCP_SERVER_AUTH_AZURE_REQUIRED_SCOPES=User.Read,email,profile
 ```
 
-With environment variables set, your server code simplifies to:
+设置环境变量后，您的服务器代码简化为：
 
 ```python server.py
 from fastmcp import FastMCP
 
 # 身份验证从环境中自动配置
-mcp = FastMCP(name="Azure Secured App")
+mcp = FastMCP(name="Azure 安全应用")
 
 @mcp.tool
 async def protected_tool(query: str) -> str:

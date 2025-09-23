@@ -9,64 +9,64 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 <VersionBadge version="2.12.0" />
 
-FastMCP supports declarative configuration through `fastmcp.json` files. This is the canonical and preferred way to configure FastMCP projects, providing a single source of truth for server settings, dependencies, and deployment options that replaces complex command-line arguments.
+FastMCP 通过 `fastmcp.json` 文件支持声明式配置。这是配置 FastMCP 项目的标准和首选方式，为服务器设置、依赖项和部署选项提供单一可信来源，替代复杂的命令行参数。
 
-The `fastmcp.json` file is designed to be a portable description of your server configuration that can be shared across environments and teams. When running from a `fastmcp.json` file, you can override any configuration values using CLI arguments.
+`fastmcp.json` 文件被设计为服务器配置的可移植描述，可以在环境和团队之间共享。从 `fastmcp.json` 文件运行时，您可以使用 CLI 参数覆盖任何配置值。
 
-## Overview
+## 概述
 
-The `fastmcp.json` configuration file allows you to define all aspects of your FastMCP server in a structured, shareable format. Instead of remembering command-line arguments or writing shell scripts, you declare your server's configuration once and use it everywhere.
+`fastmcp.json` 配置文件允许您以结构化、可共享的格式定义 FastMCP 服务器的所有方面。无需记住命令行参数或编写 shell 脚本，您只需声明一次服务器配置，然后在任何地方使用。
 
-When you have a `fastmcp.json` file, running your server becomes as simple as:
+当您有 `fastmcp.json` 文件时，运行服务器就变得如此简单：
 
 ```bash
-# Run the server using the configuration
+# 使用配置运行服务器
 fastmcp run fastmcp.json
 
-# Or if fastmcp.json exists in the current directory
+# 或者如果 fastmcp.json 存在于当前目录中
 fastmcp run
 ```
 
-This configuration approach ensures reproducible deployments across different environments, from local development to production servers. It works seamlessly with Claude Desktop, VS Code extensions, and any MCP-compatible client.
+这种配置方法确保了从本地开发到生产服务器等不同环境之间的可重现部署。它与 Claude Desktop、VS Code 扩展以及任何兼容 MCP 的客户端无缝协作。
 
-## File Structure
+## 文件结构
 
-The `fastmcp.json` configuration answers three fundamental questions about your server:
+`fastmcp.json` 配置回答了关于您的服务器的三个基本问题：
 
-- **Source** = WHERE does your server code live?
-- **Environment** = WHAT environment setup does it require?
-- **Deployment** = HOW should the server run?
+- **Source（源码）** = 您的服务器代码位于何处？
+- **Environment（环境）** = 它需要什么环境设置？
+- **Deployment（部署）** = 服务器应该如何运行？
 
-This conceptual model helps you understand the purpose of each configuration section and organize your settings effectively. The configuration file maps directly to these three concerns:
+这个概念模型帮助您理解每个配置部分的目的，并有效地组织您的设置。配置文件直接映射到这三个关注点：
 
 ```json
 {
   "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
   "source": {
-    // WHERE: Location of your server code
-    "type": "filesystem",  // Optional, defaults to "filesystem"
+    // WHERE（何处）：您的服务器代码位置
+    "type": "filesystem",  // 可选，默认为 "filesystem"
     "path": "server.py",
     "entrypoint": "mcp"
   },
   "environment": {
-    // WHAT: Environment setup and dependencies
-    "type": "uv",  // Optional, defaults to "uv"
+    // WHAT（什么）：环境设置和依赖项
+    "type": "uv",  // 可选，默认为 "uv"
     "python": ">=3.10",
     "dependencies": ["pandas", "numpy"]
   },
   "deployment": {
-    // HOW: Runtime configuration
+    // HOW（如何）：运行时配置
     "transport": "stdio",
     "log_level": "INFO"
   }
 }
 ```
 
-Only the `source` field is required. The `environment` and `deployment` sections are optional and provide additional configuration when needed.
+只有 `source` 字段是必需的。`environment` 和 `deployment` 部分是可选的，在需要时提供额外的配置。
 
-### JSON Schema Support
+### JSON Schema 支持
 
-FastMCP provides JSON schemas for IDE autocomplete and validation. Add the schema reference to your `fastmcp.json` for enhanced developer experience:
+FastMCP 为 IDE 自动完成和验证提供 JSON schemas。在您的 `fastmcp.json` 中添加 schema 引用以获得增强的开发体验：
 
 ```json
 {
@@ -78,39 +78,39 @@ FastMCP provides JSON schemas for IDE autocomplete and validation. Add the schem
 }
 ```
 
-Two schema URLs are available:
-- **Version-specific**: `https://gofastmcp.com/public/schemas/fastmcp.json/v1.json`
-- **Latest version**: `https://gofastmcp.com/public/schemas/fastmcp.json/latest.json`
+提供两个 schema URL：
+- **特定版本**：`https://gofastmcp.com/public/schemas/fastmcp.json/v1.json`
+- **最新版本**：`https://gofastmcp.com/public/schemas/fastmcp.json/latest.json`
 
-Modern IDEs like VS Code will automatically provide autocomplete suggestions, validation, and inline documentation when the schema is specified.
+当指定 schema 时，VS Code 等现代 IDE 将自动提供自动完成建议、验证和内联文档。
 
-### Source Configuration
+### 源码配置
 
-The source configuration determines **WHERE** your server code lives. It tells FastMCP how to find and load your server, whether it's a local Python file, a remote repository, or hosted in the cloud. This section is required and forms the foundation of your configuration.
+源码配置确定您的服务器代码**位于何处**。它告诉 FastMCP 如何查找和加载您的服务器，无论是本地 Python 文件、远程仓库还是托管在云端。此部分是必需的，构成了您配置的基础。
 
 <Card icon="code" title="Source">
 <ParamField body="source" type="object" required>
-  The server source configuration that determines where your server code lives.
+  确定服务器代码位置的服务器源码配置。
 
   <ParamField body="type" type="string" default="filesystem">
-    The source type identifier that determines which implementation to use. Currently supports `"filesystem"` for local files. Future releases will add support for `"git"` and `"cloud"` source types.
+    确定使用哪种实现的源码类型标识符。目前支持用于本地文件的 `"filesystem"`。未来版本将添加对 `"git"` 和 `"cloud"` 源码类型的支持。
   </ParamField>
 
   <Expandable title="FileSystemSource">
-    When `type` is `"filesystem"` (or omitted), the source points to a local Python file containing your FastMCP server:
+    当 `type` 为 `"filesystem"`（或省略）时，源码指向包含您的 FastMCP 服务器的本地 Python 文件：
 
     <ParamField body="path" type="string" required>
-      Path to the Python file containing your FastMCP server.
+      包含您的 FastMCP 服务器的 Python 文件路径。
     </ParamField>
 
     <ParamField body="entrypoint" type="string">
-      Name of the server instance or factory function within the module:
-      - Can be a FastMCP server instance (e.g., `mcp = FastMCP("MyServer")`)
-      - Can be a function with no arguments that returns a FastMCP server
-      - If not specified, FastMCP searches for common names: `mcp`, `server`, or `app`
+      模块内服务器实例或工厂函数的名称：
+      - 可以是 FastMCP 服务器实例（例如，`mcp = FastMCP("MyServer")`）
+      - 可以是不带参数且返回 FastMCP 服务器的函数
+      - 如果未指定，FastMCP 将搜索常见名称：`mcp`、`server` 或 `app`
     </ParamField>
 
-    **Example:**
+    **示例：**
     ```json
     "source": {
       "type": "filesystem",
@@ -119,76 +119,76 @@ The source configuration determines **WHERE** your server code lives. It tells F
     }
     ```
 
-    Note: File paths are resolved relative to the configuration file's location.
+    注意：文件路径相对于配置文件的位置进行解析。
   </Expandable>
 </ParamField>
 </Card>
 
 <Note>
-**Future Source Types**
+**未来的源码类型**
 
-Future releases will support additional source types:
-- **Git repositories** (`type: "git"`) for loading server code directly from version control
-- **FastMCP Cloud** (`type: "cloud"`) for hosted servers with automatic scaling and management
+未来版本将支持其他源码类型：
+- **Git 仓库**（`type: "git"`）用于直接从版本控制加载服务器代码
+- **FastMCP Cloud**（`type: "cloud"`）用于具有自动扩展和管理的托管服务器
 </Note>
 
-### Environment Configuration
+### 环境配置
 
-The environment configuration determines **WHAT** environment setup your server requires. It controls the build-time setup of your Python environment, ensuring your server runs with the exact Python version and dependencies it requires. This section creates isolated, reproducible environments across different systems.
+环境配置确定您的服务器需要**什么**环境设置。它控制 Python 环境的构建时设置，确保您的服务器使用所需的确切 Python 版本和依赖项运行。此部分在不同系统之间创建隔离的、可重现的环境。
 
-FastMCP uses an extensible environment system with a base `Environment` class that can be implemented by different environment providers. Currently, FastMCP supports the `UVEnvironment` for Python environment management using `uv`'s powerful dependency resolver.
+FastMCP 使用可扩展的环境系统，具有可由不同环境提供商实现的基础 `Environment` 类。目前，FastMCP 支持使用 `uv` 强大的依赖解析器进行 Python 环境管理的 `UVEnvironment`。
 
 <Card icon="code" title="Environment">
 <ParamField body="environment" type="object">
-  Optional environment configuration. When specified, FastMCP uses the appropriate environment implementation to set up your server's runtime.
+  可选的环境配置。指定时，FastMCP 使用适当的环境实现来设置您的服务器运行时。
 
   <ParamField body="type" type="string" default="uv">
-    The environment type identifier that determines which implementation to use. Currently supports `"uv"` for Python environments managed by uv. If omitted, defaults to `"uv"`.
+    确定使用哪种实现的环境类型标识符。目前支持由 uv 管理的 Python 环境的 `"uv"`。如果省略，默认为 `"uv"`。
   </ParamField>
 
   <Expandable title="UVEnvironment">
-    When `type` is `"uv"` (or omitted), the environment uses uv to manage Python dependencies:
+    当 `type` 为 `"uv"`（或省略）时，环境使用 uv 来管理 Python 依赖项：
 
     <ParamField body="python" type="string">
-      Python version constraint. Examples:
-      - Exact version: `"3.12"`
-      - Minimum version: `">=3.10"`
-      - Version range: `">=3.10,<3.13"`
+      Python 版本约束。示例：
+      - 确切版本：`"3.12"`
+      - 最低版本：`">=3.10"`
+      - 版本范围：`">=3.10,<3.13"`
     </ParamField>
 
     <ParamField body="dependencies" type="list[str]">
-      List of pip packages with optional version specifiers (PEP 508 format).
+      带有可选版本说明符的 pip 包列表（PEP 508 格式）。
       ```json
       "dependencies": ["pandas>=2.0", "requests", "httpx"]
       ```
     </ParamField>
 
     <ParamField body="requirements" type="string">
-      Path to a requirements.txt file, resolved relative to the config file location.
+      requirements.txt 文件的路径，相对于配置文件位置解析。
       ```json
       "requirements": "requirements.txt"
       ```
     </ParamField>
 
     <ParamField body="project" type="string">
-      Path to a project directory containing pyproject.toml for uv project management.
+      包含用于 uv 项目管理的 pyproject.toml 的项目目录路径。
       ```json
       "project": "."
       ```
     </ParamField>
 
     <ParamField body="editable" type="list[string]">
-      List of paths to packages to install in editable/development mode. Useful for local development when you want changes to be reflected immediately. Supports multiple packages for monorepo setups or shared libraries.
+      要以可编辑/开发模式安装的包路径列表。对于本地开发很有用，当您希望更改立即反映时。支持单仓库设置或共享库的多个包。
       ```json
       "editable": ["."]
       ```
-      Or with multiple packages:
+      或使用多个包：
       ```json
       "editable": [".", "../shared-lib", "/path/to/another-package"]
       ```
     </ParamField>
 
-    **Example:**
+    **示例：**
     ```json
     "environment": {
       "type": "uv",
@@ -198,68 +198,68 @@ FastMCP uses an extensible environment system with a base `Environment` class th
     }
     ```
 
-    Note: When any UVEnvironment field is specified, FastMCP automatically creates an isolated environment using `uv` before running your server.
+    注意：当指定任何 UVEnvironment 字段时，FastMCP 会在运行服务器之前使用 `uv` 自动创建隔离环境。
   </Expandable>
 </ParamField>
 </Card>
 
-When environment configuration is provided, FastMCP:
-1. Detects the environment type (defaults to `"uv"` if not specified)
-2. Creates an isolated environment using the appropriate provider
-3. Installs the specified dependencies
-4. Runs your server in this clean environment
+当提供环境配置时，FastMCP：
+1. 检测环境类型（如果未指定则默认为 `"uv"`）
+2. 使用适当的提供商创建隔离环境
+3. 安装指定的依赖项
+4. 在这个干净的环境中运行您的服务器
 
-This build-time setup ensures your server always has the dependencies it needs, without polluting your system Python or conflicting with other projects.
+这种构建时设置确保您的服务器始终具有所需的依赖项，而不会污染您的系统 Python 或与其他项目冲突。
 
 <Note>
-**Future Environment Types**
+**未来的环境类型**
 
-Similar to source types, future releases may support additional environment types for different runtime requirements, such as Docker containers or language-specific environments beyond Python.
+与源码类型类似，未来版本可能支持其他环境类型以满足不同的运行时需求，例如 Docker 容器或 Python 之外的特定于语言的环境。
 </Note>
 
-### Deployment Configuration
+### 部署配置
 
-The deployment configuration controls **HOW** your server runs. It defines the runtime behavior including network settings, environment variables, and execution context. These settings determine how your server operates when it executes, from transport protocols to logging levels.
+部署配置控制您的服务器**如何**运行。它定义运行时行为，包括网络设置、环境变量和执行上下文。这些设置决定了您的服务器在执行时如何操作，从传输协议到日志级别。
 
-Environment variables are included in this section because they're runtime configuration that affects how your server behaves when it executes, not how its environment is built. The deployment configuration is applied every time your server starts, controlling its operational characteristics.
+环境变量包含在此部分中，因为它们是影响服务器执行时行为的运行时配置，而不是如何构建其环境。部署配置在每次服务器启动时都会应用，控制其操作特性。
 
 <Card icon="code" title="Deployment Fields">
 <ParamField body="deployment" type="object">
-  Optional runtime configuration for the server.
+  服务器的可选运行时配置。
 
   <Expandable title="Deployment Fields">
     <ParamField body="transport" type="string" default="stdio">
-      Protocol for client communication:
-      - `"stdio"`: Standard input/output for desktop clients
-      - `"http"`: Network-accessible HTTP server
-      - `"sse"`: Server-sent events
+      客户端通信协议：
+      - `"stdio"`：用于桌面客户端的标准输入/输出
+      - `"http"`：网络可访问的 HTTP 服务器
+      - `"sse"`：服务器发送事件
     </ParamField>
 
     <ParamField body="host" type="string" default="127.0.0.1">
-      Network interface to bind (HTTP transport only):
-      - `"127.0.0.1"`: Local connections only
-      - `"0.0.0.0"`: All network interfaces
+      要绑定的网络接口（仅 HTTP 传输）：
+      - `"127.0.0.1"`：仅本地连接
+      - `"0.0.0.0"`：所有网络接口
     </ParamField>
 
     <ParamField body="port" type="integer" default="3000">
-      Port number for HTTP transport.
+      HTTP 传输的端口号。
     </ParamField>
 
     <ParamField body="path" type="string" default="/mcp/">
-      URL path for the MCP endpoint when using HTTP transport.
+      使用 HTTP 传输时 MCP 端点的 URL 路径。
     </ParamField>
 
     <ParamField body="log_level" type="string" default="INFO">
-      Server logging verbosity. Options:
-      - `"DEBUG"`: Detailed debugging information
-      - `"INFO"`: General informational messages
-      - `"WARNING"`: Warning messages
-      - `"ERROR"`: Error messages only
-      - `"CRITICAL"`: Critical errors only
+      服务器日志详细程度。选项：
+      - `"DEBUG"`：详细的调试信息
+      - `"INFO"`：一般信息消息
+      - `"WARNING"`：警告消息
+      - `"ERROR"`：仅错误消息
+      - `"CRITICAL"`：仅严重错误
     </ParamField>
 
     <ParamField body="env" type="object">
-      Environment variables to set when running the server. Supports `${VAR_NAME}` syntax for runtime interpolation.
+      运行服务器时要设置的环境变量。支持用于运行时插值的 `${VAR_NAME}` 语法。
       ```json
       "env": {
         "API_KEY": "secret-key",
@@ -269,11 +269,11 @@ Environment variables are included in this section because they're runtime confi
     </ParamField>
 
     <ParamField body="cwd" type="string">
-      Working directory for the server process. Relative paths are resolved from the config file location.
+      服务器进程的工作目录。相对路径从配置文件位置解析。
     </ParamField>
 
     <ParamField body="args" type="list[str]">
-      Command-line arguments to pass to the server, passed after `--` to the server's argument parser.
+      传递给服务器的命令行参数，在 `--` 后传递给服务器的参数解析器。
       ```json
       "args": ["--config", "server-config.json"]
       ```
@@ -282,9 +282,9 @@ Environment variables are included in this section because they're runtime confi
 </ParamField>
 </Card>
 
-#### Environment Variable Interpolation
+#### 环境变量插值
 
-The `env` field in deployment configuration supports runtime interpolation of environment variables using `${VAR_NAME}` syntax. This enables dynamic configuration based on your deployment environment:
+部署配置中的 `env` 字段支持使用 `${VAR_NAME}` 语法对环境变量进行运行时插值。这使得基于您的部署环境进行动态配置成为可能：
 
 ```json
 {
@@ -298,11 +298,11 @@ The `env` field in deployment configuration supports runtime interpolation of en
 }
 ```
 
-When the server starts, FastMCP replaces `${ENVIRONMENT}`, `${DB_USER}`, etc. with values from your system's environment variables. If a variable doesn't exist, the placeholder is preserved as-is.
+当服务器启动时，FastMCP 用您系统环境变量的值替换 `${ENVIRONMENT}`、`${DB_USER}` 等。如果变量不存在，占位符将保持原样。
 
-**Example**: If your system has `ENVIRONMENT=production` and `DB_HOST=db.example.com`:
+**示例**：如果您的系统有 `ENVIRONMENT=production` 和 `DB_HOST=db.example.com`：
 ```json
-// Configuration
+// 配置
 {
   "deployment": {
     "env": {
@@ -312,136 +312,136 @@ When the server starts, FastMCP replaces `${ENVIRONMENT}`, `${DB_USER}`, etc. wi
   }
 }
 
-// Result at runtime
+// 运行时结果
 {
   "API_URL": "https://api.production.example.com",
   "DB_HOST": "db.example.com"
 }
 ```
 
-This feature is particularly useful for:
-- Deploying the same configuration across development, staging, and production
-- Keeping sensitive values out of configuration files
-- Building dynamic URLs and connection strings
-- Creating environment-specific prefixes or suffixes
+此功能特别适用于：
+- 在开发、测试和生产环境中部署相同的配置
+- 将敏感值保留在配置文件之外
+- 构建动态 URL 和连接字符串
+- 创建特定于环境的前缀或后缀
 
-## Usage with CLI Commands
+## 与 CLI 命令的使用
 
-FastMCP automatically detects and uses a file specifically named `fastmcp.json` in the current directory, making server execution simple and consistent. Files with FastMCP configuration format but different names are not auto-detected and must be specified explicitly:
+FastMCP 自动检测并使用当前目录中专门命名为 `fastmcp.json` 的文件，使服务器执行简单且一致。具有 FastMCP 配置格式但名称不同的文件不会被自动检测，必须明确指定：
 
 ```bash
-# Auto-detect fastmcp.json in current directory
+# 自动检测当前目录中的 fastmcp.json
 cd my-project
-fastmcp run  # No arguments needed!
+fastmcp run  # 不需要参数！
 
-# Or specify a configuration file explicitly
+# 或明确指定配置文件
 fastmcp run prod.fastmcp.json
 
-# Skip environment setup when already in a uv environment
+# 当已经在 uv 环境中时跳过环境设置
 fastmcp run fastmcp.json --skip-env
 
-# Skip source preparation when source is already prepared
+# 当源码已经准备好时跳过源码准备
 fastmcp run fastmcp.json --skip-source
 
-# Skip both environment and source preparation
+# 跳过环境和源码准备
 fastmcp run fastmcp.json --skip-env --skip-source
 ```
 
-### Pre-building Environments
+### 预构建环境
 
-You can use `fastmcp project prepare` to create a persistent uv project with all dependencies pre-installed:
+您可以使用 `fastmcp project prepare` 创建一个预安装了所有依赖项的持久 uv 项目：
 
 ```bash
-# Create a persistent environment
+# 创建持久环境
 fastmcp project prepare fastmcp.json --output-dir ./env
 
-# Use the pre-built environment to run the server
+# 使用预构建环境运行服务器
 fastmcp run fastmcp.json --project ./env
 ```
 
-This pattern separates environment setup (slow) from server execution (fast), useful for deployment scenarios.
+这种模式将环境设置（慢）与服务器执行（快）分离，对部署场景很有用。
 
-### Using an Existing Environment
+### 使用现有环境
 
-By default, FastMCP creates an isolated environment with `uv` based on your configuration. When you already have a suitable Python environment, use the `--skip-env` flag to skip environment creation:
+默认情况下，FastMCP 根据您的配置使用 `uv` 创建隔离环境。当您已经有合适的 Python 环境时，使用 `--skip-env` 标志跳过环境创建：
 
 ```bash
 fastmcp run fastmcp.json --skip-env
 ```
 
-**When you already have an environment:**
-- You're in an activated virtual environment with all dependencies installed
-- You're inside a Docker container with pre-installed dependencies
-- You're in a CI/CD pipeline that pre-builds the environment
-- You're using a system-wide installation with all required packages
-- You're in a uv-managed environment (prevents infinite recursion)
+**当您已经有环境时：**
+- 您在一个已安装所有依赖项的激活虚拟环境中
+- 您在一个预装依赖项的 Docker 容器内
+- 您在一个预构建环境的 CI/CD 管道中
+- 您使用的是安装了所有必需包的系统级安装
+- 您在一个 uv 管理的环境中（防止无限递归）
 
-This flag tells FastMCP: "I already have everything installed, just run the server."
+此标志告诉 FastMCP："我已经安装了所有内容，只需运行服务器。"
 
-### Using an Existing Source
+### 使用现有源码
 
-When working with source types that require preparation (future support for git repositories or cloud sources), use the `--skip-source` flag when you already have the source code available:
+当使用需要准备的源码类型（未来支持 git 仓库或云源码）时，当您已经有可用的源码时，使用 `--skip-source` 标志：
 
 ```bash
 fastmcp run fastmcp.json --skip-source
 ```
 
-**When you already have the source:**
-- You've previously cloned a git repository and don't need to re-fetch
-- You have a cached copy of a cloud-hosted server
-- You're in a CI/CD pipeline where source checkout is a separate step
-- You're iterating locally on already-downloaded code
+**当您已经有源码时：**
+- 您之前已克隆了 git 仓库，无需重新获取
+- 您有云托管服务器的缓存副本
+- 您在 CI/CD 管道中，源码检出是一个单独的步骤
+- 您在本地迭代已下载的代码
 
-This flag tells FastMCP: "I already have the source code, skip any download/clone steps."
+此标志告诉 FastMCP："我已经有源码，跳过任何下载/克隆步骤。"
 
-Note: For filesystem sources (local Python files), this flag has no effect since they don't require preparation.
+注意：对于文件系统源码（本地 Python 文件），此标志无效，因为它们不需要准备。
 
-The configuration file works with all FastMCP commands:
-- **`run`** - Start the server in production mode
-- **`dev`** - Launch with the Inspector UI for development
-- **`inspect`** - View server capabilities and configuration
-- **`install`** - Install to Claude Desktop, Cursor, or other MCP clients
+配置文件适用于所有 FastMCP 命令：
+- **`run`** - 在生产模式下启动服务器
+- **`dev`** - 使用 Inspector UI 启动以进行开发
+- **`inspect`** - 查看服务器功能和配置
+- **`install`** - 安装到 Claude Desktop、Cursor 或其他 MCP 客户端
 
-When no file argument is provided, FastMCP searches the current directory for `fastmcp.json`. This means you can simply navigate to your project directory and run `fastmcp run` to start your server with all its configured settings.
+当未提供文件参数时，FastMCP 在当前目录中搜索 `fastmcp.json`。这意味着您可以简单地导航到项目目录并运行 `fastmcp run` 来启动具有所有配置设置的服务器。
 
-### CLI Override Behavior
+### CLI 覆盖行为
 
-Command-line arguments take precedence over configuration file values, allowing ad-hoc adjustments without modifying the file:
+命令行参数优先于配置文件值，允许在不修改文件的情况下进行临时调整：
 
 ```bash
-# Config specifies port 3000, CLI overrides to 8080
+# 配置指定端口 3000，CLI 覆盖为 8080
 fastmcp run fastmcp.json --port 8080
 
-# Config specifies stdio, CLI overrides to HTTP
+# 配置指定 stdio，CLI 覆盖为 HTTP
 fastmcp run fastmcp.json --transport http
 
-# Add extra dependencies not in config
+# 添加配置中没有的额外依赖项
 fastmcp run fastmcp.json --with requests --with httpx
 ```
 
-This precedence order enables:
-- Quick testing of different settings
-- Environment-specific overrides in deployment scripts
-- Debugging with increased log levels
-- Temporary configuration changes
+这种优先级顺序支持：
+- 快速测试不同设置
+- 部署脚本中特定于环境的覆盖
+- 使用增加的日志级别进行调试
+- 临时配置更改
 
-### Custom Naming Patterns
+### 自定义命名模式
 
-You can use different configuration files for different environments:
+您可以为不同环境使用不同的配置文件：
 
-- `fastmcp.json` - Default configuration
-- `dev.fastmcp.json` - Development settings
-- `prod.fastmcp.json` - Production settings
-- `test_fastmcp.json` - Test configuration
+- `fastmcp.json` - 默认配置
+- `dev.fastmcp.json` - 开发设置
+- `prod.fastmcp.json` - 生产设置
+- `test_fastmcp.json` - 测试配置
 
-Any file with "fastmcp.json" in the name is recognized as a configuration file.
+任何名称中包含 "fastmcp.json" 的文件都被识别为配置文件。
 
-## Examples
+## 示例
 
 <Tabs>
-<Tab title="Basic Configuration">
+<Tab title="基础配置">
 
-A minimal configuration for a simple server:
+简单服务器的最小配置：
 
 ```json
 {
@@ -452,28 +452,28 @@ A minimal configuration for a simple server:
   }
 }
 ```
-This configuration explicitly specifies the server entrypoint (`mcp`), making it clear which server instance or factory function to use. Uses all defaults: STDIO transport, no special dependencies, standard logging.
+此配置明确指定服务器入口点（`mcp`），明确要使用哪个服务器实例或工厂函数。使用所有默认值：STDIO 传输、无特殊依赖项、标准日志记录。
 </Tab>
-<Tab title="Development Configuration">
+<Tab title="开发配置">
 
-A configuration optimized for local development:
+为本地开发优化的配置：
 
 ```json
 {
   "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
-  // WHERE does the server live?
+  // WHERE（何处）：服务器位于何处？
   "source": {
     "path": "src/server.py",
     "entrypoint": "app"
   },
-  // WHAT dependencies does it need?
+  // WHAT（什么）：它需要什么依赖项？
   "environment": {
     "type": "uv",
     "python": "3.12",
     "dependencies": ["fastmcp[dev]"],
     "editable": "."
   },
-  // HOW should it run?
+  // HOW（如何）：它应该如何运行？
   "deployment": {
     "transport": "http",
     "host": "127.0.0.1",
@@ -487,25 +487,25 @@ A configuration optimized for local development:
 }
 ```
 </Tab>
-<Tab title="Production Configuration">
+<Tab title="生产配置">
 
-A production-ready configuration with full dependency management:
+具有完整依赖管理的生产就绪配置：
 
 ```json
 {
   "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
-  // WHERE does the server live?
+  // WHERE（何处）：服务器位于何处？
   "source": {
     "path": "app/main.py",
     "entrypoint": "mcp_server"
   },
-  // WHAT dependencies does it need?
+  // WHAT（什么）：它需要什么依赖项？
   "environment": {
     "python": "3.11",
     "requirements": "requirements/production.txt",
     "project": "."
   },
-  // HOW should it run?
+  // HOW（如何）：它应该如何运行？
   "deployment": {
     "transport": "http",
     "host": "0.0.0.0",
@@ -523,9 +523,9 @@ A production-ready configuration with full dependency management:
 }
 ```
 </Tab>
-<Tab title="Data Science Server">
+<Tab title="数据科学服务器">
 
-Configuration for a data analysis server with scientific packages:
+使用科学包的数据分析服务器配置：
 
 ```json
 {
@@ -554,11 +554,11 @@ Configuration for a data analysis server with scientific packages:
 }
 ```
 </Tab>
-<Tab title="Multi-Environment Setup">
+<Tab title="多环境设置">
 
-You can maintain multiple configuration files for different environments:
+您可以为不同环境维护多个配置文件：
 
-**dev.fastmcp.json**:
+**dev.fastmcp.json**：
 ```json
 {
   "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
@@ -592,19 +592,19 @@ You can maintain multiple configuration files for different environments:
 }
 ```
 
-Run different configurations:
+运行不同配置：
 ```bash
-fastmcp run dev.fastmcp.json   # Development
-fastmcp run prod.fastmcp.json  # Production
+fastmcp run dev.fastmcp.json   # 开发
+fastmcp run prod.fastmcp.json  # 生产
 ```
 </Tab>
 </Tabs>
 
-## Migrating from CLI Arguments
+## 从 CLI 参数迁移
 
-If you're currently using command-line arguments or shell scripts, migrating to `fastmcp.json` simplifies your workflow. Here's how common CLI patterns map to configuration:
+如果您当前使用命令行参数或 shell 脚本，迁移到 `fastmcp.json` 可以简化您的工作流程。以下是常见 CLI 模式如何映射到配置：
 
-**CLI Command**:
+**CLI 命令**：
 ```bash
 uv run --with pandas --with requests \
   fastmcp run server.py \
@@ -613,7 +613,7 @@ uv run --with pandas --with requests \
   --log-level INFO
 ```
 
-**Equivalent fastmcp.json**:
+**等效的 fastmcp.json**：
 ```json
 {
   "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
@@ -632,9 +632,9 @@ uv run --with pandas --with requests \
 }
 ```
 
-Now simply run:
+现在只需运行：
 ```bash
-fastmcp run  # Automatically finds and uses fastmcp.json
+fastmcp run  # 自动查找并使用 fastmcp.json
 ```
 
-The configuration file approach provides better documentation, easier sharing, and consistent execution across different environments while maintaining the flexibility to override settings when needed.
+配置文件方法提供更好的文档、更容易的共享以及跨不同环境的一致执行，同时在需要时保持覆盖设置的灵活性。

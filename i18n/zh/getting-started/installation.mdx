@@ -61,22 +61,22 @@ mcp = FastMCP("My MCP Server")
 在 `fastmcp==2.3.0` 和 `mcp==1.8.0` 之前，2.x API 始终镜像官方 1.0 API。然而，随着项目的分化，这无法保证。如果您尝试在 FastMCP 2.x 中使用 1.0 API，可能会看到弃用警告。请参考此文档了解新功能的详细信息。
 </Warning>
 
-## Versioning Policy
+## 版本控制策略
 
-FastMCP follows semantic versioning with pragmatic adaptations for the rapidly evolving MCP ecosystem. Breaking changes may occur in minor versions (e.g., 2.3.x to 2.4.0) when necessary to stay current with the MCP Protocol.
+FastMCP 遵循语义化版本控制，并对快速发展的 MCP 生态系统进行实用性调整。为了与 MCP 协议保持同步，次要版本（例如，从 2.3.x 到 2.4.0）中可能会出现破坏性更改。
 
-For production use, always pin to exact versions:
+在生产环境中使用时，请始终固定到确切版本：
 ```
-fastmcp==2.11.0  # Good
-fastmcp>=2.11.0  # Bad - will install breaking changes
+fastmcp==2.11.0  # 正确
+fastmcp>=2.11.0  # 错误 - 会安装破坏性更改
 ```
 
-See the full [versioning and release policy](/zh/development/releases#versioning-policy) for details on our public API, deprecation practices, and breaking change philosophy.
+查看完整的[版本控制和发布策略](/zh/development/releases#versioning-policy)了解我们的公共 API、弃用实践和破坏性更改理念的详细信息。
 
-## Contributing to FastMCP
+## 为 FastMCP 做贡献
 
-Interested in contributing to FastMCP? See the [Contributing Guide](/zh/development/contributing) for details on:
-- Setting up your development environment
-- Running tests and pre-commit hooks
-- Submitting issues and pull requests
-- Code standards and review process
+有兴趣为 FastMCP 做贡献吗？请参阅[贡献指南](/zh/development/contributing)了解以下详细信息：
+- 设置您的开发环境
+- 运行测试和预提交钩子
+- 提交问题和拉取请求
+- 代码标准和审查流程

@@ -152,21 +152,21 @@ if __name__ == "__main__":
 
 <VersionBadge version="2.12.1" />
 
-For production deployments, use environment variables instead of hardcoding credentials.
+对于生产部署，请使用环境变量而不是硬编码凭据。
 
-### Provider Selection
+### 提供程序选择
 
-Setting this environment variable allows the Google provider to be used automatically without explicitly instantiating it in code.
+设置此环境变量允许自动使用 Google 提供程序，而无需在代码中显式实例化它。
 
 <Card>
-<ParamField path="FASTMCP_SERVER_AUTH" default="Not set">
-Set to `fastmcp.server.auth.providers.google.GoogleProvider` to use Google authentication.
+<ParamField path="FASTMCP_SERVER_AUTH" default="未设置">
+设置为 `fastmcp.server.auth.providers.google.GoogleProvider` 以使用 Google 身份验证。
 </ParamField>
 </Card>
 
-### Google-Specific Configuration
+### Google 特定配置
 
-These environment variables provide default values for the Google provider, whether it's instantiated manually or configured via `FASTMCP_SERVER_AUTH`.
+这些环境变量为 Google 提供程序提供默认值，无论它是手动实例化的还是通过 `FASTMCP_SERVER_AUTH` 配置的。
 
 <Card>
 <ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_ID" required>
@@ -186,7 +186,7 @@ These environment variables provide default values for the Google provider, whet
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_REQUIRED_SCOPES" default="[]">
-Comma-, space-, or JSON-separated list of required Google scopes (e.g., `"openid,https://www.googleapis.com/auth/userinfo.email"` or `["openid", "https://www.googleapis.com/auth/userinfo.email"]`)
+必需的 Google 作用域的逗号、空格或 JSON 分隔列表（例如，`"openid,https://www.googleapis.com/auth/userinfo.email"` 或 `["openid", "https://www.googleapis.com/auth/userinfo.email"]`）
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_GOOGLE_TIMEOUT_SECONDS" default="10">
@@ -194,9 +194,9 @@ Google API 调用的 HTTP 请求超时
 </ParamField>
 </Card>
 
-Example `.env` file:
+示例 `.env` 文件：
 ```bash
-# Use the Google provider
+# 使用 Google 提供程序
 FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.google.GoogleProvider
 
 # Google OAuth 凭据
@@ -212,7 +212,7 @@ FASTMCP_SERVER_AUTH_GOOGLE_REQUIRED_SCOPES=openid,https://www.googleapis.com/aut
 from fastmcp import FastMCP
 
 # 身份验证从环境中自动配置
-mcp = FastMCP(name="Google Secured App")
+mcp = FastMCP(name="Google 安全应用")
 
 @mcp.tool
 async def protected_tool(query: str) -> str:

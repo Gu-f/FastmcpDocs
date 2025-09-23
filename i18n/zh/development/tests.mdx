@@ -1,80 +1,80 @@
 ---
-title: "Tests"
-description: "Testing patterns and requirements for FastMCP"
+title: "测试"
+description: "FastMCP 的测试模式和要求"
 icon: vial
 ---
 
-Good tests are the foundation of reliable software. In FastMCP, we treat tests as first-class documentation that demonstrates how features work while protecting against regressions. Every new capability needs comprehensive tests that demonstrate correctness.
+良好的测试是可靠软件的基础。在 FastMCP 中，我们将测试视为一流的文档，展示功能如何工作的同时防止回归。每个新功能都需要全面的测试来证明正确性。
 
-## FastMCP Tests
+## FastMCP 测试
 
-### Running Tests
+### 运行测试
 
 ```bash
-# Run all tests
+# 运行所有测试
 uv run pytest
 
-# Run specific test file
+# 运行特定测试文件
 uv run pytest tests/server/test_auth.py
 
-# Run with coverage
+# 带覆盖率运行
 uv run pytest --cov=fastmcp
 
-# Skip integration tests for faster runs
+# 跳过集成测试以加快运行速度
 uv run pytest -m "not integration"
 
-# Skip tests that spawn processes
+# 跳过生成进程的测试
 uv run pytest -m "not integration and not client_process"
 ```
 
-Tests should complete in under 1 second unless marked as integration tests. This speed encourages running them frequently, catching issues early.
+测试应该在 1 秒内完成，除非标记为集成测试。这种速度鼓励频繁运行，及早发现问题。
 
-### Test Organization
+### 测试组织
 
-Our test organization mirrors the `src/` directory structure, creating a predictable mapping between code and tests. When you're working on `src/fastmcp/server/auth.py`, you'll find its tests in `tests/server/test_auth.py`. In rare cases tests are split further - for example, the OpenAPI tests are so comprehensive they're split across multiple files.
+我们的测试组织反映了 `src/` 目录结构，在代码和测试之间创建可预测的映射。当您处理 `src/fastmcp/server/auth.py` 时，您会在 `tests/server/test_auth.py` 中找到它的测试。在少数情况下，测试会进一步分割 - 例如，OpenAPI 测试非常全面，分布在多个文件中。
 
-### Test Markers
+### 测试标记
 
-We use pytest markers to categorize tests that require special resources or take longer to run:
+我们使用 pytest 标记来分类需要特殊资源或运行时间较长的测试：
 
 ```python
 @pytest.mark.integration
 async def test_github_api_integration():
-    """Test GitHub API integration with real service."""
+    """测试与真实服务的 GitHub API 集成。"""
     token = os.getenv("FASTMCP_GITHUB_TOKEN")
     if not token:
-        pytest.skip("FASTMCP_GITHUB_TOKEN not available")
+        pytest.skip("FASTMCP_GITHUB_TOKEN 不可用")
     
-    # Test against real GitHub API
+    # 对真实的 GitHub API 进行测试
     client = GitHubClient(token)
     repos = await client.list_repos("jlowin")
     assert "fastmcp" in [repo.name for repo in repos]
 
 @pytest.mark.client_process
 async def test_stdio_transport():
-    """Test STDIO transport with separate process."""
-    # This spawns a subprocess
+    """测试单独进程的 STDIO 传输。"""
+    # 这会生成一个子进程
     async with Client("python examples/simple_echo.py") as client:
         result = await client.call_tool("echo", {"message": "test"})
         assert result.content[0].text == "test"
 ```
 
-## Writing Tests
+## 编写测试
 
 
-### Test Requirements
+### 测试要求
 
-Following these practices creates maintainable, debuggable test suites that serve as both documentation and regression protection.
+遵循这些实践可以创建可维护、可调试的测试套件，既作为文档又作为回归保护。
 
-#### Single Behavior Per Test
+#### 每个测试一个行为
 
-Each test should verify exactly one behavior. When it fails, you need to know immediately what broke. A test that checks five things gives you five potential failure points to investigate. A test that checks one thing points directly to the problem.
+每个测试应该验证确切的一个行为。当它失败时，您需要立即知道什么坏了。一个检查五件事的测试给您五个潜在的故障点需要调查。一个检查一件事的测试直接指向问题。
 
 <CodeGroup>
 
-```python Good: Atomic Test
+```python 好：原子测试
 async def test_tool_registration():
-    """Test that tools are properly registered with the server."""
+    """测试工具是否正确注册到服务器。"""
     mcp = FastMCP("test-server")
     
     @mcp.tool
@@ -86,25 +86,25 @@ async def test_tool_registration():
     assert tools[0].name == "add"
 ```
 
-```python Bad: Multi-Behavior Test
+```python 差：多行为测试
 async def test_server_functionality():
-    """Test multiple server features at once."""
+    """一次测试多个服务器功能。"""
     mcp = FastMCP("test-server")
     
-    # Tool registration
+    # 工具注册
     @mcp.tool
     def add(a: int, b: int) -> int:
         return a + b
     
-    # Resource creation
+    # 资源创建
     @mcp.resource("config://app")
     def get_config():
         return {"version": "1.0"}
     
-    # Authentication setup
+    # 身份验证设置
     mcp.auth = BearerTokenProvider({"token": "user"})
     
-    # What exactly are we testing? If this fails, what broke?
+    # 我们到底在测试什么？如果失败，什么坏了？
     assert mcp.list_tools()
     assert mcp.list_resources()
     assert mcp.auth is not None
@@ -112,21 +112,21 @@ async def test_server_functionality():
 
 </CodeGroup>
 
-#### Self-Contained Setup
+#### 自包含设置
 
-Every test must create its own setup. Tests should be runnable in any order, in parallel, or in isolation. When a test fails, you should be able to run just that test to reproduce the issue.
+每个测试都必须创建自己的设置。测试应该能够以任何顺序、并行或隔离运行。当测试失败时，您应该能够仅运行该测试来重现问题。
 
 <CodeGroup>
 
-```python Good: Self-Contained
+```python 好：自包含
 async def test_tool_execution_with_error():
-    """Test that tool errors are properly handled."""
+    """测试工具错误是否正确处理。"""
     mcp = FastMCP("test-server")
     
     @mcp.tool
     def divide(a: int, b: int) -> float:
         if b == 0:
-            raise ValueError("Cannot divide by zero")
+            raise ValueError("不能除以零")
         return a / b
     
     async with Client(mcp) as client:
@@ -134,45 +134,45 @@ async def test_tool_execution_with_error():
             await client.call_tool("divide", {"a": 10, "b": 0})
 ```
 
-```python Bad: Test Dependencies
-# Global state that tests depend on
+```python 差：测试依赖
+# 测试依赖的全局状态
 test_server = None
 
 def test_setup_server():
-    """Setup for other tests."""
+    """为其他测试设置。"""
     global test_server
     test_server = FastMCP("shared-server")
 
 def test_server_works():
-    """Test server functionality."""
-    # Depends on test_setup_server running first
+    """测试服务器功能。"""
+    # 依赖于 test_setup_server 首先运行
     assert test_server is not None
 ```
 
 </CodeGroup>
 
-#### Clear Intent
+#### 明确意图
 
-Test names and assertions should make the verified behavior obvious. A developer reading your test should understand what feature it validates and how that feature should behave.
+测试名称和断言应该使验证的行为显而易见。阅读您的测试的开发者应该理解它验证什么功能以及该功能应该如何表现。
 
 ```python
 async def test_authenticated_tool_requires_valid_token():
-    """Test that authenticated users can access protected tools."""
+    """测试已认证用户可以访问受保护的工具。"""
     mcp = FastMCP("test-server")
     mcp.auth = BearerTokenProvider({"secret-token": "test-user"})
     
     @mcp.tool
     def protected_action() -> str:
-        return "success"
+        return "成功"
     
     async with Client(mcp, auth=BearerAuth("secret-token")) as client:
         result = await client.call_tool("protected_action", {})
-        assert result.content[0].text == "success"
+        assert result.content[0].text == "成功"
 ```
 
-#### Using Fixtures
+#### 使用 Fixtures
 
-Use fixtures to create reusable data, server configurations, or other resources for your tests. Note that you should **not** open FastMCP clients in your fixtures as it can create hard-to-diagnose issues with event loops.
+使用 fixtures 为您的测试创建可重用的数据、服务器配置或其他资源。请注意，您**不应该**在 fixtures 中打开 FastMCP 客户端，因为这可能会创建难以诊断的事件循环问题。
 
 ```python
 import pytest
@@ -195,41 +195,41 @@ async def test_temperature_tool(weather_server):
         assert result.data == {"city": "LA", "temp": 85}
 ```
 
-#### Effective Assertions
+#### 有效断言
 
-Assertions should be specific and provide context on failure. When a test fails during CI, the assertion message should tell you exactly what went wrong.
+断言应该是具体的，并在失败时提供上下文。当测试在 CI 期间失败时，断言消息应该告诉您究竟出了什么问题。
 
 ```python
-# Basic assertion - minimal context on failure
+# 基本断言 - 失败时上下文最少
 assert result.status == "success"
 
-# Better - explains what was expected
-assert result.status == "success", f"Expected successful operation, got {result.status}: {result.error}"
+# 更好 - 解释期望的内容
+assert result.status == "success", f"期望成功操作，得到 {result.status}: {result.error}"
 ```
 
-Try not to have too many assertions in a single test unless you truly need to check various aspects of the same behavior. In general, assertions of different behaviors should be in separate tests.
+尽量不要在单个测试中有太多断言，除非您真的需要检查同一行为的各个方面。一般来说，不同行为的断言应该在单独的测试中。
 
-#### Inline Snapshots
+#### 内联快照
 
-FastMCP uses `inline-snapshot` for testing complex data structures. On first run with empty `snapshot()`, pytest will auto-populate the expected value. To update snapshots after intentional changes, run `pytest --inline-snapshot=fix`. This is particularly useful for testing JSON schemas and API responses.
+FastMCP 使用 `inline-snapshot` 来测试复杂的数据结构。在空 `snapshot()` 的第一次运行时，pytest 会自动填充期望值。要在有意更改后更新快照，运行 `pytest --inline-snapshot=fix`。这对于测试 JSON schemas 和 API 响应特别有用。
 
 ```python
 from inline_snapshot import snapshot
 
 async def test_tool_schema_generation():
-    """Test that tool schemas are generated correctly."""
+    """测试工具 schemas 是否正确生成。"""
     mcp = FastMCP("test-server")
     
     @mcp.tool
     def calculate_tax(amount: float, rate: float = 0.1) -> dict:
-        """Calculate tax on an amount."""
+        """计算金额的税款。"""
         return {"amount": amount, "tax": amount * rate, "total": amount * (1 + rate)}
     
     tools = mcp.list_tools()
     schema = tools[0].inputSchema
     
-    # First run: snapshot() is empty, gets auto-populated
-    # Subsequent runs: compares against stored snapshot
+    # 第一次运行：snapshot() 为空，自动填充
+    # 后续运行：与存储的快照比较
     assert schema == snapshot({
         "type": "object", 
         "properties": {
@@ -240,36 +240,36 @@ async def test_tool_schema_generation():
     })
 ```
 
-### In-Memory Testing
+### 内存测试
 
-FastMCP uses in-memory transport for testing, where servers and clients communicate directly. The majority of functionality can be tested in a deterministic fashion this way. We use more complex setups only when testing transports themselves.
+FastMCP 使用内存传输进行测试，其中服务器和客户端直接通信。大部分功能都可以以这种确定性方式进行测试。我们只在测试传输本身时使用更复杂的设置。
 
-The in-memory transport runs the real MCP protocol implementation without network overhead. Instead of deploying your server or managing network connections, you pass your server instance directly to the client. Everything runs in the same Python process - you can set breakpoints anywhere and step through with your debugger.
+内存传输运行真实的 MCP 协议实现，没有网络开销。无需部署服务器或管理网络连接，您可以直接将服务器实例传递给客户端。一切都在同一个 Python 进程中运行 - 您可以在任何地方设置断点并使用调试器逐步执行。
 
 ```python
 from fastmcp import FastMCP, Client
 
-# Create your server
+# 创建您的服务器
 server = FastMCP("WeatherServer")
 
 @server.tool
 def get_temperature(city: str) -> dict:
-    """Get current temperature for a city"""
+    """获取城市的当前温度"""
     temps = {"NYC": 72, "LA": 85, "Chicago": 68}
     return {"city": city, "temp": temps.get(city, 70)}
 
 async def test_weather_operations():
-    # Pass server directly - no deployment needed
+    # 直接传递服务器 - 无需部署
     async with Client(server) as client:
         result = await client.call_tool("get_temperature", {"city": "NYC"})
         assert result.data == {"city": "NYC", "temp": 72}
 ```
 
-This pattern makes tests deterministic and fast - typically completing in milliseconds rather than seconds.
+这种模式使测试具有确定性和快速性 - 通常在毫秒而不是秒内完成。
 
-### Mocking External Dependencies
+### 模拟外部依赖
 
-FastMCP servers are standard Python objects, so you can mock external dependencies using your preferred approach:
+FastMCP 服务器是标准的 Python 对象，因此您可以使用您偏好的方法模拟外部依赖：
 
 ```python
 from unittest.mock import AsyncMock
@@ -277,7 +277,7 @@ from unittest.mock import AsyncMock
 async def test_database_tool():
     server = FastMCP("DataServer")
     
-    # Mock the database
+    # 模拟数据库
     mock_db = AsyncMock()
     mock_db.fetch_users.return_value = [
         {"id": 1, "name": "Alice"},
@@ -295,9 +295,9 @@ async def test_database_tool():
         mock_db.fetch_users.assert_called_once()
 ```
 
-### Testing Network Transports
+### 测试网络传输
 
-While in-memory testing covers most unit testing needs, you'll occasionally need to test actual network transports. Use the `run_server_in_process` utility to spawn a server in a separate process for testing:
+虽然内存测试涵盖了大部分单元测试需求，但您偶尔需要测试实际的网络传输。使用 `run_server_in_process` 实用程序在单独的进程中生成服务器进行测试：
 
 ```python
 import pytest
@@ -306,23 +306,23 @@ from fastmcp import FastMCP, Client
 from fastmcp.client.transports import StreamableHttpTransport
 
 def run_server(host: str, port: int) -> None:
-    """Function to run in subprocess."""
+    """在子进程中运行的函数。"""
     server = FastMCP("TestServer")
     
     @server.tool
     def greet(name: str) -> str:
-        return f"Hello, {name}!"
+        return f"你好，{name}！"
     
     server.run(host=host, port=port)
 
 @pytest.fixture
 async def http_server():
-    """Fixture that runs server in subprocess."""
+    """在子进程中运行服务器的 fixture。"""
     with run_server_in_process(run_server, transport="http") as url:
         yield f"{url}/mcp"
 
 async def test_http_transport(http_server: str):
-    """Test actual HTTP transport behavior."""
+    """测试实际的 HTTP 传输行为。"""
     async with Client(
         transport=StreamableHttpTransport(http_server)
     ) as client:
@@ -330,21 +330,21 @@ async def test_http_transport(http_server: str):
         assert result is True
         
         greeting = await client.call_tool("greet", {"name": "World"})
-        assert greeting.data == "Hello, World!"
+        assert greeting.data == "你好，World！"
 ```
 
-The `run_server_in_process` utility handles server lifecycle, port allocation, and cleanup automatically. This pattern is essential for testing transport-specific behavior like timeouts, headers, and authentication. Note that FastMCP often uses the `client_process` marker to isolate tests that spawn processes, as they can create contention in CI.
+`run_server_in_process` 实用程序自动处理服务器生命周期、端口分配和清理。这种模式对于测试传输特定行为（如超时、标头和身份验证）至关重要。请注意，FastMCP 经常使用 `client_process` 标记来隔离生成进程的测试，因为它们可能在 CI 中创建争用。
 
-### Documentation Testing
+### 文档测试
 
-Documentation requires the same validation as code. The `just docs` command launches a local Mintlify server that renders your documentation exactly as users will see it:
+文档需要与代码相同的验证。`just docs` 命令启动一个本地 Mintlify 服务器，完全按照用户看到的方式渲染您的文档：
 
 ```bash
-# Start local documentation server with hot reload
+# 启动带热重载的本地文档服务器
 just docs
 
-# Or run Mintlify directly
+# 或直接运行 Mintlify
 mintlify dev
 ```
 
-The local server watches for changes and automatically refreshes. This preview catches formatting issues and helps you see documentation as users will experience it.
+本地服务器监视更改并自动刷新。此预览捕获格式问题并帮助您看到用户将体验到的文档。
