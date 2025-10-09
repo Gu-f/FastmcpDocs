@@ -1,7 +1,7 @@
 ---
 title: 远程 OAuth
 sidebarTitle: 远程 OAuth
-description: 将您的 FastMCP 服务器与外部身份提供商（如 WorkOS、Auth0 和企业 SSO 系统）集成。
+description: 将您的FastMCP服务器与Descope、WorkOS、Auth0和公司SSO系统等外部身份提供程序集成。
 icon: camera-cctv
 tag: NEW
 ---
@@ -14,8 +14,8 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 <Tip>
 **何时使用 RemoteAuthProvider 与 OAuth Proxy:**
-- **RemoteAuthProvider**: 用于支持动态客户端注册的提供者（如 WorkOS AuthKit、现代 OIDC 提供者）
-- **OAuth Proxy**: 用于不支持动态客户端注册的提供者（如 GitHub、Google、Azure、Discord 等）
+- **RemoteAuthProvider**：适用于具有动态客户端注册的提供商（Descope、WorkOS AuthKit、现代OIDC提供商）
+- **OAuth Proxy**: 适用于没有动态客户端注册的提供商（GitHub、Google、Azure、AWS、Discord等）
 
 RemoteAuthProvider 需要 DCR 支持，以实现客户端的完全自动化注册和认证。
 </Tip>
@@ -29,7 +29,7 @@ RemoteAuthProvider 与支持**动态客户端注册（DCR）**的身份提供商
 | **客户端注册** | 通过 API 自动注册 | 在提供商控制台手动注册 |
 | **凭据** | 每个客户端动态生成 | 固定的应用凭据 |
 | **配置** | 零客户端配置 | 预共享凭据 |
-| **示例** | WorkOS AuthKit，现代 OIDC | GitHub，Google，Azure |
+| **示例** | Descope, WorkOS AuthKit, modern OIDC | GitHub, Google, Azure |
 | **FastMCP 类** | `RemoteAuthProvider` | [`OAuthProxy`](/zh/servers/auth/oauth-proxy) |
 
 如果您的提供商不支持 DCR（大多数传统的 OAuth 提供商），您需要使用 [`OAuth 代理`](/zh/servers/auth/oauth-proxy) 代替，它弥合了 MCP 的 DCR 期望与固定 OAuth 凭据之间的差距。

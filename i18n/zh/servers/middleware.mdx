@@ -440,7 +440,7 @@ mcp.add_middleware(TimingMiddleware())
 mcp.add_middleware(DetailedTimingMiddleware())
 ```
 
-The built-in versions include custom logger support, proper formatting, and **DetailedTimingMiddleware** provides operation-specific hooks like `on_call_tool` and `on_read_resource` for granular timing.
+内置版本包括自定义记录器支持、正确的格式，**DetailedTimingMiddleware**提供特定于操作的钩子，如“on_call_tool”和“on_read_resource”，用于细粒度计时。
 
 ### 日志记录中间件
 

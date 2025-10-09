@@ -374,7 +374,7 @@ get_prompt(self, name: str, arguments: dict[str, Any] | None = None) -> mcp.type
 #### `complete_mcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L744" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-complete_mcp(self, ref: mcp.types.ResourceReference | mcp.types.PromptReference, argument: dict[str, str]) -> mcp.types.CompleteResult
+complete_mcp(self, ref: mcp.types.ResourceTemplateReference | mcp.types.PromptReference, argument: dict[str, str], context_arguments: dict[str, Any] | None = None) -> mcp.types.CompleteResult
 ```
 
 发送完成请求并返回完整的 MCP 协议结果。
@@ -382,6 +382,7 @@ complete_mcp(self, ref: mcp.types.ResourceReference | mcp.types.PromptReference,
 **参数：**
 - `ref`: 要完成的引用。
 - `argument`: 传递给完成请求的参数。
+- `context_arguments`: 可选的上下文参数，用于与完成请求一同发送。默认值为 None.
 
 **返回值：**
 - mcp.types.CompleteResult: 来自协议的完整响应对象，
@@ -391,10 +392,10 @@ complete_mcp(self, ref: mcp.types.ResourceReference | mcp.types.PromptReference,
 - `RuntimeError`: 如果在客户端未连接时调用。
 
 
-#### `complete` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L767" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `complete` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L772" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-complete(self, ref: mcp.types.ResourceReference | mcp.types.PromptReference, argument: dict[str, str]) -> mcp.types.Completion
+complete(self, ref: mcp.types.ResourceTemplateReference | mcp.types.PromptReference, argument: dict[str, str], context_arguments: dict[str, Any] | None = None) -> mcp.types.Completion
 ```
 
 向服务器发送完成请求。
@@ -402,6 +403,7 @@ complete(self, ref: mcp.types.ResourceReference | mcp.types.PromptReference, arg
 **参数：**
 - `ref`: 要完成的引用。
 - `argument`: 传递给完成请求的参数。
+- `context_arguments`: 可选的上下文参数，用于与完成请求一同发送。默认值为 None.
 
 **返回值：**
 - mcp.types.Completion: 完成对象。

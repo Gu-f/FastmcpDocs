@@ -48,14 +48,14 @@ validate_elicitation_json_schema(schema: dict[str, Any]) -> None
 ### `ElicitationJsonSchema` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/elicitation.py#L32" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Custom JSON schema generator for MCP elicitation that always inlines enums.
+始终内联枚举的 MCP 引导自定义 JSON 模式生成器。
 
-MCP elicitation requires inline enum schemas without $ref/$defs references.
-This generator ensures enums are always generated inline for compatibility.
-Optionally adds enumNames for better UI display when available.
+MCP 引导需要内联枚举模式，不包含 $ref/$defs 引用。
+此生成器确保枚举始终内联生成以保证兼容性。
+在可用时可选添加 enumNames 以获得更好的 UI 显示。
 
 
-**Methods:**
+**方法：**
 
 #### `generate_inner` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/elicitation.py#L40" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -63,7 +63,7 @@ Optionally adds enumNames for better UI display when available.
 generate_inner(self, schema: core_schema.CoreSchema) -> JsonSchemaValue
 ```
 
-Override to prevent ref generation for enums.
+重写以防止为枚举生成引用。
 
 
 #### `enum_schema` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/elicitation.py#L50" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -72,16 +72,16 @@ Override to prevent ref generation for enums.
 enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue
 ```
 
-Generate inline enum schema with optional enumNames for better UI.
+生成内联枚举模式，带有可选的 enumNames 以获得更好的 UI。
 
-If enum members have a _display_name_ attribute or custom __str__,
-we'll include enumNames for better UI representation.
+如果枚举成员具有 _display_name_ 属性或自定义 __str__，
+我们将包含 enumNames 以获得更好的 UI 表示。
 
 
 ### `AcceptedElicitation` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/elicitation.py#L87" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Result when user accepts the elicitation.
+用户接受引导时的结果。
 
 
 ### `ScalarElicitationType` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/elicitation.py#L95" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>

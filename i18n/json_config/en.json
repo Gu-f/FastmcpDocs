@@ -46,6 +46,7 @@
                   "${LANGUAGE_CODE}/servers/auth/token-verification",
                   "${LANGUAGE_CODE}/servers/auth/remote-oauth",
                   "${LANGUAGE_CODE}/servers/auth/oauth-proxy",
+                  "${LANGUAGE_CODE}/servers/auth/oidc-proxy",
                   "${LANGUAGE_CODE}/servers/auth/full-oauth-server"
                 ]
               },
@@ -104,8 +105,11 @@
                 "group": "Authentication",
                 "icon": "key",
                 "pages": [
+                  "${LANGUAGE_CODE}/integrations/auth0",
                   "${LANGUAGE_CODE}/integrations/authkit",
+                  "${LANGUAGE_CODE}/integrations/aws-cognito",
                   "${LANGUAGE_CODE}/integrations/azure",
+                  "${LANGUAGE_CODE}/integrations/descope",
                   "${LANGUAGE_CODE}/integrations/github",
                   "${LANGUAGE_CODE}/integrations/google",
                   "${LANGUAGE_CODE}/integrations/workos"
@@ -127,6 +131,7 @@
                   "${LANGUAGE_CODE}/integrations/claude-code",
                   "${LANGUAGE_CODE}/integrations/claude-desktop",
                   "${LANGUAGE_CODE}/integrations/cursor",
+                  "${LANGUAGE_CODE}/integrations/gemini-cli",
                   "${LANGUAGE_CODE}/integrations/mcp-json-configuration"
                 ]
               },
@@ -196,6 +201,7 @@
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-claude_code",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-claude_desktop",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-cursor",
+                      "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-gemini_cli",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-mcp_json",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-install-shared"
                     ]

@@ -5,15 +5,15 @@ sidebarTitle: base
 
 # `fastmcp.utilities.mcp_server_config.v1.sources.base`
 
-## Classes
+## 类
 
 ### `Source` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/base.py#L7" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Abstract base class for all source types.
+所有源类型的抽象基类。
 
 
-**Methods:**
+**方法：**
 
 #### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/base.py#L12" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -21,11 +21,11 @@ Abstract base class for all source types.
 prepare(self) -> None
 ```
 
-Prepare the source (download, clone, install, etc).
+准备源（下载、克隆、安装等）。
 
-For sources that need preparation (e.g., git clone, download),
-this method performs that preparation. For sources that don't
-need preparation (e.g., local files), this is a no-op.
+对于需要准备的源（例如，git clone、下载），
+此方法执行该准备。对于不需要
+准备的源（例如，本地文件），这是一个空操作。
 
 
 #### `load_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/base.py#L23" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -34,9 +34,9 @@ need preparation (e.g., local files), this is a no-op.
 load_server(self) -> Any
 ```
 
-Load and return the FastMCP server instance.
+加载并返回 FastMCP 服务器实例。
 
-Must be called after prepare() if the source requires preparation.
-All information needed to load the server should be available
-as attributes on the source instance.
+如果源需要准备，必须在 prepare() 之后调用。
+加载服务器所需的所有信息应作为
+源实例的属性可用。
 

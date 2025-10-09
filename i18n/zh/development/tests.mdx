@@ -211,7 +211,7 @@ assert result.status == "success", f"期望成功操作，得到 {result.status}
 
 #### 内联快照
 
-FastMCP 使用 `inline-snapshot` 来测试复杂的数据结构。在空 `snapshot()` 的第一次运行时，pytest 会自动填充期望值。要在有意更改后更新快照，运行 `pytest --inline-snapshot=fix`。这对于测试 JSON schemas 和 API 响应特别有用。
+FastMCP采用`inline-snapshot`来测试复杂数据结构。首次运行`pytest --inline-snapshot=create`且`snapshot()`为空时，pytest会自动填充预期值。若需在有意修改后更新快照，请运行`pytest --inline-snapshot=fix`。此方法对测试JSON schema和API响应特别有效。
 
 ```python
 from inline_snapshot import snapshot

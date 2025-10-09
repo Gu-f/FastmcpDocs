@@ -1,0 +1,68 @@
+---
+title: gemini_cli
+sidebarTitle: gemini_cli
+---
+
+# `fastmcp.cli.install.gemini_cli`
+
+
+使用 Cyclopts 实现的 FastMCP 安装的 Gemini CLI 集成。
+
+## 函数
+
+### `find_gemini_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/gemini_cli.py#L20" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+find_gemini_command() -> str | None
+```
+
+
+查找 Gemini CLI 命令。
+
+
+### `check_gemini_cli_available` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/gemini_cli.py#L64" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+check_gemini_cli_available() -> bool
+```
+
+
+检查 Gemini CLI 是否可用。
+
+
+### `install_gemini_cli` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/gemini_cli.py#L69" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+install_gemini_cli(file: Path, server_object: str | None, name: str) -> bool
+```
+
+
+在 Gemini CLI 中安装 FastMCP 服务器。
+
+**参数：**
+- `file`: 服务器文件的路径
+- `server_object`: 可选的服务器对象名称（用于 \:object 后缀）
+- `name`: 在 Gemini CLI 中的服务器名称
+- `with_editable`: 可选的以可编辑模式安装的目录列表
+- `with_packages`: 可选的要安装的额外包列表
+- `env_vars`: 可选的环境变量字典
+- `python_version`: 可选的要使用的 Python 版本
+- `with_requirements`: 可选的要安装的需求文件
+- `project`: 可选的运行项目目录
+
+**返回值：**
+- 如果安装成功则返回 True，否则返回 False
+
+
+### `gemini_cli_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/install/gemini_cli.py#L151" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+gemini_cli_command(server_spec: str) -> None
+```
+
+
+在 Gemini CLI 中安装 MCP 服务器。
+
+**参数：**
+- `server_spec`: 要安装的 Python 文件，可选带有 \:object 后缀
+

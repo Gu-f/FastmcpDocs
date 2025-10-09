@@ -31,13 +31,13 @@ check_if_auth_required(mcp_url: str, httpx_kwargs: dict[str, Any] | None = None)
 ### `ClientNotFoundError` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L38" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Raised when OAuth client credentials are not found on the server.
+在服务器上找不到 OAuth 客户端凭据时引发。
 
 
 ### `StoredToken` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L44" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Token storage format with absolute expiry time.
+带有绝对过期时间的令牌存储格式。
 
 
 ### `FileTokenStorage` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L59" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -140,7 +140,7 @@ clear_all(cls, cache_dir: Path | None = None) -> None
 redirect_handler(self, authorization_url: str) -> None
 ```
 
-Open browser for authorization, with pre-flight check for invalid client.
+打开浏览器进行授权，并对无效客户端进行预检查。
 
 
 #### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L330" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -158,8 +158,8 @@ callback_handler(self) -> tuple[str, str | None]
 async_auth_flow(self, request: httpx.Request) -> AsyncGenerator[httpx.Request, httpx.Response]
 ```
 
-HTTPX auth flow with automatic retry on stale cached credentials.
+带有对过时缓存凭据自动重试的 HTTPX 身份验证流程。
 
-If the OAuth flow fails due to invalid/stale client credentials,
-clears the cache and retries once with fresh registration.
+如果 OAuth 流程由于无效/过时的客户端凭据而失败，
+则清除缓存并使用新注册重试一次。
 

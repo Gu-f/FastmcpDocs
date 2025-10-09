@@ -5,42 +5,42 @@ sidebarTitle: uv
 
 # `fastmcp.utilities.mcp_server_config.v1.environments.uv`
 
-## Classes
+## 类
 
-### `UVEnvironment` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L16" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-
-Configuration for Python environment setup.
+### `UVEnvironment` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L14" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-**Methods:**
+Python 环境设置的配置。
 
-#### `build_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L51" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+**方法：**
+
+#### `build_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L49" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 build_command(self, command: list[str]) -> list[str]
 ```
 
-Build complete uv run command with environment args and command to execute.
+构建包含环境参数和要执行命令的完整 uv run 命令。
 
-**Args:**
-- `command`: Command to execute (e.g., ["fastmcp", "run", "server.py"])
+**参数：**
+- `command`: 要执行的命令（例如，["fastmcp", "run", "server.py"]）
 
-**Returns:**
-- Complete command ready for subprocess.run, including "uv" prefix if needed.
-- If no environment configuration is set, returns the command unchanged.
+**返回值：**
+- 准备好用于 subprocess.run 的完整命令，如需要则包含 "uv" 前缀。
+- 如果未设置环境配置，则返回不变的命令。
 
 
-#### `run_with_uv` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L95" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L109" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 run_with_uv(self, command: list[str]) -> None
 ```
 
-Execute a command using uv run with this environment configuration.
+使用此环境配置通过 uv run 执行命令。
 
-**Args:**
-- `command`: Command and arguments to execute (e.g., ["fastmcp", "run", "server.py"])
+**参数：**
+- `command`: 要执行的命令和参数（例如，["fastmcp", "run", "server.py"]）
 
 
 #### `needs_uv` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L136" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -49,7 +49,7 @@ Execute a command using uv run with this environment configuration.
 needs_uv(self) -> bool
 ```
 
-Deprecated: Use _needs_setup() internally or check if build_command modifies the command.
+已弃用：在内部使用 _needs_setup() 或检查 build_command 是否修改命令。
 
 
 #### `build_uv_run_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L140" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -58,7 +58,7 @@ Deprecated: Use _needs_setup() internally or check if build_command modifies the
 build_uv_run_command(self, command: list[str]) -> list[str]
 ```
 
-Deprecated: Use build_command() instead.
+已弃用：请使用 build_command() 代替。
 
 
 #### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L144" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -67,9 +67,9 @@ Deprecated: Use build_command() instead.
 prepare(self, output_dir: Path | None = None) -> None
 ```
 
-Prepare the Python environment using uv.
+使用 uv 准备 Python 环境。
 
-**Args:**
-- `output_dir`: Directory where the persistent uv project will be created.
-       If None, creates a temporary directory for ephemeral use.
+**参数：**
+- `output_dir`: 创建持久化 uv 项目的目录。
+       如果为 None，则为临时使用创建临时目录。
 

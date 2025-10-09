@@ -1,0 +1,203 @@
+---
+title: OIDC 代理
+sidebarTitle: OIDC 代理
+description: 将 OIDC 提供程序桥接到 MCP 的身份验证流程中无缝工作。
+icon: share
+tag: NEW
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx";
+
+<VersionBadge version="2.12.4" />
+
+OIDC 代理使 FastMCP 服务器能够与开箱即用的**不支持动态客户端注册 (DCR)** 的 OIDC 提供程序进行身份验证。这包括 OAuth 提供程序，如：Auth0、Google、Azure、AWS 等。对于支持 DCR 的提供程序（如 WorkOS AuthKit），请使用 [`RemoteAuthProvider`](/servers/auth/remote-oauth) 代替。
+
+OIDC 代理基于 [`OAuthProxy`](/servers/auth/oauth-proxy) 构建，因此在底层具有所有相同的功能。
+
+## 实现
+
+### 提供程序设置要求
+
+在使用 OIDC 代理之前，您需要在 OAuth 提供程序中注册您的应用程序：
+
+1. **注册您的应用程序**在提供程序的开发者控制台中（Auth0 应用程序、Google Cloud 控制台、Azure 门户等）
+2. **配置重定向 URI**为您的 FastMCP 服务器 URL 加上您选择的回调路径：
+   - 默认：`https://your-server.com/auth/callback`
+   - 自定义：`https://your-server.com/your/custom/path`（如果您设置了 `redirect_path`）
+   - 开发：`http://localhost:8000/auth/callback`
+3. **获取您的凭据**：客户端 ID 和客户端密钥
+
+<Warning>
+  您在提供程序中配置的重定向 URI 必须与您的
+  FastMCP 服务器 URL 加上回调路径完全匹配。如果您在 OAuth 代理中自定义了 `redirect_path`，
+  请相应更新您提供程序的重定向 URI。
+</Warning>
+
+### 基本设置
+
+以下是如何与任何提供程序实现 OIDC 代理：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.auth.oidc_proxy import OIDCProxy
+
+# 创建 OIDC 代理
+auth = OIDCProxy(
+    # 提供程序的配置 URL
+    config_url="https://provider.com/.well-known/openid-configuration",
+
+    # 您注册的应用程序凭据
+    client_id="your-client-id",
+    client_secret="your-client-secret",
+
+    # 您的 FastMCP 服务器的公共 URL
+    base_url="https://your-server.com",
+
+    # 可选：自定义回调路径（默认为 "/auth/callback"）
+    # redirect_path="/custom/callback",
+)
+
+mcp = FastMCP(name="My Server", auth=auth)
+```
+
+### 配置参数
+
+<Card icon="code" title="OIDCProxy Parameters">
+<ParamField body="config_url" type="str" required>
+  您的 OAuth 提供程序的 OIDC 配置 URL
+</ParamField>
+
+<ParamField body="client_id" type="str" required>
+  来自您注册的 OAuth 应用程序的客户端 ID
+</ParamField>
+
+<ParamField body="client_secret" type="str" required>
+  来自您注册的 OAuth 应用程序的客户端密钥
+</ParamField>
+
+<ParamField body="base_url" type="AnyHttpUrl | str" required>
+  您的 FastMCP 服务器的公共 URL（例如，`https://your-server.com`）
+</ParamField>
+
+<ParamField body="strict" type="bool | None">
+  配置验证的严格标志。当为 True 时，需要所有 OIDC
+  必填字段。
+</ParamField>
+
+<ParamField body="audience" type="str | None">
+  需要它的 OIDC 提供程序（例如 Auth0）的受众参数。这通常是
+  您的 API 标识符。
+</ParamField>
+
+<ParamField body="timeout_seconds" type="int | None" default="10">
+  获取 OIDC 配置的 HTTP 请求超时时间（秒）
+</ParamField>
+
+<ParamField body="algorithm" type="str | None">
+  用于令牌验证的 JWT 算法（例如，"RS256"）。如果未指定，
+  使用提供程序的默认值。
+</ParamField>
+
+<ParamField body="required_scopes" type="list[str] | None">
+  从提供程序请求的 OAuth 作用域列表。这些会自动
+  包含在授权请求中。
+</ParamField>
+
+<ParamField body="redirect_path" type="str" default="/auth/callback">
+  OAuth 回调的路径。必须与您在 OAuth 应用程序中配置的重定向 URI 匹配
+</ParamField>
+
+<ParamField body="allowed_client_redirect_uris" type="list[str] | None">
+  MCP 客户端允许的重定向 URI 模式列表。模式支持通配符（例如，`"http://localhost:*"`、`"https://*.example.com/*"`）。
+  - `None`（默认）：允许所有重定向 URI（为了 MCP/DCR 兼容性）
+  - 空列表 `[]`：不允许任何重定向 URI
+  - 自定义列表：仅允许匹配的模式
+
+这些模式适用于 MCP 客户端回环重定向，而不是上游 OAuth 应用程序重定向 URI。
+
+</ParamField>
+
+<ParamField body="token_endpoint_auth_method" type="str | None">
+  上游 OAuth 服务器的令牌端点身份验证方法。控制代理在与上游提供程序交换授权代码和刷新令牌时如何进行身份验证。
+  - `"client_secret_basic"`：在 Authorization 标头中发送凭据（最常见）
+  - `"client_secret_post"`：在请求主体中发送凭据（某些提供程序要求）
+  - `"none"`：无身份验证（适用于公共客户端）
+  - `None`（默认）：使用 authlib 的默认值（通常为 `"client_secret_basic"`）
+
+如果您的提供程序需要特定的身份验证方法且默认值不起作用，请设置此参数。
+
+</ParamField>
+
+<ParamField body="client_storage" type="KVStorage | None">
+  用于持久化 OAuth 客户端注册的存储后端。默认情况下，客户端会自动持久化到 `~/.config/fastmcp/oidc-proxy-clients/` 磁盘中，只要文件系统保持可访问，它们就能在服务器重启后存活。这意味着 MCP 客户端只需要注册一次，就可以在您的服务器重启后无缝重新连接。
+
+```python
+from fastmcp.utilities.storage import InMemoryStorage
+
+# 使用内存存储进行测试（重启时客户端丢失）
+auth = OIDCProxy(..., client_storage=InMemoryStorage())
+```
+
+</ParamField>
+</Card>
+
+### 使用内置提供程序
+
+FastMCP 包含针对常见服务的预配置 OIDC 提供程序：
+
+```python
+from fastmcp.server.auth.providers.auth0 import Auth0Provider
+
+auth = Auth0Provider(
+    config_url="https://.../.well-known/openid-configuration",
+    client_id="your-auth0-client-id",
+    client_secret="your-auth0-client-secret",
+    audience="https://...",
+    base_url="https://localhost:8000"
+)
+
+mcp = FastMCP(name="My Server", auth=auth)
+```
+
+目前可用的提供程序包括 `Auth0Provider`。
+
+### 作用域配置
+
+OAuth 作用域通过 `required_scopes` 配置，以自动请求您的应用程序所需的权限。
+
+由代理创建的动态客户端将在其授权请求中自动包含这些作用域。
+
+## 环境配置
+
+<VersionBadge version="2.13.0" />
+
+对于生产部署，通过环境变量配置 OIDC 代理，而不是硬编码凭据：
+
+```bash
+# 指定提供程序实现
+export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.auth0.Auth0Provider
+
+# 特定提供程序的凭据
+export FASTMCP_SERVER_AUTH_AUTH0_CONFIG_URL=https://.../.well-known/openid-configuration
+export FASTMCP_SERVER_AUTH_AUTH0_CLIENT_ID=tv2ObNgaZAWWhhycr7Bz1LU2mxlnsmsB
+export FASTMCP_SERVER_AUTH_AUTH0_CLIENT_SECRET=vPYqbjemq...
+export FASTMCP_SERVER_AUTH_AUTH0_AUDIENCE=https://...
+export FASTMCP_SERVER_AUTH_AUTH0_BASE_URL=https://localhost:8000
+```
+
+使用环境配置，您的服务器代码简化为：
+
+```python
+from fastmcp import FastMCP
+
+# 身份验证自动从环境中配置
+mcp = FastMCP(name="My Server")
+
+@mcp.tool
+def protected_tool(data: str) -> str:
+    """此工具现在受 OAuth 保护。"""
+    return f"处理完成：{data}"
+
+if __name__ == "__main__":
+    mcp.run(transport="http", port=8000)
+```

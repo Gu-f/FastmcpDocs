@@ -1,0 +1,153 @@
+---
+title: Descope 🤝 FastMCP
+sidebarTitle: Descope
+description: 使用 Descope 保护您的 FastMCP 服务器
+icon: shield-check
+tag: NEW
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+<VersionBadge version="2.12.4" />
+
+本指南向您展示如何使用 [**Descope**](https://www.descope.com) 保护您的 FastMCP 服务器，Descope 是一个完整的身份验证和用户管理解决方案。此集成使用 [**远程 OAuth**](/zh/servers/auth/remote-oauth) 模式，其中 Descope 处理用户登录，您的 FastMCP 服务器验证令牌。
+
+## 配置
+
+### 前提条件
+
+开始之前，您需要：
+1. [注册](https://www.descope.com/sign-up)一个永久免费的 Descope 账户
+2. 从 [Descope 控制台](https://app.descope.com/settings/project)获取您的 **项目 ID**
+3. 您的 FastMCP 服务器 URL（开发环境可以是 localhost，例如 `http://localhost:3000`）
+
+### 步骤 1：配置 Descope
+
+<Steps>
+<Step title="启用动态客户端注册">
+    1. 转到 Descope 控制台的[入站应用程序页面](https://app.descope.com/apps/inbound)
+    2. 点击 **DCR 设置**
+    3. 启用 **动态客户端注册 (DCR)**
+    4. 定义允许的作用域
+
+    <Warning>
+    FastMCP 客户端需要 DCR 才能自动向您的身份验证服务器注册。
+    </Warning>
+</Step>
+
+<Step title="记住您的项目 ID">
+    从[项目设置](https://app.descope.com/settings/project)保存您的项目 ID：
+    ```
+    项目 ID: P2abc...123
+    ```
+</Step>
+</Steps>
+
+### 步骤 2：环境设置
+
+使用您的 Descope 配置创建 `.env` 文件：
+
+```bash
+DESCOPE_PROJECT_ID=P2abc...123      # 您的 Descope 项目 ID
+DESCOPE_BASE_URL=https://api.descope.com   # Descope API URL
+SERVER_URL=http://localhost:3000     # 您的服务器基础 URL
+```
+
+<Note>
+您可以在[多区域支持指南](https://docs.descope.com/management/project-settings/multi-regional)中找到您项目的 Descope 基础 URL。
+</Note>
+
+### 步骤 3：FastMCP 配置
+
+创建您的 FastMCP 服务器文件并使用 DescopeProvider 自动处理所有 OAuth 集成：
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.descope import DescopeProvider
+
+# DescopeProvider 自动发现 Descope 端点
+# 并配置 JWT 令牌验证
+auth_provider = DescopeProvider(
+    project_id=DESCOPE_PROJECT_ID,        # 您的 Descope 项目 ID
+    base_url=SERVER_URL,                  # 您的服务器公共 URL
+    descope_base_url=DESCOPE_BASE_URL,    # Descope API 基础 URL
+)
+
+# 使用身份验证创建 FastMCP 服务器
+mcp = FastMCP(name="My Descope Protected Server", auth=auth_provider)
+
+```
+
+## 测试
+
+要测试您的服务器，您可以使用 `fastmcp` CLI 在本地运行它。假设您已将上述代码保存到 `server.py`（在替换 `project_id`、`base_url` 和 `descope_base_url` 为您的实际值后！），您可以运行以下命令：
+
+```bash
+fastmcp run server.py --transport http --port 8000
+```
+
+现在，您可以使用 FastMCP 客户端测试在身份验证后可以访问您的服务器：
+
+```python
+from fastmcp import Client
+import asyncio
+
+async def main():
+    async with Client("http://localhost:8000/mcp/", auth="oauth") as client:
+        assert await client.ping()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## 环境变量
+
+对于生产部署，使用环境变量而不是硬编码凭据。
+
+### 提供者选择
+
+设置此环境变量允许自动使用 Descope 提供者，而无需在代码中显式实例化它。
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH" default="Not set">
+设置为 `fastmcp.server.auth.providers.descope.DescopeProvider` 以使用 Descope 身份验证。
+</ParamField>
+</Card>
+
+### Descope 特定配置
+
+这些环境变量为 Descope 提供者提供默认值，无论是手动实例化还是通过 `FASTMCP_SERVER_AUTH` 配置。
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH_DESCOPEPROVIDER_PROJECT_ID" required>
+您从 [Descope 控制台](https://app.descope.com/settings/project)获取的 Descope 项目 ID
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_DESCOPEPROVIDER_BASE_URL" required>
+您的 FastMCP 服务器的公共 URL（例如，`https://your-server.com` 或开发环境为 `http://localhost:8000`）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_DESCOPEPROVIDER_DESCOPE_BASE_URL" default="https://api.descope.com">
+您的[区域/环境](https://docs.descope.com/management/project-settings/multi-regional)的 Descope API 基础 URL
+</ParamField>
+</Card>
+
+Example `.env` file:
+```bash
+# 使用 Descope 提供者
+FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.descope.DescopeProvider
+
+# Descope 配置
+FASTMCP_SERVER_AUTH_DESCOPEPROVIDER_PROJECT_ID=P2abc...123
+FASTMCP_SERVER_AUTH_DESCOPEPROVIDER_BASE_URL=https://your-server.com
+FASTMCP_SERVER_AUTH_DESCOPEPROVIDER_DESCOPE_BASE_URL=https://api.descope.com
+```
+
+With environment variables set, your server code simplifies to:
+
+```python server.py
+from fastmcp import FastMCP
+
+# 身份验证自动从环境中配置
+mcp = FastMCP(name="My Descope Protected Server")
+```

@@ -10,11 +10,19 @@ import { VersionBadge } from "/snippets/version-badge.mdx";
 
 <VersionBadge version="2.12.0" />
 
-OAuth 代理使 FastMCP 服务器能够与**不支持动态客户端注册 (DCR)** 的 OAuth 提供程序进行身份验证。这包括几乎所有传统 OAuth 提供程序：GitHub、Google、Azure、Discord、Facebook 和大多数企业身份系统。对于确实支持 DCR 的提供程序（如 WorkOS AuthKit），请使用 [`RemoteAuthProvider`](/zh/servers/auth/remote-oauth) 代替。
+OAuth 代理使 FastMCP 服务器能够与**不支持动态客户端注册 (DCR)** 的 OAuth 提供程序进行身份验证。这包括几乎所有传统的 OAuth 提供程序：GitHub、Google、Azure、AWS、Discord、Facebook 以及大多数企业身份系统。对于支持 DCR 的提供程序（如 Descope 和 WorkOS AuthKit），请使用 [`RemoteAuthProvider`](/servers/auth/remote-oauth) 代替。
 
-MCP 客户端期望自动注册并动态获取凭据，但传统提供程序需要通过其开发者控制台手动注册应用程序。OAuth 代理通过向 MCP 客户端提供符合 DCR 的接口同时使用您与上游提供程序的预注册凭据来弥合这一差距。当客户端尝试注册时，代理返回您的固定凭据。当客户端启动授权时，代理处理回调转发的复杂性——存储客户端的动态回调 URL，使用自己的固定回调与提供程序交互，然后在令牌交换后转发回客户端。
+MCP 客户端期望能够自动注册并动态获取凭据，但传统提供程序需要通过其开发者控制台手动注册应用程序。OAuth 代理通过向 MCP 客户端呈现符合 DCR 的接口，同时与上游提供程序使用您预先注册的凭据来弥合这一差距。当客户端尝试注册时，代理返回您的固定凭据。当客户端发起授权时，代理处理回调转发的复杂性——存储客户端的动态回调 URL，使用自己的固定回调与提供程序通信，然后在令牌交换后转发回客户端。
 
-这种方法使任何 MCP 客户端（无论使用随机 localhost 端口还是固定 URL，如 Claude.ai）都能够与任何传统 OAuth 提供程序进行身份验证，同时保持完整的 OAuth 2.1 和 PKCE 安全性。
+这种方法使任何 MCP 客户端（无论是使用随机 localhost 端口还是像 Claude.ai 这样的固定 URL）都能与任何传统 OAuth 提供程序进行身份验证，同时保持完整的 OAuth 2.1 和 PKCE 安全性。
+
+<Note>
+  对于支持 OIDC 发现的提供程序（Auth0、具有 OIDC
+  配置的 Google、Azure AD），考虑使用 [`OIDC
+  代理`](/servers/auth/oidc-proxy) 进行自动配置。OIDC 代理
+  扩展了 OAuth 代理，以从提供程序的
+  `/.well-known/openid-configuration` URL 自动发现端点，简化设置。
+</Note>
 
 ## 实现
 
@@ -28,12 +36,12 @@ MCP 客户端期望自动注册并动态获取凭据，但传统提供程序需�
    - 自定义：`https://your-server.com/your/custom/path`（如果您设置了 `redirect_path`）
    - 开发：`http://localhost:8000/auth/callback`
 3. **获取您的凭据**：客户端 ID 和客户端密钥
-4. **记录 OAuth 端点**：授权 URL 和令牌 URL（通常在提供程序的 OAuth 文档中可以找到）
+4. **记录 OAuth 端点**：授权 URL 和令牌 URL（通常可在提供程序的 OAuth 文档中找到）
 
 <Warning>
   您在提供程序中配置的重定向 URI 必须与您的
-  FastMCP 服务器 URL 加上回调路径完全匹配。如果您在 OAuth 代理中
-  自定义了 `redirect_path`，请相应地更新您提供程序的重定向 URI。
+  FastMCP 服务器 URL 加上回调路径完全匹配。如果您在 OAuth 代理中自定义了 `redirect_path`，
+  请相应更新您提供程序的重定向 URI。
 </Warning>
 
 ### 基本设置
@@ -59,7 +67,7 @@ auth = OAuthProxy(
     upstream_authorization_endpoint="https://provider.com/oauth/authorize",
     upstream_token_endpoint="https://provider.com/oauth/token",
 
-    # 您注册的应用凭据
+    # 您注册的应用程序凭据
     upstream_client_id="your-client-id",
     upstream_client_secret="your-client-secret",
 
@@ -78,13 +86,14 @@ mcp = FastMCP(name="My Server", auth=auth)
 
 ### 配置参数
 
-<Card icon="code" title="OAuthProxy 参数">
+<Card icon="code" title="OAuthProxy Parameters">
 <ParamField body="upstream_authorization_endpoint" type="str" required>
   您的 OAuth 提供程序的授权端点 URL（例如，`https://github.com/login/oauth/authorize`）
 </ParamField>
 
 <ParamField body="upstream_token_endpoint" type="str" required>
-  您的 OAuth 提供程序的令牌端点 URL（例如，`https://github.com/login/oauth/access_token`）
+  您的 OAuth 提供程序的令牌端点 URL（例如，
+  `https://github.com/login/oauth/access_token`）
 </ParamField>
 
 <ParamField body="upstream_client_id" type="str" required>
@@ -96,7 +105,8 @@ mcp = FastMCP(name="My Server", auth=auth)
 </ParamField>
 
 <ParamField body="token_verifier" type="TokenVerifier" required>
-  用于验证提供程序令牌的 [`TokenVerifier`](/zh/servers/auth/token-verification) 实例
+  用于验证提供程序令牌的
+  [`TokenVerifier`](/servers/auth/token-verification) 实例
 </ParamField>
 
 <ParamField body="base_url" type="AnyHttpUrl | str" required>
@@ -116,42 +126,125 @@ mcp = FastMCP(name="My Server", auth=auth)
 </ParamField>
 
 <ParamField body="service_documentation_url" type="AnyHttpUrl | str | None">
-  您服务文档的可选 URL
+  您的服务文档的可选 URL
 </ParamField>
 
 <ParamField body="forward_pkce" type="bool" default="True">
-  是否将 PKCE（代码交换证明密钥）转发到上游 OAuth 提供程序。启用后，当客户端使用 PKCE 时，代理会生成自己的 PKCE 参数发送到上游，同时单独验证客户端的 PKCE。这确保了在两个层面（客户端到代理和代理到上游）的端到端 PKCE 安全性。
-  - `True`（默认）：为支持它的提供程序转发 PKCE（Google、Azure、GitHub 等）
-  - `False`：仅在上游提供程序不支持 PKCE 时禁用
+  是否将 PKCE（代码交换证明密钥）转发给上游 OAuth 提供程序。
+  当启用且客户端使用 PKCE 时，代理生成自己的 PKCE 参数发送到上游，
+  同时单独验证客户端的 PKCE。这确保了两个层面（客户端到代理和代理到上游）的
+  端到端 PKCE 安全性。- `True`（默认）：为支持它的提供程序转发 PKCE
+  （Google、Azure、AWS、GitHub 等）- `False`：仅在上游提供程序不支持 PKCE 时禁用
 </ParamField>
 
 <ParamField body="token_endpoint_auth_method" type="str | None">
-  上游 OAuth 服务器的令牌端点身份验证方法。控制代理在与上游提供程序交换授权代码和刷新令牌时如何进行身份验证。
-  - `"client_secret_basic"`：在 Authorization 头中发送凭据（最常见）
-  - `"client_secret_post"`：在请求体中发送凭据（某些提供程序要求）
-  - `"none"`：无身份验证（用于公共客户端）
-  - `None`（默认）：使用 authlib 的默认值（通常为 `"client_secret_basic"`）
-
-  如果您的提供程序需要特定的身份验证方法且默认方法不工作，请设置此选项。
+  上游 OAuth 服务器的令牌端点身份验证方法。控制
+  代理在与上游提供程序交换授权代码和刷新
+  令牌时如何进行身份验证。- `"client_secret_basic"`：在
+  Authorization 标头中发送凭据（最常见）- `"client_secret_post"`：在
+  请求正文中发送凭据（某些提供程序要求）- `"none"`：无
+  身份验证（适用于公共客户端）- `None`（默认）：使用 authlib 的默认值
+  （通常为 `"client_secret_basic"`）如果您的提供程序需要
+  特定的身份验证方法且默认值不起作用，请设置此项。
 </ParamField>
 
 <ParamField body="allowed_client_redirect_uris" type="list[str] | None">
-  MCP 客户端允许的重定向 URI 模式列表。模式支持通配符（例如，`"http://localhost:*"`、`"https://*.example.com/*"`）。
-  - `None`（默认）：允许所有重定向 URI（用于 MCP/DCR 兼容性）
-  - 空列表 `[]`：不允许任何重定向 URI
-  - 自定义列表：仅允许匹配的模式
-
-  这些模式适用于 MCP 客户端回环重定向，而不是上游 OAuth 应用的重定向 URI。
+  MCP 客户端允许的重定向 URI 模式列表。模式支持
+  通配符（例如，`"http://localhost:*"`、`"https://*.example.com/*"`）。-
+  `None`（默认）：允许所有重定向 URI（为了 MCP/DCR 兼容性）-
+  空列表 `[]`：不允许任何重定向 URI - 自定义列表：仅允许匹配
+  模式的重定向 URI 这些模式适用于 MCP 客户端回环重定向，而不是
+  上游 OAuth 应用程序重定向 URI。
 </ParamField>
 
 <ParamField body="valid_scopes" type="list[str] | None">
-  OAuth 提供程序的所有可能有效作用域列表。这些作用域通过 `/.well-known` 端点向客户端通告。如果未指定，默认为 TokenVerifier 中的 `required_scopes`。
+  OAuth 提供程序的所有可能有效作用域列表。这些通过
+  `/.well-known` 端点向客户端发布。如果未指定，则默认为
+  TokenVerifier 的 `required_scopes`。
+</ParamField>
+
+<ParamField body="extra_authorize_params" type="dict[str, str] | None">
+  转发到上游授权端点的附加参数。对于不属于标准 OAuth2 流程的提供程序特定参数很有用。
+
+  例如，Auth0 需要 `audience` 参数来发行 JWT 令牌：
+  ```python
+  extra_authorize_params={"audience": "https://api.example.com"}
+  ```
+
+  这些参数会添加到发送给上游提供程序的每个授权请求中。
+</ParamField>
+
+<ParamField body="extra_token_params" type="dict[str, str] | None">
+  在代码交换和令牌刷新期间转发到上游令牌端点的附加参数。对于令牌操作期间的提供程序特定要求很有用。
+
+例如，某些提供程序在令牌交换期间需要附加上下文：
+
+```python
+extra_token_params={"audience": "https://api.example.com"}
+```
+
+这些参数包含在发送给上游提供程序的所有令牌请求中。
+
+</ParamField>
+
+<ParamField body="client_storage" type="KVStorage | None">
+  用于持久化 OAuth 客户端注册的存储后端。默认情况下，客户端会自动持久化到 `~/.config/fastmcp/oauth-proxy-clients/` 磁盘中，只要文件系统保持可访问，它们就能在服务器重启后存活。这意味着 MCP 客户端只需要注册一次，就可以在您的服务器重启后无缝重新连接。
+
+```python
+from fastmcp.utilities.storage import InMemoryStorage
+
+# 使用内存存储进行测试（重启时客户端丢失）
+auth = OAuthProxy(..., client_storage=InMemoryStorage())
+```
+
 </ParamField>
 </Card>
 
+### 特定提供程序参数
+
+一些 OAuth 提供程序需要超出标准 OAuth2 流程的附加参数。使用 `extra_authorize_params` 和 `extra_token_params` 来处理这些要求：
+
+#### Auth0 示例
+
+Auth0 需要 `audience` 参数来发行 JWT 令牌而不是不透明令牌：
+
+```python
+auth = OAuthProxy(
+    upstream_authorization_endpoint="https://your-domain.auth0.com/authorize",
+    upstream_token_endpoint="https://your-domain.auth0.com/oauth/token",
+    upstream_client_id="your-auth0-client-id",
+    upstream_client_secret="your-auth0-client-secret",
+
+    # Auth0 需要 audience 参数来获取 JWT 令牌
+    extra_authorize_params={
+        "audience": "https://your-api-identifier.com"
+    },
+    extra_token_params={
+        "audience": "https://your-api-identifier.com"
+    },
+
+    token_verifier=JWTVerifier(
+        jwks_uri="https://your-domain.auth0.com/.well-known/jwks.json",
+        issuer="https://your-domain.auth0.com/",
+        audience="https://your-api-identifier.com"
+    ),
+
+    base_url="https://your-server.com"
+)
+```
+
+#### RFC 8707 资源指示器
+
+MCP 客户端可以使用标准的 `resource` 参数 (RFC 8707) 指定目标资源。存在时会自动转发：
+
+```python
+# 客户端代码（自动 - 无需服务器配置）
+# resource 参数从 AuthorizationParams 传递
+```
+
 ### 使用内置提供程序
 
-FastMCP 包含为常见服务预配置的提供程序：
+FastMCP 包含针对常见服务的预配置提供程序：
 
 ```python
 from fastmcp.server.auth.providers.github import GitHubProvider
@@ -175,13 +268,13 @@ OAuth 作用域通过您的 `TokenVerifier` 进行配置。设置 `required_scop
 JWTVerifier(..., required_scopes = ["read:user", "write:data"])
 ```
 
-代理创建的动态客户端将自动在其授权请求中包含这些作用域。
+由代理创建的动态客户端将在其授权请求中自动包含这些作用域。
 
 ## 工作原理
 
 ```mermaid
 sequenceDiagram
-    participant Client as MCP 客户端<br/>(localhost:随机)
+    participant Client as MCP 客户端<br/>(localhost:随机端口)
     participant Proxy as FastMCP OAuth 代理<br/>(服务器:8000)
     participant Provider as OAuth 提供程序<br/>(GitHub 等)
 
@@ -189,15 +282,15 @@ sequenceDiagram
     Client->>Proxy: 1. POST /register<br/>redirect_uri: localhost:54321/callback
     Proxy-->>Client: 2. 返回固定的上游凭据
 
-    Note over Client, Proxy: 使用 PKCE 和回调转发进行授权
+    Note over Client, Proxy: 使用 PKCE 和回调转发的授权
     Client->>Proxy: 3. GET /authorize<br/>redirect_uri=localhost:54321/callback<br/>code_challenge=CLIENT_CHALLENGE
-    Note over Proxy: 存储客户端 PKCE 的事务<br/>生成代理 PKCE 对
+    Note over Proxy: 存储带有客户端 PKCE 的事务<br/>生成代理 PKCE 对
     Proxy->>Provider: 4. 重定向到提供程序<br/>redirect_uri=server:8000/auth/callback<br/>code_challenge=PROXY_CHALLENGE
 
     Note over Provider, Proxy: 提供程序回调
     Provider->>Proxy: 5. GET /auth/callback<br/>带有授权代码
     Proxy->>Provider: 6. 交换代码获取令牌<br/>code_verifier=PROXY_VERIFIER
-    Provider-->>Proxy: 7. 访问和刷新令牌
+    Provider-->>Proxy: 7. 访问令牌和刷新令牌
 
     Note over Proxy, Client: 客户端回调转发
     Proxy->>Client: 8. 重定向到 localhost:54321/callback<br/>带有新的授权代码
@@ -207,27 +300,27 @@ sequenceDiagram
     Proxy-->>Client: 10. 返回存储的提供程序令牌
 ```
 
-上面的流程图说明了完整的 OAuth 代理模式。让我们了解每个阶段：
+上面的流程图展示了完整的 OAuth 代理模式。让我们了解每个阶段：
 
 ### 注册阶段
 
-当 MCP 客户端使用其动态回调 URL 调用 `/register` 时，代理会使用您预配置的上游凭据进行响应。客户端存储这些凭据，认为它已经注册了一个新应用。同时，代理记录客户端的回调 URL 以供后续使用。
+当 MCP 客户端使用其动态回调 URL 调用 `/register` 时，代理会使用您预配置的上游凭据进行响应。客户端存储这些凭据，认为它已经注册了一个新的应用程序。同时，代理记录客户端的回调 URL 供后用。
 
 ### 授权阶段
 
-客户端通过重定向到代理的 `/authorize` 端点来启动 OAuth。代理：
+客户端通过重定向到代理的 `/authorize` 端点发起 OAuth。代理：
 
 1. 存储客户端的事务及其 PKCE 质询
 2. 为上游安全生成自己的 PKCE 参数
 3. 使用固定的回调 URL 重定向到上游提供程序
 
-这种双 PKCE 方法在客户端到代理和代理到提供程序层面都保持端到端安全性。
+这种双 PKCE 方法在客户端到代理和代理到提供程序两个层面都保持端到端安全性。
 
 ### 回调阶段
 
-在用户授权后，提供程序重定向回代理的固定回调 URL。代理：
+用户授权后，提供程序重定向回代理的固定回调 URL。代理：
 
-1. 与提供程序交换授权代码获取令牌
+1. 与提供程序交换授权代码以获取令牌
 2. 临时存储这些令牌
 3. 为客户端生成新的授权代码
 4. 重定向到客户端的原始动态回调 URL
@@ -236,13 +329,13 @@ sequenceDiagram
 
 最后，客户端与代理交换其授权代码以接收提供程序的令牌。代理在返回存储的令牌之前验证客户端的 PKCE 验证器。
 
-整个流程对 MCP 客户端是透明的——它体验到的是带有动态注册的标准 OAuth 流程，不知道代理正在幕后管理复杂性。
+整个流程对 MCP 客户端是透明的——它体验的是带有动态注册的标准 OAuth 流程，不知道代理在幕后管理着复杂性。
 
 ### PKCE 转发
 
-OAuth 代理在与支持或需要 PKCE 的提供程序工作时会自动处理 PKCE（代码交换证明密钥）。代理生成自己的 PKCE 参数发送到上游，同时单独验证客户端的 PKCE，确保两个层面的端到端安全性。
+OAuth 代理在与支持或要求 PKCE（代码交换证明密钥）的提供程序合作时会自动处理 PKCE。代理生成自己的 PKCE 参数发送到上游，同时单独验证客户端的 PKCE，确保两个层面的端到端安全性。
 
-这通过 `forward_pkce` 参数默认启用，与 Google、Azure AD 和 GitHub 等提供程序无缝工作。仅在不支持 PKCE 的传统提供程序上禁用它：
+这通过 `forward_pkce` 参数默认启用，并与 Google、Azure AD 和 GitHub 等揔供程序无缝配合。仅在不支持 PKCE 的传统提供程序上禁用它：
 
 ```python
 # 仅在上游不支持 PKCE 时禁用 PKCE 转发
@@ -277,16 +370,16 @@ auth = OAuthProxy(
 )
 ```
 
-检查服务器日志中的“客户端使用 redirect_uri 注册”消息，以确定您的客户端使用的 URL。
+检查您的服务器日志中的 "Client registered with redirect_uri" 消息，以识别您的客户端使用的 URL。
 
 ## 令牌验证
 
 OAuth 代理需要兼容的 `TokenVerifier` 来验证来自您提供程序的令牌。不同的提供程序使用不同的令牌格式：
 
-- **JWT 令牌**（Google、Azure）：使用 `JWTVerifier` 与提供程序的 JWKS 端点
-- **不透明令牌**（GitHub、Discord）：使用特定于提供程序的验证器或实现自定义验证
+- **JWT 令牌**（Google、Azure）：使用 `JWTVerifier` 和提供程序的 JWKS 端点
+- **不透明令牌**（GitHub、Discord）：使用特定提供程序的验证器或实现自定义验证
 
-有关您提供程序的详细设置说明，请参阅[令牌验证指南](/zh/servers/auth/token-verification)。
+有关您的提供程序的详细设置说明，请参阅[令牌验证指南](/servers/auth/token-verification)。
 
 ## 环境配置
 
@@ -298,7 +391,7 @@ OAuth 代理需要兼容的 `TokenVerifier` 来验证来自您提供程序的令
 # 指定提供程序实现
 export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.github.GitHubProvider
 
-# 特定于提供程序的凭据
+# 特定提供程序的凭据
 export FASTMCP_SERVER_AUTH_GITHUB_CLIENT_ID="Ov23li..."
 export FASTMCP_SERVER_AUTH_GITHUB_CLIENT_SECRET="abc123..."
 export FASTMCP_SERVER_AUTH_GITHUB_BASE_URL="https://your-production-server.com"
@@ -315,7 +408,7 @@ mcp = FastMCP(name="My Server")
 @mcp.tool
 def protected_tool(data: str) -> str:
     """此工具现在受 OAuth 保护。"""
-    return f"已处理：{data}"
+    return f"处理完成：{data}"
 
 if __name__ == "__main__":
     mcp.run(transport="http", port=8000)

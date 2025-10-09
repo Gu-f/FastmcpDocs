@@ -6,14 +6,14 @@ sidebarTitle: mcp_server_config
 # `fastmcp.utilities.mcp_server_config.v1.mcp_server_config`
 
 
-FastMCP Configuration File Support.
+FastMCP 配置文件支持。
 
-This module provides support for fastmcp.json configuration files that allow
-users to specify server settings in a declarative format instead of using
-command-line arguments.
+此模块为 fastmcp.json 配置文件提供支持，允许
+用户以声明式格式指定服务器设置，而不使用
+命令行参数。
 
 
-## Functions
+## 函数
 
 ### `generate_schema` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L415" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -22,29 +22,29 @@ generate_schema(output_path: Path | str | None = None) -> dict[str, Any] | None
 ```
 
 
-Generate JSON schema for fastmcp.json files.
+为 fastmcp.json 文件生成 JSON 模式。
 
-This is used to create the schema file that IDEs can use for
-validation and auto-completion.
+这用于创建 IDE 可用于
+验证和自动补全的模式文件。
 
-**Args:**
-- `output_path`: Optional path to write the schema to. If provided,
-        writes the schema and returns None. If not provided,
-        returns the schema as a dictionary.
+**参数：**
+- `output_path`: 写入模式的可选路径。如果提供，
+        则写入模式并返回 None。如果未提供，
+        则将模式作为字典返回。
 
-**Returns:**
-- JSON schema as a dictionary if output_path is None, otherwise None
+**返回值：**
+- 如果 output_path 为 None，则返回字典形式的 JSON 模式，否则返回 None
 
 
-## Classes
+## 类
 
 ### `Deployment` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L36" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Configuration for server deployment and runtime settings.
+服务器部署和运行时设置的配置。
 
 
-**Methods:**
+**方法：**
 
 #### `apply_runtime_settings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L85" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -52,26 +52,26 @@ Configuration for server deployment and runtime settings.
 apply_runtime_settings(self, config_path: Path | None = None) -> None
 ```
 
-Apply runtime settings like environment variables and working directory.
+应用运行时设置，如环境变量和工作目录。
 
-**Args:**
-- `config_path`: Path to config file for resolving relative paths
+**参数：**
+- `config_path`: 用于解析相对路径的配置文件路径
 
-Environment variables support interpolation with ${VAR_NAME} syntax.
-For example: "API_URL": "https://api.${ENVIRONMENT}.example.com"
-will substitute the value of the ENVIRONMENT variable at runtime.
+环境变量支持使用 ${VAR_NAME} 语法进行插值。
+例如："API_URL": "https://api.${ENVIRONMENT}.example.com"
+将在运行时替换 ENVIRONMENT 变量的值。
 
 
 ### `MCPServerConfig` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L134" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Configuration for a FastMCP server.
+FastMCP 服务器的配置。
 
-This configuration file allows you to specify all settings needed to run
-a FastMCP server in a declarative format.
+此配置文件允许您以声明式格式指定运行
+FastMCP 服务器所需的所有设置。
 
 
-**Methods:**
+**方法：**
 
 #### `validate_source` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L183" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -79,14 +79,14 @@ a FastMCP server in a declarative format.
 validate_source(cls, v: dict | Source) -> SourceType
 ```
 
-Validate and convert source to proper format.
+验证并将源转换为正确的格式。
 
-Supports:
-- Dict format: `{"path": "server.py", "entrypoint": "app"}`
-- FileSystemSource instance (passed through)
+支持：
+- 字典格式：`{"path": "server.py", "entrypoint": "app"}`
+- FileSystemSource 实例（直接传递）
 
-No string parsing happens here - that's only at CLI boundaries.
-MCPServerConfig works only with properly typed objects.
+这里不会发生字符串解析 - 这只在 CLI 边界发生。
+MCPServerConfig 只使用正确类型的对象。
 
 
 #### `validate_environment` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L199" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -95,9 +95,9 @@ MCPServerConfig works only with properly typed objects.
 validate_environment(cls, v: dict | Any) -> EnvironmentType
 ```
 
-Ensure environment has a type field for discrimination.
+确保环境具有用于区分的类型字段。
 
-For backward compatibility, if no type is specified, default to "uv".
+为了向后兼容，如果未指定类型，则默认为 "uv"。
 
 
 #### `validate_deployment` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L210" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -106,11 +106,11 @@ For backward compatibility, if no type is specified, default to "uv".
 validate_deployment(cls, v: dict | Deployment) -> Deployment
 ```
 
-Validate and convert deployment to Deployment.
+验证并将部署转换为 Deployment。
 
-Accepts:
-- Deployment instance
-- dict that can be converted to Deployment
+接受：
+- Deployment 实例
+- 可转换为 Deployment 的字典
 
 
 #### `from_file` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L223" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -119,18 +119,18 @@ Accepts:
 from_file(cls, file_path: Path) -> MCPServerConfig
 ```
 
-Load configuration from a JSON file.
+从 JSON 文件加载配置。
 
-**Args:**
-- `file_path`: Path to the configuration file
+**参数：**
+- `file_path`: 配置文件的路径
 
-**Returns:**
-- MCPServerConfig instance
+**返回值：**
+- MCPServerConfig 实例
 
-**Raises:**
-- `FileNotFoundError`: If the file doesn't exist
-- `json.JSONDecodeError`: If the file is not valid JSON
-- `pydantic.ValidationError`: If the configuration is invalid
+**引发异常：**
+- `FileNotFoundError`: 如果文件不存在
+- `json.JSONDecodeError`: 如果文件不是有效的 JSON
+- `pydantic.ValidationError`: 如果配置无效
 
 
 #### `from_cli_args` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L246" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -139,29 +139,29 @@ Load configuration from a JSON file.
 from_cli_args(cls, source: FileSystemSource, transport: Literal['stdio', 'http', 'sse', 'streamable-http'] | None = None, host: str | None = None, port: int | None = None, path: str | None = None, log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] | None = None, python: str | None = None, dependencies: list[str] | None = None, requirements: str | None = None, project: str | None = None, editable: str | None = None, env: dict[str, str] | None = None, cwd: str | None = None, args: list[str] | None = None) -> MCPServerConfig
 ```
 
-Create a config from CLI arguments.
+从 CLI 参数创建配置。
 
-This allows us to have a single code path where everything
-goes through a config object.
+这允许我们有一个单一的代码路径，其中所有内容
+都通过配置对象。
 
-**Args:**
-- `source`: Server source (FileSystemSource instance)
-- `transport`: Transport protocol
-- `host`: Host for HTTP transport
-- `port`: Port for HTTP transport
-- `path`: URL path for server
-- `log_level`: Logging level
-- `python`: Python version
-- `dependencies`: Python packages to install
-- `requirements`: Path to requirements file
-- `project`: Path to project directory
-- `editable`: Path to install in editable mode
-- `env`: Environment variables
-- `cwd`: Working directory
-- `args`: Server arguments
+**参数：**
+- `source`: 服务器源（FileSystemSource 实例）
+- `transport`: 传输协议
+- `host`: HTTP 传输的主机
+- `port`: HTTP 传输的端口
+- `path`: 服务器的 URL 路径
+- `log_level`: 日志级别
+- `python`: Python 版本
+- `dependencies`: 要安装的 Python 包
+- `requirements`: requirements 文件的路径
+- `project`: 项目目录的路径
+- `editable`: 以可编辑模式安装的路径
+- `env`: 环境变量
+- `cwd`: 工作目录
+- `args`: 服务器参数
 
-**Returns:**
-- MCPServerConfig instance
+**返回值：**
+- MCPServerConfig 实例
 
 
 #### `find_config` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L323" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -170,13 +170,13 @@ goes through a config object.
 find_config(cls, start_path: Path | None = None) -> Path | None
 ```
 
-Find a fastmcp.json file in the specified directory.
+在指定目录中查找 fastmcp.json 文件。
 
-**Args:**
-- `start_path`: Directory to look in (defaults to current directory)
+**参数：**
+- `start_path`: 要查找的目录（默认为当前目录）
 
-**Returns:**
-- Path to the configuration file, or None if not found
+**返回值：**
+- 配置文件的路径，如果未找到则为 None
 
 
 #### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L342" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -185,14 +185,14 @@ Find a fastmcp.json file in the specified directory.
 prepare(self, skip_source: bool = False, output_dir: Path | None = None) -> None
 ```
 
-Prepare environment and source for execution.
+为执行准备环境和源。
 
-When output_dir is provided, creates a persistent uv project.
-When output_dir is None, does ephemeral caching (for backwards compatibility).
+当提供 output_dir 时，创建一个持久化的 uv 项目。
+当 output_dir 为 None 时，执行临时缓存（为了向后兼容）。
 
-**Args:**
-- `skip_source`: Skip source preparation if True
-- `output_dir`: Directory to create the persistent uv project in (optional)
+**参数：**
+- `skip_source`: 如果为 True，则跳过源准备
+- `output_dir`: 在其中创建持久化 uv 项目的目录（可选）
 
 
 #### `prepare_environment` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L363" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -201,13 +201,13 @@ When output_dir is None, does ephemeral caching (for backwards compatibility).
 prepare_environment(self, output_dir: Path | None = None) -> None
 ```
 
-Prepare the Python environment.
+准备 Python 环境。
 
-**Args:**
-- `output_dir`: If provided, creates a persistent uv project in this directory.
-       If None, just populates uv's cache for ephemeral use.
+**参数：**
+- `output_dir`: 如果提供，在此目录中创建持久化的 uv 项目。
+       如果为 None，则只填充 uv 的缓存以供临时使用。
 
-Delegates to the environment's prepare() method
+委托给环境的 prepare() 方法
 
 
 #### `prepare_source` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L374" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -216,9 +216,9 @@ Delegates to the environment's prepare() method
 prepare_source(self) -> None
 ```
 
-Prepare the source for loading.
+为加载准备源。
 
-Delegates to the source's prepare() method.
+委托给源的 prepare() 方法。
 
 
 #### `run_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py#L381" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -227,9 +227,9 @@ Delegates to the source's prepare() method.
 run_server(self, **kwargs: Any) -> None
 ```
 
-Load and run the server with this configuration.
+使用此配置加载并运行服务器。
 
-**Args:**
-- `**kwargs`: Additional arguments to pass to server.run_async()
-     These override config settings
+**参数：**
+- `**kwargs`: 传递给 server.run_async() 的附加参数
+     这些参数会覆盖配置设置
 

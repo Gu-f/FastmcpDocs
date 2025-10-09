@@ -119,8 +119,7 @@ to_transport(self) -> StreamableHttpTransport | SSETransport
 wrap_servers_at_root(cls, values: dict[str, Any]) -> dict[str, Any]
 ```
 
-If there's no mcpServers key but there are server configs at root, wrap them.
-
+如果不存在“mcpServers”键，但根目录中有服务器配置信息，则对其进行封装。
 
 #### `add_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/mcp_config.py#L270" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 

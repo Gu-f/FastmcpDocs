@@ -1,0 +1,174 @@
+---
+title: Gemini CLI 🤝 FastMCP
+sidebarTitle: Gemini CLI
+description: 在 Gemini CLI 中安装和使用 FastMCP 服务器
+icon: message-smile
+tag: NEW
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+import { LocalFocusTip } from "/snippets/local-focus-zh.mdx"
+
+<LocalFocusTip />
+
+Gemini CLI 通过多种传输方法（包括 STDIO、SSE 和 HTTP）支持 MCP 服务器，允许您使用来自 FastMCP 服务器的自定义工具、资源和提示扩展 Gemini 的功能。
+
+## 需求
+
+此集成使用 STDIO 传输在本地运行您的 FastMCP 服务器。对于远程部署，您可以使用 HTTP 或 SSE 传输运行 FastMCP 服务器，并使用 Gemini CLI 的内置 MCP 管理命令直接配置它。
+
+## 创建服务器
+
+本指南中的示例将使用以下简单的投骰子服务器，保存为 `server.py`。
+
+```python server.py
+import random
+from fastmcp import FastMCP
+
+mcp = FastMCP(name="Dice Roller")
+
+@mcp.tool
+def roll_dice(n_dice: int) -> list[int]:
+    """投出 `n_dice` 个 6 面骰子并返回结果。"""
+    return [random.randint(1, 6) for _ in range(n_dice)]
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+## 安装服务器
+
+### FastMCP CLI
+<VersionBadge version="2.13.0" />
+
+在 Gemini CLI 中安装 FastMCP 服务器的最简单方法是使用 `fastmcp install gemini-cli` 命令。这自动处理配置、依赖管理，并调用 Gemini CLI 的内置 MCP 管理系统。
+
+```bash
+fastmcp install gemini-cli server.py
+```
+
+安装命令支持与 `run` 命令相同的 `file.py:object` 记号法。如果未指定对象，它将自动在您的文件中查找名为 `mcp`、`server` 或 `app` 的 FastMCP 服务器对象：
+
+```bash
+# 如果您的服务器对象名为 'mcp'，这些是等价的
+fastmcp install gemini-cli server.py
+fastmcp install gemini-cli server.py:mcp
+
+# 如果您的服务器有不同的名称，请使用显式对象名称
+fastmcp install gemini-cli server.py:my_custom_server
+```
+
+该命令将使用 Gemini CLI 的 `gemini mcp add` 命令自动配置服务器。
+
+#### 依赖
+
+FastMCP 为您的 Gemini CLI 服务器提供灵活的依赖管理选项：
+
+**单个包**: 使用 `--with` 标志指定您的服务器需要的包。您可以多次使用此标志：
+
+```bash
+fastmcp install gemini-cli server.py --with pandas --with requests
+```
+
+**需求文件**: 如果您维护一个包含所有依赖的 `requirements.txt` 文件，请使用 `--with-requirements` 来安装它们：
+
+```bash
+fastmcp install gemini-cli server.py --with-requirements requirements.txt
+```
+
+**可编辑包**: 对于正在开发的本地包，请使用 `--with-editable` 以可编辑模式安装它们：
+
+```bash
+fastmcp install gemini-cli server.py --with-editable ./my-local-package
+```
+
+或者，您可以使用 `fastmcp.json` 配置文件（推荐）：
+
+```json fastmcp.json
+{
+  "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
+  "source": {
+    "path": "server.py",
+    "entrypoint": "mcp"
+  },
+  "environment": {
+    "dependencies": ["pandas", "requests"]
+  }
+}
+```
+
+
+#### Python 版本和项目配置
+
+使用这些选项控制您服务器的 Python 环境：
+
+**Python 版本**: 使用 `--python` 指定您的服务器需要的 Python 版本。当您的服务器需要特定的 Python 功能时，这确保了兼容性：
+
+```bash
+fastmcp install gemini-cli server.py --python 3.11
+```
+
+**项目目录**: 使用 `--project` 在特定项目上下文中运行您的服务器。这告诉 `uv` 使用项目的配置文件和虚拟环境：
+
+```bash
+fastmcp install gemini-cli server.py --project /path/to/my-project
+```
+
+#### 环境变量
+
+如果您的服务器需要环境变量（如 API 密钥），您必须包含它们：
+
+```bash
+fastmcp install gemini-cli server.py --server-name "天气服务器" \
+  --env API_KEY=your-api-key \
+  --env DEBUG=true
+```
+
+或者从 `.env` 文件中加载它们：
+
+```bash
+fastmcp install gemini-cli server.py --server-name "天气服务器" --env-file .env
+```
+
+<Warning>
+**必须安装 Gemini CLI**。该集成查找 Gemini CLI 并使用 `gemini mcp add` 命令来注册服务器。
+</Warning>
+
+### 手动配置
+
+为了更好地控制配置，您可以手动使用 Gemini CLI 的内置 MCP 管理命令。这给您对服务器启动方式的直接控制：
+
+```bash
+# 添加带有自定义配置的服务器
+gemini mcp add dice-roller uv -- run --with fastmcp fastmcp run server.py
+
+# 添加带有环境变量的服务器
+gemini mcp add weather-server -e API_KEY=secret -e DEBUG=true uv -- run --with fastmcp fastmcp run server.py
+
+# 添加带有特定作用域（用户或项目）的服务器
+gemini mcp add my-server --scope user uv -- run --with fastmcp fastmcp run server.py
+```
+
+您也可以在 Gemini CLI 命令中手动指定 Python 版本和项目目录：
+
+```bash
+# 使用特定 Python 版本
+gemini mcp add ml-server uv -- run --python 3.11 --with fastmcp fastmcp run server.py
+
+# 在项目目录内
+gemini mcp add project-server uv -- run --project /path/to/project --with fastmcp fastmcp run server.py
+```
+
+## 使用服务器
+
+一旦您的服务器安装完成，您就可以开始在 Gemini CLI 中使用您的 FastMCP 服务器。
+
+尝试向 Gemini 询问以下内容：
+
+> "为我投一些骰子"
+
+Gemini 将自动检测您的 `roll_dice` 工具并使用它来完成您的请求。
+
+Gemini CLI 现在可以访问您在 FastMCP 服务器中定义的所有工具和提示。 
+
+如果您的服务器提供提示，您可以使用 `/prompt_name` 将它们作为斜杠命令使用。

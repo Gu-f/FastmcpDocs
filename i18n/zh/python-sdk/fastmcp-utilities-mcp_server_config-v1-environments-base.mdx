@@ -5,15 +5,15 @@ sidebarTitle: base
 
 # `fastmcp.utilities.mcp_server_config.v1.environments.base`
 
-## Classes
+## 类
 
 ### `Environment` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/base.py#L7" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Base class for environment configuration.
+环境配置的基类。
 
 
-**Methods:**
+**方法：**
 
 #### `build_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/base.py#L13" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -21,13 +21,13 @@ Base class for environment configuration.
 build_command(self, command: list[str]) -> list[str]
 ```
 
-Build the full command with environment setup.
+构建包含环境设置的完整命令。
 
-**Args:**
-- `command`: Base command to wrap with environment setup
+**参数：**
+- `command`: 用环境设置包装的基础命令
 
-**Returns:**
-- Full command ready for subprocess execution
+**返回值：**
+- 准备好用于子进程执行的完整命令
 
 
 #### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/base.py#L24" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -36,8 +36,8 @@ Build the full command with environment setup.
 prepare(self, output_dir: Path | None = None) -> None
 ```
 
-Prepare the environment (optional, can be no-op).
+准备环境（可选，可以是空操作）。
 
-**Args:**
-- `output_dir`: Directory for persistent environment setup
+**参数：**
+- `output_dir`: 用于持久化环境设置的目录
 

@@ -102,7 +102,7 @@ fastmcp run my_server.py:mcp --transport http --port 8000
 import asyncio
 from fastmcp import Client
 
-client = Client("http://localhost:8000")
+client = Client("http://localhost:8000/mcp")
 
 async def call_tool(name: str):
     async with client:
@@ -119,11 +119,10 @@ asyncio.run(call_tool("Ford"))
 
 ## 部署到 FastMCP Cloud
 
-
 [FastMCP Cloud](https://fastmcp.cloud) 是由 [Prefect](https://www.prefect.io/fastmcp) 的 FastMCP 团队运营的托管服务。它经过优化，可以尽可能快速地部署经过身份验证的 FastMCP 服务器，为您提供一个安全的 URL，您可以将其插入到任何 LLM 客户端中。
 
 <Info>
-请注意，FastMCP Cloud 是一项商业服务，但对于大多数个人服务器来说是完全免费的。
+FastMCP Cloud对个人服务器**免费开放**，并为团队提供按需付费的简易计费方案。
 </Info>
 
 要部署您的服务器，您需要一个 [GitHub 账户](https://github.com)。一旦您有了账户，您可以通过三个步骤部署您的服务器：

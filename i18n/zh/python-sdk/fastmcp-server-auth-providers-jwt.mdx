@@ -69,21 +69,21 @@ JWT 令牌验证设置。
 ### `JWTVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/jwt.py#L164" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-JWT token verifier supporting both asymmetric (RSA/ECDSA) and symmetric (HMAC) algorithms.
+支持非对称（RSA/ECDSA）和对称（HMAC）算法的 JWT 令牌验证器。
 
-This verifier validates JWT tokens using various signing algorithms:
-- **Asymmetric algorithms** (RS256/384/512, ES256/384/512, PS256/384/512):
-  Uses public/private key pairs. Ideal for external clients and services where
-  only the authorization server has the private key.
-- **Symmetric algorithms** (HS256/384/512): Uses a shared secret for both
-  signing and verification. Perfect for internal microservices and trusted
-  environments where the secret can be securely shared.
+此验证器使用各种签名算法验证 JWT 令牌：
+- **非对称算法**（RS256/384/512、ES256/384/512、PS256/384/512）：
+  使用公钥/私钥对。适用于外部客户端和服务，在这种情况下
+  只有授权服务器拥有私钥。
+- **对称算法**（HS256/384/512）：使用共享密钥进行
+  签名和验证。非常适合内部微服务和可信
+  环境，在这些环境中可以安全地共享密钥。
 
-Use this when:
-- You have JWT tokens issued by an external service (asymmetric)
-- You need JWKS support for automatic key rotation (asymmetric)
-- You have internal microservices sharing a secret key (symmetric)
-- Your tokens contain standard OAuth scopes and claims
+在以下情况下使用：
+- 您有由外部服务颁发的 JWT 令牌（非对称）
+- 您需要 JWKS 支持以实现自动密钥轮换（非对称）
+- 您有共享密钥的内部微服务（对称）
+- 您的令牌包含标准 OAuth 作用域和声明
 
 
 **方法：**

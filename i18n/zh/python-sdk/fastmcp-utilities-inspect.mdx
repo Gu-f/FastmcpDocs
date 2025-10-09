@@ -68,9 +68,9 @@ format_fastmcp_info(info: FastMCPInfo) -> bytes
 ```
 
 
-Format FastMCPInfo as FastMCP-specific JSON.
+将 FastMCPInfo 格式化为 FastMCP 特定的 JSON。
 
-This includes FastMCP-specific fields like tags, enabled, annotations, etc.
+这包括 FastMCP 特定字段，如标签、启用、注释等。
 
 
 ### `format_mcp_info` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L388" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -80,10 +80,10 @@ format_mcp_info(mcp: FastMCP[Any] | FastMCP1x) -> bytes
 ```
 
 
-Format server info as standard MCP protocol JSON.
+将服务器信息格式化为标准 MCP 协议 JSON。
 
-Uses Client to get the standard MCP protocol format with camelCase fields.
-Includes version metadata at the top level.
+使用 Client 获取带有 camelCase 字段的标准 MCP 协议格式。
+在顶级包含版本元数据。
 
 
 ### `format_info` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L421" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -93,15 +93,15 @@ format_info(mcp: FastMCP[Any] | FastMCP1x, format: InspectFormat | Literal['fast
 ```
 
 
-Format server information according to the specified format.
+按照指定格式格式化服务器信息。
 
-**Args:**
-- `mcp`: The FastMCP instance
-- `format`: Output format ("fastmcp" or "mcp")
-- `info`: Pre-extracted FastMCPInfo (optional, will be extracted if not provided)
+**参数：**
+- `mcp`: FastMCP 实例
+- `format`: 输出格式（"fastmcp" 或 "mcp"）
+- `info`: 预提取的 FastMCPInfo（可选，如未提供则将被提取）
 
-**Returns:**
-- JSON bytes in the requested format
+**返回值：**
+- 请求格式的 JSON 字节
 
 
 ## 类
@@ -139,5 +139,5 @@ Format server information according to the specified format.
 ### `InspectFormat` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/inspect.py#L354" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Output format for inspect command.
+inspect命令输出格式.
 

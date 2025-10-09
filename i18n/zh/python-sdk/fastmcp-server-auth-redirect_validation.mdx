@@ -6,9 +6,9 @@ sidebarTitle: redirect_validation
 # `fastmcp.server.auth.redirect_validation`
 
 
-Utilities for validating client redirect URIs in OAuth flows.
+用于在 OAuth 流程中验证客户端重定向 URI 的实用工具。
 
-## Functions
+## 函数
 
 ### `matches_allowed_pattern` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/redirect_validation.py#L8" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -17,20 +17,20 @@ matches_allowed_pattern(uri: str, pattern: str) -> bool
 ```
 
 
-Check if a URI matches an allowed pattern with wildcard support.
+检查 URI 是否与支持通配符的允许模式匹配。
 
-Patterns support * wildcard matching:
-- http://localhost:* matches any localhost port
-- http://127.0.0.1:* matches any 127.0.0.1 port
-- https://*.example.com/* matches any subdomain of example.com
-- https://app.example.com/auth/* matches any path under /auth/
+模式支持 * 通配符匹配：
+- http://localhost:* 匹配任意 localhost 端口
+- http://127.0.0.1:* 匹配任意 127.0.0.1 端口
+- https://*.example.com/* 匹配 example.com 的任意子域名
+- https://app.example.com/auth/* 匹配 /auth/ 下的任意路径
 
-**Args:**
-- `uri`: The redirect URI to validate
-- `pattern`: The allowed pattern (may contain wildcards)
+**参数：**
+- `uri`: 要验证的重定向 URI
+- `pattern`: 允许的模式（可能包含通配符）
 
-**Returns:**
-- True if the URI matches the pattern
+**返回值：**
+- 如果 URI 与模式匹配则返回 True
 
 
 ### `validate_redirect_uri` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/redirect_validation.py#L28" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -40,14 +40,14 @@ validate_redirect_uri(redirect_uri: str | AnyUrl | None, allowed_patterns: list[
 ```
 
 
-Validate a redirect URI against allowed patterns.
+根据允许的模式验证重定向 URI。
 
-**Args:**
-- `redirect_uri`: The redirect URI to validate
-- `allowed_patterns`: List of allowed patterns. If None, all URIs are allowed (for DCR compatibility).
-             If empty list, no URIs are allowed.
-             To restrict to localhost only, explicitly pass DEFAULT_LOCALHOST_PATTERNS.
+**参数：**
+- `redirect_uri`: 要验证的重定向 URI
+- `allowed_patterns`: 允许的模式列表。如果为 None，则允许所有 URI（为 DCR 兼容性）。
+             如果为空列表，则不允许任何 URI。
+             要仅限制为 localhost，请明确传递 DEFAULT_LOCALHOST_PATTERNS。
 
-**Returns:**
-- True if the redirect URI is allowed
+**返回值：**
+- 如果允许重定向 URI 则返回 True
 

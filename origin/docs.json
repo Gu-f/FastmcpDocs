@@ -4,9 +4,6 @@
     "default": "system",
     "strict": false
   },
-  "interaction": {
-    "drilldown": false
-  },
   "background": {
     "color": {
       "dark": "#222831",
@@ -14,8 +11,11 @@
     },
     "decoration": "windows"
   },
+  "contextual": {
+    "options": ["copy", "view"]
+  },
   "banner": {
-    "content": "Remote MCP that just works:  [FastMCP Cloud is here!](https://fastmcp.link/IhmBxWn) "
+    "content": "Host your server on [FastMCP Cloud](https://fastmcp.cloud) for free!"
   },
   "colors": {
     "dark": "#f72585",
@@ -39,12 +39,22 @@
       "measurementId": "G-64R5W1TJXG"
     }
   },
+  "interaction": {
+    "drilldown": false
+  },
   "logo": {
-    "dark": "/assets/brand/logo-wordmark-dark.svg",
-    "light": "/assets/brand/logo-wordmark.svg"
+    "dark": "/assets/brand/wordmark-white.png",
+    "light": "/assets/brand/wordmark.png"
   },
   "name": "FastMCP",
   "navbar": {
+    "links": [
+      {
+        "href": "https://fastmcp.cloud",
+        "label": "FastMCP Cloud",
+        "icon": "cloud"
+      }
+    ],
     "primary": {
       "href": "https://github.com/jlowin/fastmcp",
       "type": "github"
@@ -97,6 +107,7 @@
                   "servers/auth/token-verification",
                   "servers/auth/remote-oauth",
                   "servers/auth/oauth-proxy",
+                  "servers/auth/oidc-proxy",
                   "servers/auth/full-oauth-server"
                 ]
               },
@@ -155,8 +166,11 @@
                 "group": "Authentication",
                 "icon": "key",
                 "pages": [
+                  "integrations/auth0",
                   "integrations/authkit",
+                  "integrations/aws-cognito",
                   "integrations/azure",
+                  "integrations/descope",
                   "integrations/github",
                   "integrations/google",
                   "integrations/workos"
@@ -178,6 +192,7 @@
                   "integrations/claude-code",
                   "integrations/claude-desktop",
                   "integrations/cursor",
+                  "integrations/gemini-cli",
                   "integrations/mcp-json-configuration"
                 ]
               },
@@ -247,6 +262,7 @@
                       "python-sdk/fastmcp-cli-install-claude_code",
                       "python-sdk/fastmcp-cli-install-claude_desktop",
                       "python-sdk/fastmcp-cli-install-cursor",
+                      "python-sdk/fastmcp-cli-install-gemini_cli",
                       "python-sdk/fastmcp-cli-install-mcp_json",
                       "python-sdk/fastmcp-cli-install-shared"
                     ]
@@ -422,6 +438,6 @@
   "theme": "mint",
   "thumbnails": {
     "appearance": "light",
-    "background": "/assets/brand/card-background.png"
+    "background": "/assets/brand/thumbnail-background.png"
   }
 }

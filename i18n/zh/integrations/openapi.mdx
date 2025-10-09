@@ -217,7 +217,7 @@ mcp = FastMCP.from_openapi(
 除了更精确地针对方法、模式和标签之外，此函数还可以访问有关路由的任何其他 OpenAPI 元数据。
 
 <Tip>
-`route_map_fn` **会**在在您的自定义映射中匹配 `MCPType.EXCLUDE` 的路由上被调用，让您有机会覆盖排除。
+FastMCP Cloud对个人服务器**免费开放**，并为团队提供按需付费的简易计费方案。`route_map_fn` 会应用于所有路由，即使在自定义映射中匹配了 `MCPType.EXCLUDE` 的路由。这为你提供了自定义映射或覆盖排除规则的机会。
 </Tip>
 
 ```python

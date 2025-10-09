@@ -4,9 +4,6 @@
     "default": "system",
     "strict": false
   },
-  "interaction": {
-    "drilldown": false
-  },
   "background": {
     "color": {
       "dark": "#222831",
@@ -14,8 +11,11 @@
     },
     "decoration": "windows"
   },
+  "contextual": {
+    "options": ["copy", "view"]
+  },
   "banner": {
-    "content": "Remote MCP that just works:  [FastMCP Cloud is here!](https://fastmcp.link/IhmBxWn) "
+    "content": "Host your server on [FastMCP Cloud](https://fastmcp.cloud) for free!"
   },
   "colors": {
     "dark": "#f72585",
@@ -40,9 +40,12 @@
       "measurementId": "G-64R5W1TJXG"
     }
   },
+  "interaction": {
+    "drilldown": false
+  },
   "logo": {
-    "dark": "/assets/brand/logo-wordmark-dark.svg",
-    "light": "/assets/brand/logo-wordmark.svg"
+    "dark": "/assets/brand/wordmark-white.png",
+    "light": "/assets/brand/wordmark.png"
   },
   "name": "FastMCP",
   "navbar": {
@@ -53,7 +56,13 @@
     "links": [
       {
         "label": "Docs i18n Repo",
-        "href": "https://github.com/Gu-f/FastmcpDocs"
+        "href": "https://github.com/Gu-f/FastmcpDocs",
+        "icon": "github"
+      },
+      {
+        "href": "https://fastmcp.cloud",
+        "label": "FastMCP Cloud",
+        "icon": "cloud"
       }
     ]
   },
@@ -76,6 +85,6 @@
   "theme": "mint",
   "thumbnails": {
     "appearance": "light",
-    "background": "/assets/brand/card-background.png"
+    "background": "/assets/brand/thumbnail-background.png"
   }
 }

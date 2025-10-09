@@ -95,7 +95,7 @@ to_mcp_template(self, **overrides: Any) -> MCPResourceTemplate
 将资源模板转换为 MCPResourceTemplate。
 
 
-#### `from_mcp_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L169" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `from_mcp_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L171" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 from_mcp_template(cls, mcp_template: MCPResourceTemplate) -> ResourceTemplate
@@ -104,7 +104,7 @@ from_mcp_template(cls, mcp_template: MCPResourceTemplate) -> ResourceTemplate
 从原始的 MCP ResourceTemplate 对象创建 FastMCP ResourceTemplate。
 
 
-#### `key` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L182" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `key` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L184" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 key(self) -> str
@@ -116,7 +116,7 @@ key(self) -> str
 同一工具可能具有不同的键。
 
 
-### `FunctionResourceTemplate` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L192" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `FunctionResourceTemplate` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L194" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 用于动态创建资源的模板。
@@ -124,7 +124,7 @@ key(self) -> str
 
 **方法：**
 
-#### `read` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L197" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `read` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L199" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 read(self, arguments: dict[str, Any]) -> str | bytes
@@ -133,7 +133,7 @@ read(self, arguments: dict[str, Any]) -> str | bytes
 读取资源内容。
 
 
-#### `from_function` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L213" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `from_function` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/template.py#L215" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 from_function(cls, fn: Callable[..., Any], uri_template: str, name: str | None = None, title: str | None = None, description: str | None = None, mime_type: str | None = None, tags: set[str] | None = None, enabled: bool | None = None, annotations: Annotations | None = None, meta: dict[str, Any] | None = None) -> FunctionResourceTemplate

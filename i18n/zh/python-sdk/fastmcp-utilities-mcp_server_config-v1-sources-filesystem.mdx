@@ -5,15 +5,15 @@ sidebarTitle: filesystem
 
 # `fastmcp.utilities.mcp_server_config.v1.sources.filesystem`
 
-## Classes
+## 类
 
 ### `FileSystemSource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/filesystem.py#L15" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-Source for local Python files.
+本地 Python 文件的源。
 
 
-**Methods:**
+**方法：**
 
 #### `parse_path_with_object` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/filesystem.py#L28" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -21,10 +21,10 @@ Source for local Python files.
 parse_path_with_object(cls, v: str) -> str
 ```
 
-Parse path:object syntax and extract the object name.
+解析 path:object 语法并提取对象名称。
 
-This validator runs before the model is created, allowing us to
-handle the "file.py:object" syntax at the model boundary.
+此验证器在创建模型之前运行，允许我们在
+模型边界处理 "file.py:object" 语法。
 
 
 #### `load_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/filesystem.py#L63" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -33,5 +33,5 @@ handle the "file.py:object" syntax at the model boundary.
 load_server(self) -> Any
 ```
 
-Load server from filesystem.
+从文件系统加载服务器。
 

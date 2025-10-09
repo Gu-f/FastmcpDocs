@@ -10,21 +10,20 @@ sidebarTitle: cli
 
 ## 函数
 
-### `with_argv` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L68" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `with_argv` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L69" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 with_argv(args: list[str] | None)
 ```
 
 
-Temporarily replace sys.argv if args provided.
+如果提供了参数，临时替换 sys.argv。
 
-This context manager is used at the CLI boundary to inject
-server arguments when needed, without mutating sys.argv deep
-in the source loading logic.
+此上下文管理器在 CLI 边界使用，用于在需要时注入
+服务器参数，而不会在源代码加载逻辑深处变更 sys.argv。
 
-Args are provided without the script name, so we preserve sys.argv[0]
-and replace the rest.
+参数提供时不包含脚本名称，因此我们保留 sys.argv[0]
+并替换其余部分。
 
 
 ### `version` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L91" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -47,7 +46,7 @@ dev(server_spec: str | None = None) -> None
 使用 MCP Inspector 运行 MCP 服务器进行开发。
 
 **参数：**
-- `server_spec`: Python file to run, optionally with \:object suffix, or None to auto-detect fastmcp.json
+- `server_spec`: 要运行的 Python 文件，可选带有 \:object 后缀，或 None 以自动检测 fastmcp.json
 
 
 ### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L310" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -57,21 +56,21 @@ run(server_spec: str | None = None, *server_args: str) -> None
 ```
 
 
-The server can be specified in several ways:
+服务器可以通过几种方式指定：
 
 服务器可以通过四种方式指定：
 1. 模块方式："server.py" - 直接运行模块，查找名为 'mcp'、'server' 或 'app' 的对象
 2. 导入方式："server.py:app" - 导入并运行指定的服务器对象
 3. URL 方式："http://server-url" - 连接到远程服务器并创建代理
 4. MCPConfig 文件："mcp.json" - 作为 MCPConfig 文件中 MCP 服务器的代理服务器运行
-5. FastMCP config: "fastmcp.json" - runs server using FastMCP configuration
-6. No argument: looks for fastmcp.json in current directory
+5. FastMCP 配置："fastmcp.json" - 使用 FastMCP 配置运行服务器
+6. 无参数：在当前目录中查找 fastmcp.json
 
 服务器参数可以在 -- 后传递：
 fastmcp run server.py -- --config config.json --debug
 
 **参数：**
-- `server_spec`: Python file, object specification (file\:obj), config file, URL, or None to auto-detect
+- `server_spec`: Python 文件、对象规范 (file\:obj)、配置文件、URL，或 None 以自动检测
 
 
 ### `inspect` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L524" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -81,28 +80,28 @@ inspect(server_spec: str | None = None) -> None
 ```
 
 
-Inspect an MCP server and display information or generate a JSON report.
+检查 MCP 服务器并显示信息或生成 JSON 报告。
 
-This command analyzes an MCP server. Without flags, it displays a text summary.
-Use --format to output complete JSON data.
+此命令分析 MCP 服务器。不带标志时，它显示文本摘要。
+使用 --format 输出完整的 JSON 数据。
 
 **Examples:**
 
-# Show text summary
+# 显示文本摘要
 fastmcp inspect server.py
 
-# Output FastMCP format JSON to stdout
+# 将 FastMCP 格式 JSON 输出到标准输出
 fastmcp inspect server.py --format fastmcp
 
-# Save MCP protocol format to file (format required with -o)
+# 将 MCP 协议格式保存到文件（使用 -o 时需要格式）
 fastmcp inspect server.py --format mcp -o manifest.json
 
-# Inspect from fastmcp.json configuration
+# 从 fastmcp.json 配置检查
 fastmcp inspect fastmcp.json
-fastmcp inspect  # auto-detect fastmcp.json
+fastmcp inspect  # 自动检测 fastmcp.json
 
 **Args:**
-- `server_spec`: Python file to inspect, optionally with \:object suffix, or fastmcp.json
+- `server_spec`: 要检查的 Python 文件，可选带有 \:object 后缀，或 fastmcp.json
 
 
 ### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L765" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -112,18 +111,18 @@ prepare(config_path: Annotated[str | None, cyclopts.Parameter(help='Path to fast
 ```
 
 
-Prepare a FastMCP project by creating a persistent uv environment.
+通过创建持久性 uv 环境来准备 FastMCP 项目。
 
-This command creates a persistent uv project with all dependencies installed:
-- Creates a pyproject.toml with dependencies from the config
-- Installs all Python packages into a .venv
-- Prepares the source (git clone, download, etc.) unless --skip-source
+此命令创建一个安装了所有依赖的持久性 uv 项目：
+- 从配置中创建带有依赖的 pyproject.toml
+- 将所有 Python 包安装到 .venv 中
+- 准备源代码（git clone、下载等），除非使用 --skip-source
 
-After running this command, you can use:
+运行此命令后，您可以使用：
 fastmcp run &lt;config&gt; --project &lt;output-dir&gt;
 
-This is useful for:
-- CI/CD pipelines with separate build and run stages
-- Docker images where you prepare during build
-- Production deployments where you want fast startup times
+这对以下情况很有用：
+- 具有分离的构建和运行阶段的 CI/CD 管道
+- 在构建期间准备的 Docker 镜像
+- 需要快速启动时间的生产部署
 

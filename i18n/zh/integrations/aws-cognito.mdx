@@ -1,0 +1,322 @@
+---
+title: AWS Cognito OAuth 🤝 FastMCP
+sidebarTitle: AWS Cognito
+description: 使用 AWS Cognito 用户池保护您的 FastMCP 服务器
+icon: aws
+tag: NEW
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+<VersionBadge version="2.12.4" />
+
+本指南向您展示如何使用 **AWS Cognito 用户池**保护您的 FastMCP 服务器。由于 AWS Cognito 不支持动态客户端注册，此集成使用 [**OAuth 代理**](/zh/servers/auth/oauth-proxy) 模式来桥接 AWS Cognito 的传统 OAuth 与 MCP 的身份验证需求。它还包括强大的 JWT 令牌验证，确保企业级身份验证。
+
+## 配置
+
+### 前提条件
+
+开始之前，您需要：
+1. 一个有权限创建 AWS Cognito 用户池的 **[AWS 账户](https://aws.amazon.com/)**
+2. 对 AWS Cognito 概念（用户池、应用程序客户端）的基本了解
+3. 您的 FastMCP 服务器 URL（开发环境可以是 localhost，例如 `http://localhost:8000`）
+
+### 步骤 1：创建 AWS Cognito 用户池和应用程序客户端
+
+设置带有应用程序客户端的 AWS Cognito 用户池以获取身份验证所需的凭据：
+
+<Steps>
+<Step title="导航到 AWS Cognito">
+    转到 **[AWS Cognito 控制台](https://console.aws.amazon.com/cognito/)** 并确保您在所需的 AWS 区域中。
+
+    从侧边导航中选择 **"用户池"**（如果看不到，请点击左上角的汉堡包图标），然后点击 **"创建用户池"** 创建新的用户池。
+</Step>
+
+<Step title="定义您的应用程序">
+    AWS Cognito 现在提供简化的设置体验：
+
+    1. **应用程序类型**: 选择 **"传统 Web 应用程序"**（这是 FastMCP 服务器端身份验证的正确选择）
+    2. **为您的应用程序命名**: 输入描述性名称（例如，`FastMCP Server`）
+
+    传统 Web 应用程序类型自动配置：
+    - 带有客户端密钥的服务器端身份验证
+    - 授权码授予流程
+    - 适合机密客户端的安全设置
+
+    <Info>
+    选择“传统 Web 应用程序”而不是 SPA、移动应用程序或机器对机器选项。这确保了 FastMCP 的正确 OAuth 2.0 配置。
+    </Info>
+</Step>
+
+<Step title="配置选项">
+    AWS 将引导您完成配置选项：
+
+    - **登录标识符**: 选择用户登录方式（电子邮件、用户名或电话）
+    - **必需属性**: 选择您需要的任何附加用户信息
+    - **返回 URL**: 添加您的回调 URL（例如，开发环境为 `http://localhost:8000/auth/callback`）
+
+    <Tip>
+    简化界面根据您的应用程序类型选择自动处理大多数 OAuth 安全设置。
+    </Tip>
+</Step>
+
+<Step title="审查和创建">
+    审查您的配置并点击 **"创建用户池"**。
+
+    创建后，您将看到用户池详细信息。保存这些重要值：
+    - **用户池 ID**（格式：`eu-central-1_XXXXXXXXX`）
+    - **客户端 ID**（在侧边导航中找到 → "应用程序" → "应用程序客户端" → \<您的应用程序名称，例如 `FastMCP Server`\> → "应用程序客户端信息"）
+    - **客户端密钥**（在侧边导航中找到 → "应用程序" → "应用程序客户端" → \<您的应用程序名称，例如 `FastMCP Server`\> → "应用程序客户端信息"）
+
+    <Tip>
+    用户池 ID 和应用程序客户端凭据是 FastMCP 配置所需的全部。
+    </Tip>
+</Step>
+
+<Step title="配置 OAuth 设置">
+    在您的应用程序客户端设置中的“登录页面”下，您可以双重检查并调整 OAuth 配置：
+
+    - **允许的回调 URL**: 添加您的服务器 URL + `/auth/callback`（例如，`http://localhost:8000/auth/callback`）
+    - **允许的注销 URL**: 可选，用于注销功能
+    - **OAuth 2.0 授予类型**: 确保选择了“授权码授予”
+    - **OpenID Connect 作用域**: 选择您的应用程序需要的作用域（例如，`openid`、`email`、`profile`）
+
+    <Tip>
+    对于本地开发，您可以使用 `http://localhost` URL。对于生产环境，您必须使用 HTTPS。
+    </Tip>
+</Step>
+
+<Step title="获取 AWS Cognito 域名">
+    在侧边导航中转到 **"品牌" → "域名"** 来查找或配置您的 AWS Cognito 域名：
+
+    **选项 1：使用自动生成的域名**
+    - 如果 AWS 已经自动创建了域名，请记住 **域名前缀**（`.auth.region.amazoncognito.com` 之前的部分）
+    - 这个前缀就是您在 FastMCP 配置中将使用的内容
+
+    **选项 2：创建自定义域名前缀**
+    - 如果不存在域名或您想要更好的名称，请使用 **"操作"** 菜单删除现有域名并创建新域名
+    - 在 **"创建 Cognito 域名"** 对话框中的 **"域名" → "Cognito 域名"** 下，输入在您所在 AWS 区域中可用的有意义的前缀（例如，`my-app`）
+    - 只需记住您输入的 **域名前缀**（例如，`my-fastmcp-app`） - 这就是您在 FastMCP 配置中将使用的内容
+
+    <Info>
+    FastMCP AWS Cognito 提供者从您的前缀和区域自动构建完整域名，简化配置。
+    </Info>
+</Step>
+
+<Step title="保存您的凭据">
+    设置后，您将拥有：
+
+    - **用户池 ID**: 格式似 `eu-central-1_XXXXXXXXX`
+    - **客户端 ID**: 您应用程序的客户端标识符
+    - **客户端密钥**: 生成的客户端密钥（保持安全）
+    - **域名前缀**: 您的 AWS Cognito 域名的前缀
+    - **AWS 区域**: 您的 AWS Cognito 用户池所在的位置
+
+    <Tip>
+    安全存储这些凭据。永远不要将它们提交到版本控制。在生产环境中使用环境变量或 AWS Secrets Manager。
+    </Tip>
+</Step>
+</Steps>
+
+### 步骤 2：FastMCP 配置
+
+使用 `AWSCognitoProvider` 创建您的 FastMCP 服务器，它自动处理 AWS Cognito 的 JWT 令牌和用户声明：
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.aws import AWSCognitoProvider
+from fastmcp.server.dependencies import get_access_token
+
+# AWSCognitoProvider 处理 JWT 验证和用户声明
+auth_provider = AWSCognitoProvider(
+    user_pool_id="eu-central-1_XXXXXXXXX",   # 您的 AWS Cognito 用户池 ID
+    aws_region="eu-central-1",               # AWS 区域（默认为 eu-central-1）
+    client_id="your-app-client-id",          # 您的应用程序客户端 ID
+    client_secret="your-app-client-secret",  # 您的应用程序客户端密钥
+    base_url="http://localhost:8000",        # 必须与您的回调 URL 匹配
+    # redirect_path="/auth/callback"         # 默认值，如需要可自定义
+)
+
+mcp = FastMCP(name="AWS Cognito Secured App", auth=auth_provider)
+
+# 添加一个受保护的工具来测试身份验证
+@mcp.tool
+async def get_access_token_claims() -> dict:
+    """获取已认证用户的访问令牌声明。"""
+    token = get_access_token()
+    return {
+        "sub": token.claims.get("sub"),
+        "username": token.claims.get("username"),
+        "cognito:groups": token.claims.get("cognito:groups", []),
+    }
+```
+
+## 测试
+
+### 运行服务器
+
+使用 HTTP 传输启动您的 FastMCP 服务器以启用 OAuth 流程：
+
+```bash
+fastmcp run server.py --transport http --port 8000
+```
+
+您的服务器现在正在运行并受到 AWS Cognito OAuth 身份验证保护。
+
+### 使用客户端测试
+
+创建一个与您的 AWS Cognito 保护服务器进行身份验证的测试客户端：
+
+```python test_client.py
+from fastmcp import Client
+import asyncio
+
+async def main():
+    # 客户端将自动处理 AWS Cognito OAuth
+    async with Client("http://localhost:8000/mcp/", auth="oauth") as client:
+        # 首次连接将在您的浏览器中打开 AWS Cognito 登录页面
+        print("✓ 已通过 AWS Cognito 认证！")
+
+        # 测试受保护的工具
+        print("调用受保护的工具：get_access_token_claims")
+        result = await client.call_tool("get_access_token_claims")
+        user_data = result.data
+        print("可用的访问令牌声明：")
+        print(f"- sub: {user_data.get('sub', 'N/A')}")
+        print(f"- username: {user_data.get('username', 'N/A')}")
+        print(f"- cognito:groups: {user_data.get('cognito:groups', [])}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+当您首次运行客户端时：
+1. 您的浏览器将打开 AWS Cognito 的托管 UI 登录页面
+2. 登录（或注册）后，您将被重定向回您的 MCP 服务器
+3. 客户端接收 JWT 令牌并可以进行身份验证请求
+
+<Info>
+客户端在本地缓存令牌，因此除非令牌过期或您明确清除缓存，否则后续运行时无需重新认证。
+</Info>
+
+## 环境变量
+
+对于生产部署，使用环境变量而不是硬编码凭据。
+
+### 提供者选择
+
+设置此环境变量允许自动使用 AWS Cognito 提供者，而无需在代码中显式实例化它。
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH" default="Not set">
+设置为 `fastmcp.server.auth.providers.aws.AWSCognitoProvider` 以使用 AWS Cognito 身份验证。
+</ParamField>
+</Card>
+
+### AWS Cognito 特定配置
+
+这些环境变量为 AWS Cognito 提供者提供默认值，无论是手动实例化还是通过 `FASTMCP_SERVER_AUTH` 配置。
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH_AWS_COGNITO_USER_POOL_ID" required>
+您的 AWS Cognito 用户池 ID（例如，`eu-central-1_XXXXXXXXX`）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AWS_COGNITO_AWS_REGION" default="eu-central-1">
+您的 AWS Cognito 用户池所在的 AWS 区域
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AWS_COGNITO_CLIENT_ID" required>
+您的 AWS Cognito 应用程序客户端 ID
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AWS_COGNITO_CLIENT_SECRET" required>
+您的 AWS Cognito 应用程序客户端密钥
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AWS_COGNITO_BASE_URL" default="http://localhost:8000">
+用于 OAuth 回调的 FastMCP 服务器公共 URL
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AWS_COGNITO_REDIRECT_PATH" default="/auth/callback">
+在您的 AWS Cognito 应用程序客户端中配置的重定向路径之一
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AWS_COGNITO_REQUIRED_SCOPES" default='["openid"]'>
+逗号、空格或 JSON 分隔的所需 OAuth 作用域列表（例如，`openid email` 或 `["openid","email","profile"]`）
+</ParamField>
+</Card>
+
+Example `.env` file:
+```bash
+# 使用 AWS Cognito 提供者
+FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.aws.AWSCognitoProvider
+
+# AWS Cognito 凭据
+FASTMCP_SERVER_AUTH_AWS_COGNITO_USER_POOL_ID=eu-central-1_XXXXXXXXX
+FASTMCP_SERVER_AUTH_AWS_COGNITO_AWS_REGION=eu-central-1
+FASTMCP_SERVER_AUTH_AWS_COGNITO_CLIENT_ID=your-app-client-id
+FASTMCP_SERVER_AUTH_AWS_COGNITO_CLIENT_SECRET=your-app-client-secret
+FASTMCP_SERVER_AUTH_AWS_COGNITO_BASE_URL=https://your-server.com
+FASTMCP_SERVER_AUTH_AWS_COGNITO_REQUIRED_SCOPES=openid,email,profile
+```
+
+With environment variables set, your server code simplifies to:
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.dependencies import get_access_token
+
+# 身份验证自动从环境中配置
+mcp = FastMCP(name="AWS Cognito Secured App")
+
+@mcp.tool
+async def get_access_token_claims() -> dict:
+    """获取已认证用户的访问令牌声明。"""
+    token = get_access_token()
+    return {
+        "sub": token.claims.get("sub"),
+        "username": token.claims.get("username"),
+        "cognito:groups": token.claims.get("cognito:groups", []),
+    }
+```
+
+## 功能
+
+### JWT 令牌验证
+
+AWS Cognito 提供者包括强大的 JWT 令牌验证：
+
+- **签名验证**: 根据 AWS Cognito 的公钥 (JWKS) 验证令牌
+- **过期检查**: 自动拒绝已过期的令牌
+- **颁发者验证**: 确保令牌来自您特定的 AWS Cognito 用户池
+- **作用域强制**: 验证所需的 OAuth 作用域是否存在
+
+### 用户声明和组
+
+从 AWS Cognito JWT 令牌中访问丰富的用户信息：
+
+```python
+from fastmcp.server.dependencies import get_access_token
+
+@mcp.tool
+async def admin_only_tool() -> str:
+    """仅对管理员用户可用的工具。"""
+    token = get_access_token()
+    user_groups = token.claims.get("cognito:groups", [])
+
+    if "admin" not in user_groups:
+        raise ValueError("此工具需要管理员访问权限")
+
+    return "管理员访问权限已授予！"
+```
+
+### 企业集成
+
+适合企业环境：
+
+- **单一登录 (SSO)**: 与企业身份提供者集成
+- **多因素身份验证 (MFA)**: 利用 AWS Cognito 的内置 MFA
+- **用户组**: 通过 AWS Cognito 组进行基于角色的访问控制
+- **自定义属性**: 访问在您的 AWS Cognito 用户池中定义的自定义用户属性
+- **合规性**: 满足企业安全和合规性要求

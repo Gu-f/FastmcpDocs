@@ -57,12 +57,12 @@ get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -
 - OAuthProvider：完整的 OAuth 授权服务器路由
 - 自定义提供者：其所需的任何路由
 
-**Args:**
-- `mcp_path`: The path where the MCP endpoint is mounted (e.g., "/mcp")
-- `mcp_endpoint`: The MCP endpoint handler to protect with auth
+**参数：**
+- `mcp_path`: MCP 端点挂载的路径（例如，"/mcp"）
+- `mcp_endpoint`: 要使用身份验证保护的 MCP 端点处理程序
 
 **返回值：**
-- List of routes for this provider, including protected MCP endpoints if provided
+- 此提供者的路由列表，包括提供的受保护 MCP 端点（如果有）
 
 
 #### `get_middleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L122" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -71,10 +71,10 @@ get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -
 get_middleware(self) -> list
 ```
 
-Get HTTP application-level middleware for this auth provider.
+获取此身份验证提供者的 HTTP 应用程序级中间件。
 
-**Returns:**
-- List of Starlette Middleware instances to apply to the HTTP app
+**返回值：**
+- 要应用到 HTTP 应用程序的 Starlette 中间件实例列表
 
 
 ### `TokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L154" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -94,7 +94,7 @@ Get HTTP application-level middleware for this auth provider.
 verify_token(self, token: str) -> AccessToken | None
 ```
 
-Verify a bearer token and return access info if valid.
+验证承载令牌并在有效时返回访问信息。
 
 
 ### `RemoteAuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L180" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -131,7 +131,7 @@ get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -
 
 获取此提供者的 OAuth 路由。
 
-Creates protected resource metadata routes and optionally wraps MCP endpoints with auth.
+创建受保护资源元数据路由，并可选择用身份验证包装 MCP 端点。
 
 
 ### `OAuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L255" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
@@ -173,8 +173,8 @@ get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -
 
 此方法创建完整的 OAuth 路由集，包括：
 - 标准 OAuth 授权服务器路由（/.well-known/oauth-authorization-server、/authorize、/token 等）
-- Optional protected resource routes
-- Protected MCP endpoints if provided
+- 可选的受保护资源路由
+- 提供的受保护 MCP 端点（如果有）
 
 **返回值：**
 - OAuth 路由列表
