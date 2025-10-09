@@ -74,15 +74,15 @@ FastMCP 由 [Prefect](https://www.prefect.io/) 用 💙 制作。
 
 
 
-## LLM-Friendly Docs
+## LLM 友好的文档
 
-The FastMCP documentation is available in multiple LLM-friendly formats:
+FastMCP 文档提供多种 LLM 友好的格式：
 
-### MCP Server
+### MCP 服务器
 
-The FastMCP docs are accessible via MCP! The server URL is `https://gofastmcp.com/mcp`. 
+FastMCP 文档可通过 MCP 访问！服务器 URL 是 `https://gofastmcp.com/mcp`。
 
-In fact, you can use FastMCP to search the FastMCP docs:
+实际上，您可以使用 FastMCP 来搜索 FastMCP 文档：
 
 ```python
 import asyncio
@@ -91,20 +91,20 @@ from fastmcp import Client
 async def main():
     async with Client("https://gofastmcp.com/mcp") as client:
         result = await client.call_tool(
-            name="SearchFastMcp", 
-            arguments={"query": "deploy a FastMCP server"}
+            name="SearchFastMcp",
+            arguments={"query": "部署 FastMCP 服务器"}
         )
     print(result)
 
 asyncio.run(main())
 ```
 
-### Plain Text Formats
+### 纯文本格式
 
-The docs are also available in [llms.txt format](https://llmstxt.org/):
-- [llms.txt](https://gofastmcp.com/llms.txt) - A sitemap listing all documentation pages
-- [llms-full.txt](https://gofastmcp.com/llms-full.txt) - The entire documentation in one file (may exceed context windows)
+文档还提供 [llms.txt 格式](https://llmstxt.org/)：
+- [llms.txt](https://gofastmcp.com/llms.txt) - 列出所有文档页面的站点地图
+- [llms-full.txt](https://gofastmcp.com/llms-full.txt) - 一个文件中的完整文档（可能超出上下文窗口）
 
-Any page can be accessed as markdown by appending `.md` to the URL. For example, this page becomes `https://gofastmcp.com/getting-started/welcome.md`.
+任何页面都可以通过在 URL 后添加 `.md` 作为 markdown 格式访问。例如，此页面变为 `https://gofastmcp.com/getting-started/welcome.md`。
 
 You can also copy any page as markdown by pressing "Cmd+C" (or "Ctrl+C" on Windows) on your keyboard.
