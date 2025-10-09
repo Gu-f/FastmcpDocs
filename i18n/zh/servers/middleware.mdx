@@ -89,17 +89,24 @@ FastMCP 提供了多个在不同特定性级别下调用的钩子。理解这个
 这个层次结构允许您以正确的特定性级别针对中间件逻辑。使用 `on_message` 处理广泛的关注点（如日志记录），使用 `on_request` 处理身份验证，使用 `on_call_tool` 处理工具特定的逻辑（如性能监控）。
 
 ### 可用钩子
+<VersionBadge version="2.9.0" />
 
 - `on_message`：为所有 MCP 消息（请求和通知）调用
 - `on_request`：专门为 MCP 请求（期望响应）调用
 - `on_notification`：专门为 MCP 通知（发送后忘记）调用
 - `on_call_tool`：在执行工具时调用
+
 - `on_read_resource`：在读取资源时调用
 - `on_get_prompt`：在检索提示时调用
 - `on_list_tools`：在列出可用工具时调用
 - `on_list_resources`：在列出可用资源时调用
 - `on_list_resource_templates`：在列出资源模板时调用
 - `on_list_prompts`：在列出可用提示时调用
+<VersionBadge version="2.13.0" />
+- `on_initialize`：在客户端连接并初始化会话时调用（返回`None`）
+<Note>
+`on_initialize`钩子接收客户端的初始化请求，但**返回`None`**而不是结果。初始化响应由MCP协议内部处理，中间件无法修改。此钩子对于客户端检测、记录连接或初始化会话状态很有用，但不能用于修改初始化握手本身。
+</Note>
 
 ## 中间件中的组件访问
 

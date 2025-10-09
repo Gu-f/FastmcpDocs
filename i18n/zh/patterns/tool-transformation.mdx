@@ -490,6 +490,7 @@ mcp.add_tool(new_tool)
 
 在 FastMCP 下使用 `MCPConfig` 运行 MCP 服务器时，您还可以直接在 MCPConfig json 文件中应用工具转换的子集。
 
+
 ```json
 {
     "mcpServers": {
@@ -520,6 +521,7 @@ mcp.add_tool(new_tool)
 
 `tools` 部分是工具名称到工具配置的字典。每个工具配置是工具属性的字典。
 
+
 有关更多详细信息，请参见 [MCPConfigTransport](/zh/clients/transports#tool-transformation-with-fastmcp-and-mcpconfig) 文档。
 
 
@@ -546,7 +548,7 @@ Tool.from_tool(parent_tool, output_schema={
 
 **移除输出架构**
 ```python
-Tool.from_tool(parent_tool, output_schema=False)
+Tool.from_tool(parent_tool, output_schema=None)
 ```
 移除输出架构声明。自动结构化内容仍然适用于类对象返回（dict、dataclass、Pydantic 模型），但原始类型不会被结构化。
 
@@ -564,8 +566,139 @@ Tool.from_tool(parent_tool, transform_fn=custom_output)
 
 工具转换是一个灵活的功能，支持许多强大的模式。以下是一些常见用例，给您一些想法。
 
-### 适配远程或生成的工具
-这是使用工具转换的最常见原因之一。来自远程服务器（通过 [代理](/zh/servers/proxy)）或从 [OpenAPI 规范](/zh/integrations/openapi) 生成的工具通常太通用，无法直接被 LLM 使用。您可以使用转换为您的特定需求创建更简单、更直观的版本。
+### 将客户端方法公开为工具
+
+工具转换的一个强大用例是将现有 Python 客户端（GitHub 客户端、API 客户端、数据库客户端等）的方法直接公开为 MCP 工具。这种模式消除了样板代码包装函数，并将工具视为客户端方法周围的注释。
+
+**不使用工具转换**，您通常会创建重复注释的包装函数：
+
+```python
+async def get_repository(
+    owner: Annotated[str, "仓库所有者。"],
+    repo: Annotated[str, "仓库名称。"],
+) -> Repository:
+    """获取关于 GitHub 仓库的基本信息。"""
+    return await github_client.get_repository(owner=owner, repo=repo)
+```
+
+**使用工具转换**，您可以直接包装客户端方法：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.tools import Tool
+from fastmcp.tools.tool_transform import ArgTransform
+
+mcp = FastMCP("GitHub 工具")
+
+# 直接将客户端方法包装为工具
+get_repo_tool = Tool.from_tool(
+    tool=Tool.from_function(fn=github_client.get_repository),
+    description="获取关于 GitHub 仓库的基本信息。",
+    transform_args={
+        "owner": ArgTransform(description="仓库所有者。"),
+        "repo": ArgTransform(description="仓库名称。"),
+    }
+)
+
+mcp.add_tool(get_repo_tool)
+```
+
+这种模式将实现保留在您的客户端中，并将工具视为注释层，避免重复代码。
+
+#### 隐藏客户端特定参数
+
+客户端方法通常具有不应向 LLM 公开的内部参数（调试标志、身份验证令牌、速率限制设置）。使用 `hide=True` 和默认值来自动处理这些参数：
+
+```python
+get_issues_tool = Tool.from_tool(
+    tool=Tool.from_function(fn=github_client.get_issues),
+    description="从 GitHub 仓库获取问题。",
+    transform_args={
+        "owner": ArgTransform(description="仓库所有者。"),
+        "repo": ArgTransform(description="仓库名称。"),
+        "limit": ArgTransform(description="返回的最大问题数。"),
+        # 隐藏内部参数
+        "include_debug_info": ArgTransform(hide=True, default=False),
+        "error_on_not_found": ArgTransform(hide=True, default=True),
+    }
+)
+
+mcp.add_tool(get_issues_tool)
+```
+
+LLM 只看到 `owner`、`repo` 和 `limit`。内部参数自动提供。
+
+#### 可重用的参数模式
+
+在包装多个客户端方法时，您可以定义可重用的参数转换。这对于大型工具集具有良好的可扩展性，并保持注释的一致性：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.tools import Tool
+from fastmcp.tools.tool_transform import ArgTransform
+
+mcp = FastMCP("GitHub 工具")
+
+# 定义可重用的参数模式
+OWNER_ARG = ArgTransform(description="仓库所有者。")
+REPO_ARG = ArgTransform(description="仓库名称。")
+LIMIT_ARG = ArgTransform(description="返回的最大项目数。")
+HIDE_ERROR = ArgTransform(hide=True, default=True)
+
+def create_github_tools(client):
+    """使用共享参数模式从 GitHub 客户端方法创建工具。"""
+
+    owner_repo_args = {
+        "owner": OWNER_ARG,
+        "repo": REPO_ARG,
+    }
+
+    error_args = {
+        "error_on_not_found": HIDE_ERROR,
+    }
+
+    return [
+        Tool.from_tool(
+            tool=Tool.from_function(fn=client.get_repository),
+            description="获取关于 GitHub 仓库的基本信息。",
+            transform_args={**owner_repo_args, **error_args}
+        ),
+        Tool.from_tool(
+            tool=Tool.from_function(fn=client.get_issue),
+            description="从仓库获取特定问题。",
+            transform_args={
+                **owner_repo_args,
+                "issue_number": ArgTransform(description="问题编号。"),
+                "limit_comments": LIMIT_ARG,
+                **error_args,
+            }
+        ),
+        Tool.from_tool(
+            tool=Tool.from_function(fn=client.get_pull_request),
+            description="从仓库获取特定拉取请求。",
+            transform_args={
+                **owner_repo_args,
+                "pull_request_number": ArgTransform(description="PR 编号。"),
+                "limit_comments": LIMIT_ARG,
+                **error_args,
+            }
+        ),
+    ]
+
+# 将所有工具添加到服务器
+for tool in create_github_tools(github_client):
+    mcp.add_tool(tool)
+```
+
+这种模式提供了几个好处：
+
+- **无重复实现**：逻辑保留在客户端中
+- **一致的注释**：可重用的参数模式确保一致性
+- **易于维护**：更新客户端，而不是包装函数
+- **可扩展**：通过包装附加的客户端方法轻松添加新工具
+
+### Adapting Remote or Generated Tools
+This is one of the most common reasons to use tool transformation. Tools from remote MCP servers (via a [proxy](/servers/proxy)) or generated from an [OpenAPI spec](/integrations/openapi) are often too generic for direct use by an LLM. You can use transformation to create a simpler, more intuitive version for your specific needs.
 
 ### 链式转换
 您可以通过使用已转换的工具作为新转换的父级来链接转换。这让您可以分层构建复杂的行为，例如，首先重命名参数，然后向重命名的工具添加验证逻辑。

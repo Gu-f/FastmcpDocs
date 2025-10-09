@@ -22,6 +22,7 @@ with_argv(args: list[str] | None)
 此上下文管理器在 CLI 边界使用，用于在需要时注入
 服务器参数，而不会在源代码加载逻辑深处变更 sys.argv。
 
+
 参数提供时不包含脚本名称，因此我们保留 sys.argv[0]
 并替换其余部分。
 
@@ -73,7 +74,7 @@ fastmcp run server.py -- --config config.json --debug
 - `server_spec`: Python 文件、对象规范 (file\:obj)、配置文件、URL，或 None 以自动检测
 
 
-### `inspect` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L524" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `inspect` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L544" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 inspect(server_spec: str | None = None) -> None
@@ -104,7 +105,7 @@ fastmcp inspect  # 自动检测 fastmcp.json
 - `server_spec`: 要检查的 Python 文件，可选带有 \:object 后缀，或 fastmcp.json
 
 
-### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L765" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L785" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 prepare(config_path: Annotated[str | None, cyclopts.Parameter(help='Path to fastmcp.json configuration file')] = None, output_dir: Annotated[str | None, cyclopts.Parameter(help='Directory to create the persistent environment in')] = None, skip_source: Annotated[bool, cyclopts.Parameter(help='Skip source preparation (e.g., git clone)')] = False) -> None

@@ -1,0 +1,60 @@
+---
+title: scalekit
+sidebarTitle: scalekit
+---
+
+# `fastmcp.server.auth.providers.scalekit`
+
+
+FastMCP的Scalekit身份验证提供程序。
+
+此模块提供ScalekitProvider - 一个完整的身份验证解决方案，与Scalekit的OAuth 2.1和OpenID Connect服务集成，支持资源服务器身份验证以实现无缝 MCP客户端身份验证。
+
+
+## 类
+
+### `ScalekitProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/scalekit.py#L26" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+### `ScalekitProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/scalekit.py#L39" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+用于OAuth 2.1身份验证的Scalekit资源服务器提供程序。
+
+此提供程序使用资源服务器模式实现Scalekit集成。
+FastMCP充当受保护的资源服务器，验证由Scalekit授权服务器颁发的访问令牌。
+
+重要设置要求：
+
+1. 在Scalekit仪表板中创建MCP服务器：
+   - 转到您的[Scalekit仪表板](https://app.scalekit.com/)
+   - 导般MCP Servers部分
+   - 注册一个具有适当作用域的新MCP服务器
+   - 确保资源标识符与您配置为MCP URL的内容完全匹配
+   - 记录资源ID
+
+2. 环境配置：
+   - 设置SCALEKIT_ENVIRONMENT_URL（例如https://your-env.scalekit.com）
+   - 从您的OAuth应用程序设置SCALEKIT_CLIENT_ID
+   - 从您创建的资源设置SCALEKIT_RESOURCE_ID
+   - 将MCP_URL设置为您的FastMCP服务器的公共URL
+
+有关详细设置说明，请参阅：
+https://docs.scalekit.com/mcp/overview/
+
+
+**方法:**
+
+#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/scalekit.py#L135" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -> list[Route]
+```
+
+获取OAuth路由，包括Scalekit授权服务器元数据转发。
+
+这返回标准的受保护资源路由加上一个授权服务器元数据端点，该端点将Scalekit的OAuth元数据转发给客户端。
+
+**参数:**
+- `mcp_path`: 挂载MCP端点的路径（例如"/mcp"）
+- `mcp_endpoint`: 用身份验证保护的MCP端点处理程序
+

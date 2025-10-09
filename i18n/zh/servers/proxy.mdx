@@ -245,10 +245,28 @@ config = {
 # 创建到多个服务器的统一代理
 composite_proxy = FastMCP.as_proxy(config, name="Composite Proxy")
 
-# 工具和资源可通过前缀访问：
-# - weather_get_forecast, calendar_add_event 
-# - weather://weather/icons/sunny, calendar://calendar/events/today
+# 工具、资源、提示和模板可通过前缀访问：
+# - 工具: weather_get_forecast, calendar_add_event
+# - 提示: weather_daily_summary, calendar_quick_add
+# - 资源: weather://weather/icons/sunny, calendar://calendar/events/today
+# - 模板: weather://weather/locations/{id}, calendar://calendar/events/{date}
 ```
+
+## 组件前缀
+
+代理一个或多个服务器时，组件名称的前缀方式与挂载和导入相同：
+
+- 工具：`{prefix}_{tool_name}`
+- 提示：`{prefix}_{prompt_name}`
+- 资源：`protocol://{prefix}/path/to/resource`（默认路径格式）
+- 资源模板：`protocol://{prefix}/...` 且模板名称也会添加前缀
+
+这些规则适用于以下所有情况：
+- 在另一个服务器上挂载代理
+- 从`MCPConfig`创建多服务器代理
+- 直接使用`FastMCP.as_proxy()`
+
+有关资源URI前缀格式（路径vs传统协议样式）和配置选项，请参阅服务器组合 → 资源前缀格式。
 
 ## 镜像组件
 
@@ -332,4 +350,3 @@ def custom_client_factory():
 
 proxy = FastMCPProxy(client_factory=custom_client_factory)
 ```
-

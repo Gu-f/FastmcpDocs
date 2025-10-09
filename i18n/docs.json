@@ -11,12 +11,6 @@
     },
     "decoration": "windows"
   },
-  "contextual": {
-    "options": [
-      "copy",
-      "view"
-    ]
-  },
   "banner": {
     "content": "Host your server on [FastMCP Cloud](https://fastmcp.cloud) for free!"
   },
@@ -24,6 +18,12 @@
     "dark": "#f72585",
     "light": "#4cc9f0",
     "primary": "#2d00f7"
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view"
+    ]
   },
   "description": "The fast, Pythonic way to build MCP servers and clients.",
   "favicon": {
@@ -190,6 +190,7 @@
                       "zh/integrations/azure",
                       "zh/integrations/descope",
                       "zh/integrations/github",
+                      "zh/integrations/scalekit",
                       "zh/integrations/google",
                       "zh/integrations/workos"
                     ]
@@ -342,16 +343,21 @@
                           "zh/python-sdk/fastmcp-server-auth-__init__",
                           "zh/python-sdk/fastmcp-server-auth-auth",
                           "zh/python-sdk/fastmcp-server-auth-oauth_proxy",
+                          "zh/python-sdk/fastmcp-server-auth-oidc_proxy",
                           {
                             "group": "providers",
                             "pages": [
                               "zh/python-sdk/fastmcp-server-auth-providers-__init__",
+                              "zh/python-sdk/fastmcp-server-auth-providers-auth0",
+                              "zh/python-sdk/fastmcp-server-auth-providers-aws",
                               "zh/python-sdk/fastmcp-server-auth-providers-azure",
                               "zh/python-sdk/fastmcp-server-auth-providers-bearer",
+                              "zh/python-sdk/fastmcp-server-auth-providers-descope",
                               "zh/python-sdk/fastmcp-server-auth-providers-github",
                               "zh/python-sdk/fastmcp-server-auth-providers-google",
                               "zh/python-sdk/fastmcp-server-auth-providers-in_memory",
                               "zh/python-sdk/fastmcp-server-auth-providers-jwt",
+                              "zh/python-sdk/fastmcp-server-auth-providers-scalekit",
                               "zh/python-sdk/fastmcp-server-auth-providers-workos"
                             ]
                           },
@@ -432,6 +438,7 @@
                         ]
                       },
                       "zh/python-sdk/fastmcp-utilities-openapi",
+                      "zh/python-sdk/fastmcp-utilities-storage",
                       "zh/python-sdk/fastmcp-utilities-tests",
                       "zh/python-sdk/fastmcp-utilities-types"
                     ]
@@ -562,6 +569,7 @@
                       "en/integrations/azure",
                       "en/integrations/descope",
                       "en/integrations/github",
+                      "en/integrations/scalekit",
                       "en/integrations/google",
                       "en/integrations/workos"
                     ]
@@ -714,16 +722,21 @@
                           "en/python-sdk/fastmcp-server-auth-__init__",
                           "en/python-sdk/fastmcp-server-auth-auth",
                           "en/python-sdk/fastmcp-server-auth-oauth_proxy",
+                          "en/python-sdk/fastmcp-server-auth-oidc_proxy",
                           {
                             "group": "providers",
                             "pages": [
                               "en/python-sdk/fastmcp-server-auth-providers-__init__",
+                              "en/python-sdk/fastmcp-server-auth-providers-auth0",
+                              "en/python-sdk/fastmcp-server-auth-providers-aws",
                               "en/python-sdk/fastmcp-server-auth-providers-azure",
                               "en/python-sdk/fastmcp-server-auth-providers-bearer",
+                              "en/python-sdk/fastmcp-server-auth-providers-descope",
                               "en/python-sdk/fastmcp-server-auth-providers-github",
                               "en/python-sdk/fastmcp-server-auth-providers-google",
                               "en/python-sdk/fastmcp-server-auth-providers-in_memory",
                               "en/python-sdk/fastmcp-server-auth-providers-jwt",
+                              "en/python-sdk/fastmcp-server-auth-providers-scalekit",
                               "en/python-sdk/fastmcp-server-auth-providers-workos"
                             ]
                           },
@@ -804,6 +817,7 @@
                         ]
                       },
                       "en/python-sdk/fastmcp-utilities-openapi",
+                      "en/python-sdk/fastmcp-utilities-storage",
                       "en/python-sdk/fastmcp-utilities-tests",
                       "en/python-sdk/fastmcp-utilities-types"
                     ]

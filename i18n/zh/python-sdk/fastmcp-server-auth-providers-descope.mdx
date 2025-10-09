@@ -1,0 +1,57 @@
+---
+title: descope
+sidebarTitle: descope
+---
+
+# `fastmcp.server.auth.providers.descope`
+
+
+FastMCP的Descope身份验证提供程序。
+
+此模块提供DescopeProvider - 一个完整的身份验证解决方案，与Descope的OAuth 2.1和OpenID Connect服务集成，支持动态客户端注册(DCR)以实现无缝 MCP客户端身份验证。
+
+
+## 类
+
+### `DescopeProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/descope.py#L26" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+### `DescopeProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/descope.py#L38" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+用于DCR（动态客户端注册）的Descope元数据提供程序。
+
+此提供程序使用元数据转发实现Descope集成。
+这是Descope DCR的推荐方法，因为它允许Descope直接处理OAuth流程，而FastMCP充当资源服务器。
+
+重要设置要求：
+
+1. 在Descope控制台中启用动态客户端注册：
+   - 转到Descope控制台的[Inbound Apps页面](https://app.descope.com/apps/inbound)
+   - 点击**DCR Settings**
+   - 启用**Dynamic Client Registration (DCR)**
+   - 定义允许的作用域
+
+2. 记录您的项目ID：
+   - 从[项目设置](https://app.descope.com/settings/project)保存您的项目ID
+   - 示例：P2abc...123
+
+有关详细设置说明，请参阅：
+https://docs.descope.com/identity-federation/inbound-apps/creating-inbound-apps#method-2-dynamic-client-registration-dcr
+
+
+**方法:**
+
+#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/descope.py#L127" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -> list[Route]
+```
+
+获取OAuth路由，包括Descope授权服务器元数据转发。
+
+这返回标准的受保护资源路由加上一个授权服务器元数据端点，该端点将Descope的OAuth元数据转发给客户端。
+
+**参数:**
+- `mcp_path`: 挂载MCP端点的路径（例如"/mcp"）
+- `mcp_endpoint`: 用身份验证保护的MCP端点处理程序
+

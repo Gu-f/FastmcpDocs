@@ -412,14 +412,14 @@ def get_repo_info(owner: str, repo: str) -> dict:
 - `repos://jlowin/fastmcp/info` → 返回有关 jlowin/fastmcp 仓库的信息
 - `repos://prefecthq/prefect/info` → 返回有关 prefecthq/prefect 仓库的信息
 
+### RFC 6570 URI 模板
+
+
+FastMCP 实现了 [RFC 6570 URI 模板](https://datatracker.ietf.org/doc/html/rfc6570)用于资源模板，提供了定义参数化 URI 的标准化方式。这包括对简单扩展、通配符路径参数和表单样式查询参数的支持。
+
 ### 通配符参数
 
 <VersionBadge version="2.2.4" />
-
-<Tip>
-请注意：FastMCP 对通配符参数的支持是模型上下文协议标准的**扩展**，该标准在其他方面遵循 RFC 6570。由于所有模板处理都在 FastMCP 服务器中进行，这不应该与其他 MCP 实现产生任何兼容性问题。
-</Tip>
-
 
 资源模板支持可以匹配多个路径段的通配符参数。然而标准参数（`{param}`）只匹配单个路径段并不跨越"/"边界，通配符参数（`{param*}`）可以捕获包括斜杠在内的多个段。通配符捕获所有后续路径段，*直到* URI 模板的定义部分（无论是字面量还是另一个参数）。这允许您在单个 URI 模板中拥有多个通配符参数。
 
@@ -466,43 +466,88 @@ def get_template_file(owner: str, path: str) -> dict:
 
 请注意，与常规参数一样，每个通配符参数仍必须是函数签名中的命名参数，并且所有必需的函数参数都必须出现在 URI 模板中。
 
-### 默认值
+#### 查询参数
 
-<VersionBadge version="2.2.0" />
+<VersionBadge version="2.13.0" />
 
-在创建资源模板时，FastMCP 对 URI 模板参数和函数参数之间的关系强制执行两个规则：
+FastMCP 支持使用 `{?param1,param2}` 语法的 RFC 6570 表单样式查询参数。查询参数提供了一种干净的方式来向资源传递可选配置，而不会使路径变得杂乱。
 
-1. **必需的函数参数：** 所有没有默认值的函数参数（必需参数）都必须出现在 URI 模板中。
-2. **URI 参数：** 所有 URI 模板参数都必须作为函数参数存在。
-
-然而，具有默认值的函数参数不需要包含在 URI 模板中。当客户端请求资源时，FastMCP 将：
-
-- 从 URI 中提取模板中包含的参数值
-- 为不在 URI 模板中的任何函数参数使用默认值
-
-这允许灵活的 API 设计。例如，一个具有可选参数的简单搜索模板：
+查询参数必须是可选的函数参数（具有默认值），而路径参数映射到必需的函数参数。这强制实行了清晰的分离：必需数据在路径中，可选配置在查询参数中。
 
 ```python
 from fastmcp import FastMCP
 
 mcp = FastMCP(name="DataServer")
 
-@mcp.resource("search://{query}")
-def search_resources(query: str, max_results: int = 10, include_archived: bool = False) -> dict:
-    """搜索与查询字符串匹配的资源。"""
-    # 只有 'query' 在 URI 中是必需的，其他参数使用它们的默认值
-    results = perform_search(query, limit=max_results, archived=include_archived)
+# Basic query parameters
+@mcp.resource("data://{id}{?format}")
+def get_data(id: str, format: str = "json") -> str:
+    """Retrieve data in specified format."""
+    if format == "xml":
+        return f"<data id='{id}' />"
+    return f'{{"id": "{id}"}}'
+
+# 带有类型强制转换的多个查询参数
+@mcp.resource("api://{endpoint}{?version,limit,offset}")
+def call_api(endpoint: str, version: int = 1, limit: int = 10, offset: int = 0) -> dict:
+    """调用带有分页的API端点。"""
     return {
-        "query": query,
-        "max_results": max_results,
-        "include_archived": include_archived,
-        "results": results
+        "endpoint": endpoint,
+        "version": version,
+        "limit": limit,
+        "offset": offset,
+        "results": fetch_results(endpoint, version, limit, offset)
     }
+
+# 带有通配符的查询参数
+@mcp.resource("files://{path*}{?encoding,lines}")
+def read_file(path: str, encoding: str = "utf-8", lines: int = 100) -> str:
+    """读取文件，带有可选编码和行数限制。"""
+    return read_file_content(path, encoding, lines)
 ```
 
-使用此模板，客户端可以请求 `search://python`，函数将以 `query="python", max_results=10, include_archived=False` 被调用。MCP 开发人员仍可以使用更具体的参数直接调用底层的 `search_resources` 函数。
+**示例请求：**
+- `data://123` → 使用默认格式 `"json"`
+- `data://123?format=xml` → 使用格式 `"xml"`
+- `api://users?version=2&limit=50` → `version=2, limit=50, offset=0`
+- `files://src/main.py?encoding=ascii&lines=50` → 自定义编码和行数限制
 
-您还可以通过手动将装饰器应用于单个函数来创建多个资源模板，以提供访问相同底层数据的不同方式：
+FastMCP 会根据您函数的类型提示（`int`、`float`、`bool`、`str`）自动将查询参数字符串值强制转换为正确的类型。
+
+**查询参数与隐藏默认值：**
+
+查询参数向客户端暴露可选配置。要完全对客户端隐藏可选参数（始终使用默认值），只需在URI模板中省略它们：
+
+```python
+# 客户端可以通过查询字符串覆盖 max_results
+@mcp.resource("search://{query}{?max_results}")
+def search_configurable(query: str, max_results: int = 10) -> dict:
+    return {"query": query, "limit": max_results}
+
+# 客户端无法覆盖 max_results（不在URI模板中）
+@mcp.resource("search://{query}")
+def search_fixed(query: str, max_results: int = 10) -> dict:
+    return {"query": query, "limit": max_results}
+```
+
+### 模板参数规则
+
+<VersionBadge version="2.2.0" />
+
+FastMCP 在创建资源模板时强制执行这些验证规则：
+
+1. **必需的函数参数**（无默认值）必须出现在URI路径模板中
+2. **查询参数**（使用 `{?param}` 语法指定）必须是带有默认值的可选函数参数
+3. **所有URI模板参数**（路径和查询）都必须作为函数参数存在
+
+可选的函数参数（具有默认值的参数）可以：
+- 作为查询参数包含（`{?param}`）- 客户端可以通过查询字符串覆盖
+- 从 URI 模板中省略 - 始终使用默认值，不对客户端暴露
+- 在替代路径模板中使用 - 支持多种方式访问同一资源
+
+**一个函数的多个模板：**
+
+通过手动应用装饰器创建多个资源模板，通过不同URI模式暴露同一函数：
 
 ```python
 from fastmcp import FastMCP

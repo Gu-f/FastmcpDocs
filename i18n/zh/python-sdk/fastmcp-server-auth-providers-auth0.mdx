@@ -1,0 +1,45 @@
+---
+title: auth0
+sidebarTitle: auth0
+---
+
+# `fastmcp.server.auth.providers.auth0`
+
+
+FastMCP的Auth0 OAuth提供程序。
+
+此模块提供了一个完整的Auth0集成，只需要配置URL、客户端ID、客户端密鑰、受众和基础URL即可使用。
+
+示例：
+    ```python
+    from fastmcp import FastMCP
+    from fastmcp.server.auth.providers.auth0 import Auth0Provider
+
+    # 简单的Auth0 OAuth保护
+    auth = Auth0Provider(
+        config_url="https://auth0.config.url",
+        client_id="your-auth0-client-id",
+        client_secret="your-auth0-client-secret",
+        audience="your-auth0-api-audience",
+        base_url="http://localhost:8000",
+    )
+
+    mcp = FastMCP("我的受保护服务器", auth=auth)
+    ```
+
+
+## 类
+
+### `Auth0ProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/auth0.py#L36" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Auth0 OIDC提供程序的设置。
+
+
+### `Auth0Provider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/auth0.py#L60" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+FastMCP的Auth0提供程序实现。
+
+此提供程序是一个完整的Auth0集成，只需要配置URL、客户端ID、客户端密鑰、受众和基础URL即可使用。
+

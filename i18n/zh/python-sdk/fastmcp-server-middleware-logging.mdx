@@ -22,18 +22,15 @@ The default serializer for Payloads in the logging middleware.
 
 ## 类
 
-### `LoggingMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L19" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `BaseLoggingMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L19" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-提供全面请求和响应日志记录的中间件。
-
-以可配置的详细级别记录所有 MCP 消息。适用于调试、
-监控和理解服务器使用模式。
+日志中间件的基类。
 
 
 **方法：**
 
-#### `on_message` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L91" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `on_message` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L110" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any
@@ -42,22 +39,18 @@ on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any])
 记录所有消息。
 
 
-### `StructuredLoggingMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L114" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `LoggingMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L143" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-为更好的日志分析提供结构化 JSON 日志记录的中间件。
+提供全面请求和响应日志记录的中间件。
 
-输出结构化日志，更容易使用日志聚合工具（如 ELK 堆栈、
-Splunk 或云日志服务）进行解析和分析。
+使用可配置的详细级别记录所有MCP消息。对于调试、监控和理解服务器使用模式非常有用。
 
 
-**方法：**
+### `StructuredLoggingMiddleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L198" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
-#### `on_message` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/middleware/logging.py#L185" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
-```python
-on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any
-```
+提供结构化JSON日志记录以便更好地进行日志分析的中间件。
 
-记录结构化消息信息。
+输出结构化日志，更容易使用ELK堆栈、Splunk或云日志服务等日志聚合工具进行解析和分析。
 

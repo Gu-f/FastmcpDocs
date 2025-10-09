@@ -382,7 +382,8 @@ complete_mcp(self, ref: mcp.types.ResourceTemplateReference | mcp.types.PromptRe
 **参数：**
 - `ref`: 要完成的引用。
 - `argument`: 传递给完成请求的参数。
-- `context_arguments`: 可选的上下文参数，用于与完成请求一同发送。默认值为 None.
+- `context_arguments`: 可选的上下文参数，包含在完成请求中。默认值为 None.
+
 
 **返回值：**
 - mcp.types.CompleteResult: 来自协议的完整响应对象，
@@ -403,7 +404,8 @@ complete(self, ref: mcp.types.ResourceTemplateReference | mcp.types.PromptRefere
 **参数：**
 - `ref`: 要完成的引用。
 - `argument`: 传递给完成请求的参数。
-- `context_arguments`: 可选的上下文参数，用于与完成请求一同发送。默认值为 None.
+- `context_arguments`: 可选的上下文参数，包含在完成请求中。默认值为 None.
+
 
 **返回值：**
 - mcp.types.Completion: 完成对象。
@@ -412,7 +414,7 @@ complete(self, ref: mcp.types.ResourceTemplateReference | mcp.types.PromptRefere
 - `RuntimeError`: 如果在客户端未连接时调用。
 
 
-#### `list_tools_mcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L789" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `list_tools_mcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L799" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 list_tools_mcp(self) -> mcp.types.ListToolsResult
@@ -428,7 +430,7 @@ list_tools_mcp(self) -> mcp.types.ListToolsResult
 - `RuntimeError`: 如果在客户端未连接时调用。
 
 
-#### `list_tools` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L804" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `list_tools` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L814" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 list_tools(self) -> list[mcp.types.Tool]
@@ -443,7 +445,7 @@ list_tools(self) -> list[mcp.types.Tool]
 - `RuntimeError`: 如果在客户端未连接时调用。
 
 
-#### `call_tool_mcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L818" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `call_tool_mcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L828" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 call_tool_mcp(self, name: str, arguments: dict[str, Any], progress_handler: ProgressHandler | None = None, timeout: datetime.timedelta | float | int | None = None) -> mcp.types.CallToolResult
@@ -468,7 +470,7 @@ call_tool_mcp(self, name: str, arguments: dict[str, Any], progress_handler: Prog
 - `RuntimeError`: 如果在客户端未连接时调用。
 
 
-#### `call_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L855" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `call_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L865" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 call_tool(self, name: str, arguments: dict[str, Any] | None = None, timeout: datetime.timedelta | float | int | None = None, progress_handler: ProgressHandler | None = None, raise_on_error: bool = True) -> CallToolResult
@@ -498,10 +500,10 @@ call_tool(self, name: str, arguments: dict[str, Any] | None = None, timeout: dat
 - `RuntimeError`: 如果在客户端未连接时调用。
 
 
-#### `generate_name` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L926" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `generate_name` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L936" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 generate_name(cls, name: str | None = None) -> str
 ```
 
-### `CallToolResult` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L935" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `CallToolResult` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/client.py#L945" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>

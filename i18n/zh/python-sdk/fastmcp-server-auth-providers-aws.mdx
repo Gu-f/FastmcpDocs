@@ -1,0 +1,84 @@
+---
+title: aws
+sidebarTitle: aws
+---
+
+# `fastmcp.server.auth.providers.aws`
+
+
+FastMCP的AWS Cognito OAuth提供程序。
+
+此模块提供了一个完整的AWS Cognito OAuth集成，可以通过用户池ID、域名前缀、客户端ID和客户端密鑰即可使用。它处理了AWS Cognito的OAuth流程、令牌验证和用户管理的所有复杂性。
+
+示例：
+    ```python
+    from fastmcp import FastMCP
+    from fastmcp.server.auth.providers.aws_cognito import AWSCognitoProvider
+
+    # 简单的AWS Cognito OAuth保护
+    auth = AWSCognitoProvider(
+        user_pool_id="your-user-pool-id",
+        aws_region="eu-central-1",
+        client_id="your-cognito-client-id",
+        client_secret="your-cognito-client-secret"
+    )
+
+    mcp = FastMCP("我的受保护服务器", auth=auth)
+    ```
+
+
+## 类
+
+### `AWSCognitoProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L40" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+AWS Cognito OAuth提供程序的设置。
+
+
+### `AWSCognitoTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L64" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+将声明过滤为Cognito特定子集的令牌验证器。
+
+
+**方法:**
+
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L67" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+verify_token(self, token: str) -> AccessToken | None
+```
+
+验证令牌并将声明过滤为Cognito特定子集。
+
+
+### `AWSCognitoProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L91" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+FastMCP的完整AWS Cognito OAuth提供程序。
+
+此提供程序使用OIDC发现为任何FastMCP服务器添加AWS Cognito OAuth保护变得非常简单。只需提供您的Cognito用户池详细信息、客户端凭据和基础URL，即可开始使用。
+
+功能：
+- 从AWS Cognito用户池自动OIDC发现
+- 通过Cognito的公共密钥自动JWT令牌验证
+- Cognito特定声明过滤（sub、username、cognito:groups）
+- 支持Cognito用户池
+
+
+**方法:**
+
+#### `get_token_verifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L215" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_token_verifier(self) -> TokenVerifier
+```
+
+创建带有声明过滤的Cognito特定令牌验证器。
+
+**参数:**
+- `algorithm`: 可选的令牌验证器算法
+- `audience`: 可选的令牌验证器受众
+- `required_scopes`: 可选的令牌验证器所需作用域
+- `timeout_seconds`: HTTP请求超时时间（秒）
+

@@ -11,9 +11,6 @@
     },
     "decoration": "windows"
   },
-  "contextual": {
-    "options": ["copy", "view"]
-  },
   "banner": {
     "content": "Host your server on [FastMCP Cloud](https://fastmcp.cloud) for free!"
   },
@@ -21,6 +18,12 @@
     "dark": "#f72585",
     "light": "#4cc9f0",
     "primary": "#2d00f7"
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view"
+    ]
   },
   "description": "The fast, Pythonic way to build MCP servers and clients.",
   "favicon": {

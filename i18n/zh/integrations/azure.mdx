@@ -10,7 +10,7 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 
 <VersionBadge version="2.12.0" />
 
-本指南将向您展示如何使用 **Azure OAuth**（Microsoft Entra ID）保护您的 FastMCP 服务器。由于 Azure 不支持动态客户端注册，此集成使用 [**OAuth 代理**](/zh/servers/auth/oauth-proxy) 模式来连接 Azure 的传统 OAuth 与 MCP 的身份验证要求。
+本指南向您展示了如何使用**Azure OAuth**（Microsoft Entra ID）保护您的FastMCP服务器。由于Azure不支持动态客户端注册，此集成使用[**OAuth代理**]（/servers/auth/OAuth-Proxy）模式将Azure的传统OAuth与MCP的身份验证要求连接起来。FastMCP根据应用程序的client_id验证Azure JWT.
 
 ## 配置
 
@@ -49,7 +49,38 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
     <Tip>
     如果您想使用自定义回调路径（例如，`/auth/azure/callback`），请确保在 Azure 应用注册和配置 AzureProvider 时的 `redirect_path` 参数中设置相同的路径。
     </Tip>
+
+    - **公开 API**：配置您的应用程序 ID URI 并定义作用域
+      - 在应用注册侧边栏中转到**公开 API**。
+      - 点击“应用程序 ID URI”旁边的**设置**，并选择以下之一：
+        - 保持默认的 `api://{client_id}`
+        - 设置自定义值，遵循支持的格式（参见 [标识符 URI 限制](https://learn.microsoft.com/en-us/entra/identity-platform/identifier-uri-restrictions)）
+      - 点击**添加作用域**并创建您的应用程序所需的作用域，例如：
+        - 作用域名称：`read`（或 `write` 等）
+        - 管理员同意显示名称/描述：适合您的组织
+        - 谁可以同意：根据需要（仅管理员或管理员和用户）
+
+    - **配置访问令牌版本**：确保您的应用程序使用访问令牌 v2
+      - 在应用注册侧边栏中转到**清单**。
+      - 找到 `requestedAccessTokenVersion` 属性并将其设置为 `2`：
+        ```json
+        "api": {
+            "requestedAccessTokenVersion": 2
+        }
+        ```
+      - 在清单编辑器顶部点击**保存**。
+
+    <Warning>
+    FastMCP 的 Azure 集成需要访问令牌 v2 才能正常工作。如果未设置，您可能会遇到身份验证错误。
+    </Warning>
+
+    <Note>
+    在 FastMCP 的 `AzureProvider` 中，将 `identifier_uri` 设置为您的应用程序 ID URI（可选；默认为 `api://{client_id}`），并将 `required_scopes` 设置为未加前缀的作用域名称（例如，`read`、`write`）。在授权期间，FastMCP 会自动为作用域加上您的 `identifier_uri` 前缀。
+    </Note>
+
+
 </Step>
+
 
 <Step title="创建客户端密钥">
     注册后，在您的应用设置中导航到 **证书和密钥**。
@@ -91,8 +122,12 @@ auth_provider = AzureProvider(
     client_secret="your-client-secret",                 # 您的 Azure 应用客户端密钥
     tenant_id="08541b6e-646d-43de-a0eb-834e6713d6d5", # 您的 Azure 租户 ID（必需）
     base_url="http://localhost:8000",                   # 必须与您的应用注册匹配
-    required_scopes=["User.Read", "email", "openid", "profile"],  # Microsoft Graph 权限
-    # redirect_path="/auth/callback"                  # 默认值，如需可自定义
+    required_scopes=["your-scope"],                 # 配置应用程序时创建的作用域名称
+    # identifier_uri 默认为 api://{client_id}
+    # identifier_uri="api://your-api-id",
+    # 可选：在授权请求中请求附加的上游作用域
+    # additional_authorize_scopes=["User.Read", "offline_access", "openid", "email"],
+    # redirect_path="/auth/callback"                  # Default value, customize if needed
 )
 
 mcp = FastMCP(name="Azure Secured App", auth=auth_provider)
@@ -215,12 +250,16 @@ if __name__ == "__main__":
 在您的 Azure 应用注册中配置的重定向路径
 </ParamField>
 
-<ParamField path="FASTMCP_SERVER_AUTH_AZURE_REQUIRED_SCOPES" default='["User.Read", "email", "openid", "profile"]'>
-必需的 Microsoft Graph 作用域的逗号、空格或 JSON 分隔列表
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_REQUIRED_SCOPES" default="">
+您的 API 所需的作用域的逗号、空格或 JSON 分隔列表。这些在令牌上进行验证，如果客户端未请求特定作用域，则用作默认值。
 </ParamField>
 
-<ParamField path="FASTMCP_SERVER_AUTH_AZURE_TIMEOUT_SECONDS" default="10">
-Microsoft Graph API 调用的 HTTP 请求超时
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_ADDITIONAL_AUTHORIZE_SCOPES" default="">
+在授权请求中包含的附加作用域的逗号、空格或 JSON 分隔列表，不加前缀。使用此功能请求上游作用域，如 Microsoft Graph 权限。这些不用于令牌验证。
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_IDENTIFIER_URI" default="api://{client_id}">
+在授权期间用于为作用域加前缀的应用程序 ID URI。
 </ParamField>
 </Card>
 
@@ -234,7 +273,11 @@ FASTMCP_SERVER_AUTH_AZURE_CLIENT_ID=835f09b6-0f0f-40cc-85cb-f32c5829a149
 FASTMCP_SERVER_AUTH_AZURE_CLIENT_SECRET=your-client-secret-here
 FASTMCP_SERVER_AUTH_AZURE_TENANT_ID=08541b6e-646d-43de-a0eb-834e6713d6d5
 FASTMCP_SERVER_AUTH_AZURE_BASE_URL=https://your-server.com
-FASTMCP_SERVER_AUTH_AZURE_REQUIRED_SCOPES=User.Read,email,profile
+FASTMCP_SERVER_AUTH_AZURE_REQUIRED_SCOPES=read,write
+# 可选自定义API配置
+# FASTMCP_SERVER_AUTH_AZURE_IDENTIFIER_URI=api://your-api-id
+# 请求附加上游范围（可选）
+# FASTMCP_SERVER_AUTH_AZURE_ADDITIONAL_AUTHORIZE_SCOPES=User.Read,Mail.Read
 ```
 
 设置环境变量后，您的服务器代码简化为：

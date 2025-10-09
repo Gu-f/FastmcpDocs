@@ -10,7 +10,7 @@ FastMCP 的日志实用程序。
 
 ## 函数
 
-### `get_logger` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/logging.py#L10" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `get_logger` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/logging.py#L13" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_logger(name: str) -> logging.Logger
@@ -26,10 +26,10 @@ get_logger(name: str) -> logging.Logger
 - 配置的日志记录器实例
 
 
-### `configure_logging` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/logging.py#L22" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `configure_logging` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/logging.py#L25" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-configure_logging(level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] | int = 'INFO', logger: logging.Logger | None = None, enable_rich_tracebacks: bool = True, **rich_kwargs: Any) -> None
+configure_logging(level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] | int = 'INFO', logger: logging.Logger | None = None, enable_rich_tracebacks: bool | None = None, **rich_kwargs: Any) -> None
 ```
 
 
@@ -39,4 +39,20 @@ configure_logging(level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
 - `logger`: 要配置的日志记录器
 - `level`: 要使用的日志级别
 - `rich_kwargs`: 用于创建 RichHandler 所使用的参数
+
+
+### `temporary_log_level` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/logging.py#L72" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+temporary_log_level(level: str | None, logger: logging.Logger | None = None, enable_rich_tracebacks: bool | None = None, **rich_kwargs: Any)
+```
+
+
+临时设置日志级别并之后恢复的上下文管理器。
+
+**参数:**
+- `level`: 要设置的临时日志级别（例如"DEBUG", "INFO"）
+- `logger`: 可选的日志器配置（默认为FastMCP日志器）
+- `enable_rich_tracebacks`: 是否启用丰富的回溯
+- `**rich_kwargs`: RichHandler的附加参数
 

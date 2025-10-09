@@ -13,17 +13,19 @@ sidebarTitle: oauth
 default_cache_dir() -> Path
 ```
 
-### `check_if_auth_required` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L199" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+获取默认的缓存目录路径。
+
+### `check_if_auth_required` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L212" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 check_if_auth_required(mcp_url: str, httpx_kwargs: dict[str, Any] | None = None) -> bool
 ```
 
 
-通过发送测试请求检查 MCP 端点是否需要身份验证。
+通过发送测试请求检查MCP端点是否需要身份验证。
 
-**返回值：**
-- 如果似乎需要身份验证则返回 True，否则返回 False
+**返回值:**
+- 如果需要身份验证则返回True，否则返回False
 
 
 ## 类
@@ -31,54 +33,46 @@ check_if_auth_required(mcp_url: str, httpx_kwargs: dict[str, Any] | None = None)
 ### `ClientNotFoundError` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L38" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-在服务器上找不到 OAuth 客户端凭据时引发。
+当服务器上找不到OAuth客户端凭据时抛出的异常。
 
 
 ### `StoredToken` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L44" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-带有绝对过期时间的令牌存储格式。
+包含绝对过期时间的令牌存储格式。
 
 
 ### `FileTokenStorage` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L59" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-基于文件的令牌存储实现，用于 OAuth 凭据和令牌。
-实现了 mcp.client.auth.TokenStorage 协议。
+基于文件的OAuth凭据和令牌存储实现。
+实现了mcp.client.auth.TokenStorage协议。
 
-每个实例都绑定到特定的服务器 URL，以实现适当的令牌隔离。
+每个实例都绑定到特定的服务器URL以确保令牌隔离。
+内部使用JSONFileStorage进行一致的文件处理。
 
 
-**方法：**
+**方法:**
 
-#### `get_base_url` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L74" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_base_url` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L75" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_base_url(url: str) -> str
 ```
 
-从 URL 中提取基础 URL（协议 + 主机）。
+从URL中提取基础URL（协议 + 主机）。
 
 
-#### `get_cache_key` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L79" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-get_cache_key(self) -> str
-```
-
-从服务器的基础 URL 生成安全的文件系统键。
-
-
-#### `get_tokens` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L94" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_tokens` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L96" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_tokens(self) -> OAuthToken | None
 ```
 
-从文件存储加载令牌。
+从文件存储中加载令牌。
 
 
-#### `set_tokens` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L126" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `set_tokens` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L132" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 set_tokens(self, tokens: OAuthToken) -> None
@@ -87,16 +81,16 @@ set_tokens(self, tokens: OAuthToken) -> None
 将令牌保存到文件存储。
 
 
-#### `get_client_info` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L143" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_client_info` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L149" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_client_info(self) -> OAuthClientInformationFull | None
 ```
 
-从文件存储加载客户端信息。
+从文件存储中加载客户端信息。
 
 
-#### `set_client_info` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L171" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `set_client_info` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L179" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 set_client_info(self, client_info: OAuthClientInformationFull) -> None
@@ -105,7 +99,7 @@ set_client_info(self, client_info: OAuthClientInformationFull) -> None
 将客户端信息保存到文件存储。
 
 
-#### `clear` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L177" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `clear` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L185" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 clear(self) -> None
@@ -113,8 +107,11 @@ clear(self) -> None
 
 清除此服务器的所有缓存数据。
 
+注意：为向后兼容性，这是一个同步方法。
+使用直接文件操作而不是异步存储方法。
 
-#### `clear_all` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L186" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+#### `clear_all` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L199" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 clear_all(cls, cache_dir: Path | None = None) -> None
@@ -123,43 +120,43 @@ clear_all(cls, cache_dir: Path | None = None) -> None
 清除所有服务器的所有缓存数据。
 
 
-### `OAuth` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L229" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `OAuth` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L242" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-为具有基于浏览器身份验证的 MCP 服务器提供的 OAuth 客户端提供者。
+MCP服务器的OAuth客户端提供程序，支持基于浏览器的身份验证。
 
 此类通过打开浏览器进行用户授权并运行本地回调服务器，
-为 FastMCP 客户端提供 OAuth 身份验证。
+为FastMCP客户端提供OAuth身份验证。
 
 
-**方法：**
+**方法:**
 
-#### `redirect_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L309" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `redirect_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L322" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 redirect_handler(self, authorization_url: str) -> None
 ```
 
-打开浏览器进行授权，并对无效客户端进行预检查。
+打开浏览器进行授权，并预先检查无效客户端。
 
 
-#### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L330" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L343" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 callback_handler(self) -> tuple[str, str | None]
 ```
 
-处理 OAuth 回调并返回 (auth_code, state)。
+处理OAuth回调并返回(auth_code, state)。
 
 
-#### `async_auth_flow` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L363" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `async_auth_flow` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/client/auth/oauth.py#L376" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 async_auth_flow(self, request: httpx.Request) -> AsyncGenerator[httpx.Request, httpx.Response]
 ```
 
-带有对过时缓存凭据自动重试的 HTTPX 身份验证流程。
+HTTPX身份验证流程，在过期缓存凭据时自动重试。
 
-如果 OAuth 流程由于无效/过时的客户端凭据而失败，
-则清除缓存并使用新注册重试一次。
+如果OAuth流程因无效/过期的客户端凭据而失败，
+会清除缓存并使用新的注册重试一次。
 

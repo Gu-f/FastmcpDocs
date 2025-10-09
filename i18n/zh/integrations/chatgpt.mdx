@@ -1,159 +1,157 @@
 ---
 title: ChatGPT 🤝 FastMCP
 sidebarTitle: ChatGPT
-description: 将 FastMCP 服务器连接到 ChatGPT Deep Research
+description: 在聊天和深度研究模式下将 FastMCP 服务器连接到 ChatGPT
 icon: message-smile
-
+tag: NEW
 ---
 
-ChatGPT 通过远程 HTTP 连接支持 MCP 服务器，允许您使用 FastMCP 服务器的自定义工具和知识扩展 ChatGPT 的功能。
-
-<Note>
-ChatGPT 的 MCP 集成目前仅限于 **Deep Research** 功能，不适用于一般聊天。此功能适用于 ChatGPT Pro、Team、Enterprise 和 Edu 用户。
-</Note>
+ChatGPT 通过远程 HTTP 连接支持 MCP 服务器，有两种模式：用于交互式对话的**聊天模式**和用于全面信息检索的**深度研究模式**。
 
 <Tip>
-OpenAI 官方的 MCP 文档和示例是用 **FastMCP v2** 构建的！查看他们的[简单 Deep Research 风格 MCP 服务器示例](https://github.com/openai/sample-deep-research-mcp)以获得与本文档类似的快速参考，或者查看 OpenAI Cookbook 中[更完整的 Deep Research 示例](https://github.com/openai/openai-cookbook/tree/main/examples/deep_research_api/how_to_build_a_deep_research_mcp_server)，其中包括向量搜索等功能。
+**聊天模式需要开发者模式**：要在常规 ChatGPT 对话中使用 MCP 服务器，您必须首先在 ChatGPT 设置中启用开发者模式。此功能适用于 ChatGPT Pro、Team、Enterprise 和 Edu 用户。
 </Tip>
 
-## 深度思考功能(Deep Research)
+<Note>
+OpenAI 的官方 MCP 文档和示例使用 **FastMCP v2** 构建！从他们的 [MCP 文档](https://platform.openai.com/docs/mcp) 和 [开发者模式指南](https://platform.openai.com/docs/guides/developer-mode) 了解更多。
+</Note>
 
-ChatGPT 的 Deep Research 功能要求 MCP 服务器是可通过互联网访问的 HTTP 端点，并包含**恰好两个特定工具**：
+## 构建服务器
 
-- **`search`**：用于搜索您的资源并返回匹配的 ID
-- **`fetch`**：用于通过 ID 检索特定资源的完整内容
+首先，让我们创建一个简单的 FastMCP 服务器：
 
-<Warning>
-如果您的服务器没有实现具有正确签名的 `search` 和 `fetch` 工具，ChatGPT 将显示错误："This MCP server doesn't implement our specification"。两个工具都是必需的。
-</Warning>
-
-### 工具描述很重要
-
-由于 ChatGPT 需要了解如何有效使用您的工具，**请编写详细的工具描述**。描述教会 ChatGPT 如何形成查询、使用什么参数以及从您的数据中期望什么。糟糕的描述会导致糟糕的搜索结果。
-
-### 创建服务器
-
-与 Deep Research 兼容的服务器必须实现这两个必需的工具：
-
-- **`search(query: str)`** - 接受任何类型的查询并返回匹配的记录 ID
-- **`fetch(id: str)`** - 接受 ID 并返回记录
-
-**关键**：为两个工具编写详细的文档字符串。这些描述教会 ChatGPT 如何有效使用您的工具。糟糕的描述会导致糟糕的搜索结果。
-
-`search` 工具应该接受查询（任何类型的！）并返回 ID。`fetch` 工具应该接受 ID 并返回记录。
-
-以下是您可以调整的参考服务器实现（另请参阅 [OpenAI 的示例服务器](https://github.com/openai/sample-deep-research-mcp) 进行比较）：
-
-```python server.py [expandable]
-import json
-from pathlib import Path
-from dataclasses import dataclass
+```python server.py
 from fastmcp import FastMCP
+import random
 
-@dataclass
-class Record:
-    id: str
-    title: str
-    text: str
-    metadata: dict
+mcp = FastMCP("Demo Server")
 
-def create_server(
-    records_path: Path | str,
-    name: str | None = None,
-    instructions: str | None = None,
-) -> FastMCP:
-    """创建一个名为“FastMCP”的服务器，该服务器能够从一个 JSON 文件中搜索并获取记录。"""
-    records = json.loads(Path(records_path).read_text())
-
-    RECORDS = [Record(**r) for r in records]
-    LOOKUP = {r.id: r for r in RECORDS}
-
-    mcp = FastMCP(name=name or "Deep Research MCP", instructions=instructions)
-
-    @mcp.tool()
-    async def search(query: str):
-        """
-        对标题、文本和元数据进行简单的无序关键词搜索。
-        在记录内容中搜索任意查询词。
-        返回匹配记录的 ID 列表，以便 ChatGPT 获取。
-        """
-        toks = query.lower().split()
-        ids = []
-        for r in RECORDS:
-            record_txt = " ".join(
-                [r.title, r.text, " ".join(r.metadata.values())]
-            ).lower()
-            if any(t in record_txt for t in toks):
-                ids.append(r.id)
-
-        return {"ids": ids}
-
-    @mcp.tool()
-    async def fetch(id: str):
-        """
-        根据 ID 获取一条记录。
-        返回完整的记录数据，以便 ChatGPT 进行分析和引用。
-        """
-        if id not in LOOKUP:
-            raise ValueError(f"未知的记录 ID: {id}")
-        return LOOKUP[id]
-
-    return mcp
+@mcp.tool
+def roll_dice(sides: int = 6) -> int:
+    """投出指定面数的骰子。"""
+    return random.randint(1, sides)
 
 if __name__ == "__main__":
-    mcp = create_server("path/to/records.json")
     mcp.run(transport="http", port=8000)
 ```
 
-### 部署服务器
+### 部署您的服务器
 
-您的服务器必须部署到公共 URL，以便 ChatGPT 访问它。
-
-对于开发，您可以使用 `ngrok` 等工具临时将本地运行的服务器暴露到互联网。我们将在此示例中这样做（您可能需要安装 `ngrok` 并创建一个免费账户），但您可以使用任何其他方法来部署您的服务器。
-
-假设您将上述代码保存为 `server.py`，您可以在两个单独的终端中运行以下两个命令来部署您的服务器并将其暴露到互联网：
+您的服务器必须可从互联网访问。对于开发，使用 `ngrok`：
 
 <CodeGroup>
-```bash FastMCP server
+```bash Terminal 1
 python server.py
 ```
 
-```bash ngrok
+```bash Terminal 2
 ngrok http 8000
 ```
 </CodeGroup>
 
+记住您的公共 URL（例如，`https://abc123.ngrok.io`）以进行后续步骤。
+
+## 聊天模式
+
+聊天模式让您在 ChatGPT 对话中直接使用 MCP 工具。有关最新要求，请参阅 [OpenAI 的开发者模式指南](https://platform.openai.com/docs/guides/developer-mode)。
+
+### 添加到 ChatGPT
+
+#### 1. 启用开发者模式
+
+1. 打开 ChatGPT 并转到**设置** → **连接器**
+2. 在**高级**下，将**开发者模式**切换为启用
+
+#### 2. 创建连接器
+
+1. 在**设置** → **连接器**中，点击**创建**
+2. 输入：
+   - **名称**：您的服务器名称
+   - **服务器 URL**：`https://your-server.ngrok.io/mcp/`
+3. 勾选**我信任此提供者**
+4. 如需要，添加身份验证
+5. 点击**创建**
+
+<Note>
+**没有开发者模式**：如果您没有搜索/获取工具，ChatGPT 将拒绝服务器。启用开发者模式后，聊天模式不需要搜索/获取工具。
+</Note>
+
+#### 3. 在聊天中使用
+
+1. 开始新聊天
+2. 点击 **+** 按钮 → **更多** → **开发者模式**
+3. **启用您的 MCP 服务器连接器**（必需 - 必须在每个聊天中显式添加连接器）
+4. 现在您可以使用您的工具：
+
+使用示例：
+- "投出一个 20 面骰子"
+- "投骰子"（使用默认 6 面）
+
+<Tip>
+连接器必须在每个聊天会话中通过开发者模式显式启用。一旦添加，它在整个对话期间保持活跃。
+</Tip>
+
+### 跳过确认
+
+使用 `annotations={"readOnlyHint": True}` 为只读工具跳过确认提示：
+
+```python
+@mcp.tool(annotations={"readOnlyHint": True})
+def get_status() -> str:
+    """检查系统状态。"""
+    return "所有系统运行正常"
+
+@mcp.tool()  # 无注释 - ChatGPT 可能会要求确认
+def delete_item(id: str) -> str:
+    """删除一个项目。"""
+    return f"已删除 {id}"
+```
+
+## 深度研究模式
+
+深度研究模式提供带有引用的系统性信息检索。有关最新的深度研究规范，请参阅 [OpenAI 的 MCP 文档](https://platform.openai.com/docs/mcp)。
+
 <Warning>
-这会将您的未认证服务器暴露到互联网。如果您了解风险，只能在安全环境中运行此命令。
+**需要搜索和获取工具**：在没有开发者模式的情况下，ChatGPT 将拒绝任何没有 `search` 和 `fetch` 工具的服务器。即使在开发者模式下，深度研究也只使用这两个工具。
 </Warning>
 
-### 连接到 ChatGPT
+### 工具实现
 
-将 `https://your-server-url.com` 替换为您服务器的实际 URL（例如您的 ngrok URL）。
+深度研究工具必须遵循此模式：
 
-1. 打开 ChatGPT 并转到 **Settings** → **Connectors**
-2. 点击 **Add custom connector**
-3. 输入您的服务器详细信息：
-   - **Name**: Library Catalog
-   - **URL**: 您的服务器 URL，包括路径。
-        - **注意**：确保您的 URL 包含您使用的传输的正确路径。默认值是 SSE 的 /sse/（例如，https://abc123.ngrok.io/sse/）和 HTTP 的 /mcp/（例如，https://abc123.ngrok.io/mcp/）。
-   - **Description**: A library catalog for searching and retrieving books
+```python
+@mcp.tool()
+def search(query: str) -> dict:
+    """
+    搜索与查询匹配的记录。
+    必须返回 {"ids": [字符串 ID 列表]}
+    """
+    # 您的搜索逻辑
+    matching_ids = ["id1", "id2", "id3"]
+    return {"ids": matching_ids}
 
-#### 测试连接
+@mcp.tool()
+def fetch(id: str) -> dict:
+    """
+    按 ID 获取完整记录。
+    返回完整的记录数据供 ChatGPT 分析。
+    """
+    # 您的获取逻辑
+    return {
+        "id": id,
+        "title": "记录标题",
+        "content": "完整记录内容...",
+        "metadata": {"author": "Jane Doe", "date": "2024"}
+    }
+```
 
-1. 在 ChatGPT 中开始新聊天
-2. 点击 **Tools** → **Run deep research** 
-3. 选择您的 **Library Catalog** 连接器作为源
-4. 问一些问题，比如：
-   - "搜索 Python 编程书籍"
-   - "查找关于 AI 和机器学习的书籍"
-   - "显示 Python Software Foundation 的书籍"
+### 使用深度研究
 
-ChatGPT 将使用您服务器的搜索和获取工具来查找相关信息，并在其回复中引用来源。
+1. 确保您的服务器已添加到 ChatGPT 的连接器（与聊天模式相同）
+2. 开始新聊天
+3. 点击 **+** → **深度研究**
+4. 选择您的 MCP 服务器作为源
+5. 提出研究问题
 
-### 故障排除
+ChatGPT 将使用您的 `search` 和 `fetch` 工具来查找并引用相关信息。
 
-#### "This MCP server doesn't implement our specification"
-
-
-如果您收到此错误，很可能是因为您的服务器没有实现所需的工具（`search` 和 `fetch`）。要纠正此问题，请确保您的服务器满足服务要求。

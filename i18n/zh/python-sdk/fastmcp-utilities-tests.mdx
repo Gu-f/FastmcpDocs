@@ -29,6 +29,7 @@ run_server_in_process(server_fn: Callable[..., None], *args, **kwargs) -> Genera
 
 在单独的进程中运行 FastMCP 服务器并返回服务器 URL 的上下文管理器。当上下文管理器退出时，服务器进程将被终止。
 
+
 **参数：**
 - `server_fn`: 运行 FastMCP 服务器的函数。FastMCP 服务器不可 pickle 化，因此我们需要一个创建并运行服务器的函数。
 - `*args`: 传递给服务器函数的参数。
@@ -37,11 +38,12 @@ run_server_in_process(server_fn: Callable[..., None], *args, **kwargs) -> Genera
 - `port`: 要绑定的服务器端口 (默认\: 自动发现有效端口).
 - `**kwargs`: 传递给服务器函数的关键字参数。
 
+
 **返回值：**
 - 服务器 URL。
 
 
-### `caplog_for_fastmcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L141" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `caplog_for_fastmcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L143" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 caplog_for_fastmcp(caplog)
@@ -53,7 +55,7 @@ caplog_for_fastmcp(caplog)
 
 ## 类
 
-### `HeadlessOAuth` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L152" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `HeadlessOAuth` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L154" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 用于绕过浏览器交互进行测试的 OAuth 提供程序。
@@ -61,9 +63,10 @@ caplog_for_fastmcp(caplog)
 通过发起 HTTP 请求而不是打开浏览器和运行回调服务器来程序化地模拟完整的 OAuth 流程。对自动化测试很有用。
 
 
+
 **方法：**
 
-#### `redirect_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L165" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `redirect_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L167" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 redirect_handler(self, authorization_url: str) -> None
@@ -72,7 +75,7 @@ redirect_handler(self, authorization_url: str) -> None
 向授权 URL 发出 HTTP 请求并为回调处理程序存储响应。
 
 
-#### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L171" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L173" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 callback_handler(self) -> tuple[str, str | None]

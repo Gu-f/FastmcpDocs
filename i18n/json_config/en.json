@@ -68,7 +68,10 @@
               {
                 "group": "Essentials",
                 "icon": "cube",
-                "pages": ["${LANGUAGE_CODE}/clients/client", "${LANGUAGE_CODE}/clients/transports"]
+                "pages": [
+                  "${LANGUAGE_CODE}/clients/client",
+                  "${LANGUAGE_CODE}/clients/transports"
+                ]
               },
               {
                 "group": "Core Operations",
@@ -94,7 +97,10 @@
               {
                 "group": "Authentication",
                 "icon": "user-shield",
-                "pages": ["${LANGUAGE_CODE}/clients/auth/oauth", "${LANGUAGE_CODE}/clients/auth/bearer"]
+                "pages": [
+                  "${LANGUAGE_CODE}/clients/auth/oauth",
+                  "${LANGUAGE_CODE}/clients/auth/bearer"
+                ]
               }
             ]
           },
@@ -111,6 +117,7 @@
                   "${LANGUAGE_CODE}/integrations/azure",
                   "${LANGUAGE_CODE}/integrations/descope",
                   "${LANGUAGE_CODE}/integrations/github",
+                  "${LANGUAGE_CODE}/integrations/scalekit",
                   "${LANGUAGE_CODE}/integrations/google",
                   "${LANGUAGE_CODE}/integrations/workos"
                 ]
@@ -176,7 +183,10 @@
         "tab": "Documentation"
       },
       {
-        "pages": ["${LANGUAGE_CODE}/updates", "${LANGUAGE_CODE}/changelog"],
+        "pages": [
+          "${LANGUAGE_CODE}/updates",
+          "${LANGUAGE_CODE}/changelog"
+        ],
         "tab": "What's New"
       },
       {
@@ -260,16 +270,21 @@
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-__init__",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-auth",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-oauth_proxy",
+                      "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-oidc_proxy",
                       {
                         "group": "providers",
                         "pages": [
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-__init__",
+                          "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-auth0",
+                          "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-aws",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-azure",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-bearer",
+                          "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-descope",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-github",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-google",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-in_memory",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-jwt",
+                          "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-scalekit",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-workos"
                         ]
                       },
@@ -350,6 +365,7 @@
                     ]
                   },
                   "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-openapi",
+                  "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-storage",
                   "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-tests",
                   "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-types"
                 ]

@@ -341,7 +341,7 @@ app.mount("/analytics", mcp_app)
 
 ## 提供 LLM 友好的 API
 
-一个常见的模式是从您的 FastAPI 应用程序生成 MCP 服务器，然后将其挂载回同一个应用程序。这在您的常规 API 旁边提供了一个 LLM 优化的接口：
+一种常见的模式是从FastAPI应用程序生成MCP服务器，并从同一应用程序提供两个接口。这为您的常规API提供了一个LLM优化的接口：
 
 ```python
 # 假设上面的 FastAPI 应用程序已经定义
@@ -354,13 +354,19 @@ mcp = FastMCP.from_fastapi(app=app, name="电子商务 MCP")
 # 2. 创建 MCP 的 ASGI 应用程序
 mcp_app = mcp.http_app(path='/mcp')
 
-# 3. 将其挂载回您的 FastAPI 应用程序
-app = FastAPI(title="电子商务 API", lifespan=mcp_app.lifespan)
-app.mount("/llm", mcp_app)
+# 3. 创建一个结合两组路由的新 FastAPI 应用程序
+combined_app = FastAPI(
+    title="带有 MCP 的电子商务 API",
+    routes=[
+        *mcp_app.routes,  # MCP 路由
+        *app.routes,      # 原始 API 路由
+    ],
+    lifespan=mcp_app.lifespan,
+)
 
 # 现在您拥有：
 # - 常规 API：http://localhost:8000/products
-# - LLM 友好的 MCP：http://localhost:8000/llm/mcp/
+# - LLM-friendly MCP: http://localhost:8000/mcp/
 # 两者都从同一个 FastAPI 应用程序提供服务！
 ```
 
