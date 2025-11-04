@@ -20,10 +20,10 @@ temporary_settings(**kwargs: Any)
 - `**kwargs`: 要覆盖的设置，包括嵌套设置。
 
 
-### `run_server_in_process` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L75" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `run_server_in_process` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L76" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-run_server_in_process(server_fn: Callable[..., None], *args, **kwargs) -> Generator[str, None, None]
+run_server_in_process(server_fn: Callable[..., None], *args: Any, **kwargs: Any) -> Generator[str, None, None]
 ```
 
 
@@ -43,7 +43,27 @@ run_server_in_process(server_fn: Callable[..., None], *args, **kwargs) -> Genera
 - 服务器 URL。
 
 
-### `caplog_for_fastmcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L143" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `run_server_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L144" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+run_server_async(server: FastMCP, port: int | None = None, transport: Literal['http', 'streamable-http', 'sse'] = 'http', path: str = '/mcp', host: str = '127.0.0.1') -> AsyncGenerator[str, None]
+```
+
+
+将 FastMCP 服务器作为 asyncio 任务启动，用于进程内异步测试。
+
+这是测试 FastMCP 服务器的推荐方式。它将服务器作为异步任务
+在同一进程中运行，消除了子进程协调、休眠和清理问题。
+
+**参数:**
+- `server`: FastMCP 服务器实例
+- `port`: 要绑定的端口（默认：查找可用端口）
+- `transport`: 传输类型（"http"、"streamable-http" 或 "sse"）
+- `path`: 服务器的 URL 路径（默认："/mcp"）
+- `host`: 要绑定的主机（默认："127.0.0.1"）
+
+
+### `caplog_for_fastmcp` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L226" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 caplog_for_fastmcp(caplog)
@@ -55,7 +75,7 @@ caplog_for_fastmcp(caplog)
 
 ## 类
 
-### `HeadlessOAuth` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L154" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `HeadlessOAuth` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L237" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 用于绕过浏览器交互进行测试的 OAuth 提供程序。
@@ -66,7 +86,7 @@ caplog_for_fastmcp(caplog)
 
 **方法：**
 
-#### `redirect_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L167" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `redirect_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L250" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 redirect_handler(self, authorization_url: str) -> None
@@ -75,7 +95,7 @@ redirect_handler(self, authorization_url: str) -> None
 向授权 URL 发出 HTTP 请求并为回调处理程序存储响应。
 
 
-#### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L173" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `callback_handler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/tests.py#L256" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 callback_handler(self) -> tuple[str, str | None]

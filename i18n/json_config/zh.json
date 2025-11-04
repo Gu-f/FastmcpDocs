@@ -1,14 +1,17 @@
 {
   "language": "${LANGUAGE_CODE}",
-  "tabs": [
+  "dropdowns": [
       {
+        "dropdown": "文档",
+        "icon": "book",
         "groups": [
           {
             "group": "开始",
             "pages": [
               "${LANGUAGE_CODE}/getting-started/welcome",
               "${LANGUAGE_CODE}/getting-started/installation",
-              "${LANGUAGE_CODE}/getting-started/quickstart"
+              "${LANGUAGE_CODE}/getting-started/quickstart",
+              "${LANGUAGE_CODE}/updates"
             ]
           },
           {
@@ -35,7 +38,9 @@
                   "${LANGUAGE_CODE}/servers/logging",
                   "${LANGUAGE_CODE}/servers/progress",
                   "${LANGUAGE_CODE}/servers/sampling",
-                  "${LANGUAGE_CODE}/servers/middleware"
+                  "${LANGUAGE_CODE}/servers/middleware",
+                  "${LANGUAGE_CODE}/servers/icons",
+                  "${LANGUAGE_CODE}/servers/storage-backends"
                 ]
               },
               {
@@ -56,7 +61,7 @@
                 "pages": [
                   "${LANGUAGE_CODE}/deployment/running-server",
                   "${LANGUAGE_CODE}/deployment/server-configuration",
-                  "${LANGUAGE_CODE}/deployment/self-hosted",
+                  "${LANGUAGE_CODE}/deployment/http",
                   "${LANGUAGE_CODE}/deployment/fastmcp-cloud"
                 ]
               }
@@ -152,10 +157,9 @@
                 ]
               },
               {
-                "group": "Web 框架",
+                "group": "API 集成",
                 "icon": "globe",
                 "pages": [
-                  "${LANGUAGE_CODE}/integrations/asgi",
                   "${LANGUAGE_CODE}/integrations/fastapi",
                   "${LANGUAGE_CODE}/integrations/openapi"
                 ]
@@ -168,7 +172,8 @@
               "${LANGUAGE_CODE}/patterns/tool-transformation",
               "${LANGUAGE_CODE}/patterns/decorating-methods",
               "${LANGUAGE_CODE}/patterns/cli",
-              "${LANGUAGE_CODE}/patterns/contrib"
+              "${LANGUAGE_CODE}/patterns/contrib",
+              "${LANGUAGE_CODE}/patterns/testing"
             ]
           },
           {
@@ -176,18 +181,12 @@
             "pages": [
               "${LANGUAGE_CODE}/development/contributing",
               "${LANGUAGE_CODE}/development/tests",
-              "${LANGUAGE_CODE}/development/releases"
+              "${LANGUAGE_CODE}/development/releases",
+              "${LANGUAGE_CODE}/development/upgrade-guide",
+              "${LANGUAGE_CODE}/changelog"
             ]
           }
-        ],
-        "tab": "文档"
-      },
-      {
-        "pages": [
-          "${LANGUAGE_CODE}/updates",
-          "${LANGUAGE_CODE}/changelog"
-        ],
-        "tab": "最新动态"
+        ]
       },
       {
         "anchors": [
@@ -202,7 +201,6 @@
                 "group": "fastmcp.cli",
                 "pages": [
                   "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-__init__",
-                  "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-claude",
                   "${LANGUAGE_CODE}/python-sdk/fastmcp-cli-cli",
                   {
                     "group": "install",
@@ -269,6 +267,8 @@
                     "pages": [
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-__init__",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-auth",
+                      "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-jwt_issuer",
+                      "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-middleware",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-oauth_proxy",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-oidc_proxy",
                       {
@@ -283,8 +283,10 @@
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-github",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-google",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-in_memory",
+                          "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-introspection",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-jwt",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-scalekit",
+                          "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-supabase",
                           "${LANGUAGE_CODE}/python-sdk/fastmcp-server-auth-providers-workos"
                         ]
                       },
@@ -300,11 +302,13 @@
                     "group": "middleware",
                     "pages": [
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-__init__",
+                      "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-caching",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-error_handling",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-logging",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-middleware",
                       "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-rate_limiting",
-                      "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-timing"
+                      "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-timing",
+                      "${LANGUAGE_CODE}/python-sdk/fastmcp-server-middleware-tool_injection"
                     ]
                   },
                   "${LANGUAGE_CODE}/python-sdk/fastmcp-server-openapi",
@@ -365,15 +369,16 @@
                     ]
                   },
                   "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-openapi",
-                  "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-storage",
                   "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-tests",
-                  "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-types"
+                  "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-types",
+                  "${LANGUAGE_CODE}/python-sdk/fastmcp-utilities-ui"
                 ]
               }
             ]
           }
         ],
-        "tab": "SDK 参考文档"
+        "dropdown": "SDK 参考文档",
+        "icon": "code"
       }
     ]
 }

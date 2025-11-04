@@ -1,0 +1,77 @@
+---
+title: introspection
+sidebarTitle: introspection
+---
+
+# `fastmcp.server.auth.providers.introspection`
+
+
+用于 FastMCP 的 OAuth 2.0 令牌内省（RFC 7662）提供程序。
+
+此模块使用 RFC 7662 中定义的 OAuth 2.0 令牌内省协议为不透明令牌提供令牌验证。
+它允许 FastMCP 服务器验证不使用 JWT 格式的授权服务器签发的令牌。
+
+
+示例：
+    ```python
+    from fastmcp import FastMCP
+    from fastmcp.server.auth.providers.introspection import IntrospectionTokenVerifier
+
+    # 通过 RFC 7662 内省验证不透明令牌
+    verifier = IntrospectionTokenVerifier(
+        introspection_url="https://auth.example.com/oauth/introspect",
+        client_id="your-client-id",
+        client_secret="your-client-secret",
+        required_scopes=["read", "write"]
+    )
+
+    mcp = FastMCP("My Protected Server", auth=verifier)
+    ```
+
+
+## 类
+
+### `IntrospectionTokenVerifierSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/introspection.py#L43" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+OAuth 2.0 令牌内省验证的设置。
+
+
+### `IntrospectionTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/introspection.py#L65" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+OAuth 2.0 令牌内省验证器（RFC 7662）。
+
+此验证器通过调用 OAuth 2.0 令牌内省端点来验证不透明令牌。
+与无状态的 JWT 验证不同，令牌内省需要为每次令牌验证向授权服务器发起网络调用。
+
+
+验证器使用提供的 client_id 和 client_secret 通过 HTTP Basic 认证
+向内省端点进行身份验证，符合 RFC 7662 规范。
+
+在以下情况使用：
+- 您的授权服务器签发不透明（非 JWT）令牌
+- 您需要验证来自 Auth0、Okta、Keycloak 或其他 OAuth 服务器的令牌
+- 您的令牌需要实时撤销检查
+- 您的授权服务器支持 RFC 7662 内省
+
+
+**方法:**
+
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/introspection.py#L184" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+verify_token(self, token: str) -> AccessToken | None
+```
+
+使用 OAuth 2.0 令牌内省（RFC 7662）验证承载令牌。
+
+此方法向内省端点发送包含令牌的 POST 请求，
+使用客户端凭据通过 HTTP Basic 认证进行身份验证。
+
+**参数:**
+- `token`: 要验证的不透明令牌字符串
+
+**返回:**
+- 如果有效且活跃则返回 AccessToken 对象，如果无效、不活跃或过期则返回 None
+

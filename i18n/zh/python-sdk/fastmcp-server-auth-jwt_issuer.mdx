@@ -1,0 +1,104 @@
+---
+title: jwt_issuer
+sidebarTitle: jwt_issuer
+---
+
+# `fastmcp.server.auth.jwt_issuer`
+
+
+用于 FastMCP OAuth 代理的 JWT 令牌签发和验证。
+
+此模块实现了 OAuth 代理的令牌工厂模式，其中代理向客户端签发自己的 JWT 令牌，
+而不是转发上游提供商的令牌。这维护了正确的 OAuth 2.0 令牌受众边界。
+
+
+
+## 函数
+
+### `derive_jwt_key` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/jwt_issuer.py#L37" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+derive_jwt_key() -> bytes
+```
+
+
+从高熵或低熵密钥材料和服务器盐值派生 JWT 签名密钥。
+
+
+## 类
+
+### `JWTIssuer` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/jwt_issuer.py#L74" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+使用 HS256 签发和验证 FastMCP 签名的 JWT 令牌。
+
+此签发者为 MCP 客户端创建具有适当受众声明的 JWT 令牌，
+维护 OAuth 2.0 令牌边界。令牌使用 HS256 签名，
+密钥从上游客户端密钥派生。
+
+
+**方法:**
+
+#### `issue_access_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/jwt_issuer.py#L100" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+issue_access_token(self, client_id: str, scopes: list[str], jti: str, expires_in: int = 3600) -> str
+```
+
+签发最小的 FastMCP 访问令牌。
+
+FastMCP 令牌是引用令牌，仅包含验证和查找所需的最小声明。
+JTI 映射到包含实际用户身份和授权数据的上游令牌。
+
+
+**参数:**
+- `client_id`: MCP 客户端 ID
+- `scopes`: 令牌范围
+- `jti`: 唯一令牌标识符（映射到上游令牌）
+- `expires_in`: 令牌生存时间（秒）
+
+**返回:**
+- 签名的 JWT 令牌
+
+
+#### `issue_refresh_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/jwt_issuer.py#L147" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+issue_refresh_token(self, client_id: str, scopes: list[str], jti: str, expires_in: int) -> str
+```
+
+签发最小的 FastMCP 刷新令牌。
+
+FastMCP 刷新令牌是引用令牌，仅包含验证和查找所需的最小声明。
+JTI 映射到包含实际用户身份和授权数据的上游令牌。
+
+
+**参数:**
+- `client_id`: MCP 客户端 ID
+- `scopes`: 令牌范围
+- `jti`: 唯一令牌标识符（映射到上游令牌）
+- `expires_in`: 令牌生存时间（秒）（应匹配上游刷新过期时间）
+
+**返回:**
+- 签名的 JWT 令牌
+
+
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/jwt_issuer.py#L195" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+verify_token(self, token: str) -> dict[str, Any]
+```
+
+验证和解码 FastMCP 令牌。
+
+验证 JWT 签名、过期时间、签发者和受众。
+
+**参数:**
+- `token`: 要验证的 JWT 令牌
+
+**返回:**
+- 解码的令牌负载
+
+**抛出:**
+- `JoseError`: 如果令牌无效、过期或具有错误的声明
+

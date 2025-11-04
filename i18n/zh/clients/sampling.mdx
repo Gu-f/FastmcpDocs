@@ -151,51 +151,6 @@ client = Client(
 )
 ```
 
-## 采样回退
-
-
-客户端对采样的支持是可选的，如果客户端不支持采样，服务器将报告错误，指示客户端不支持采样。
-
-
-也可以为 FastMCP 服务器提供 `sampling_handler`，当客户端不支持采样时，它将用于处理采样请求。此采样处理器绕过客户端，直接向 LLM 提供商发送采样请求。
-
-采样处理器可以使用任何 LLM 提供商来实现，但作为贡献模块提供了 OpenAI 的示例实现。采样缺乏典型 LLM 补全的完整功能。因此，指向第三方提供商的 OpenAI 兼容 API 的 OpenAI 采样处理器通常足以实现采样处理器。
-
-
-
-```python
-import asyncio
-import os
-
-from mcp.types import ContentBlock
-from openai import OpenAI
-
-from fastmcp import FastMCP
-from fastmcp.experimental.sampling.handlers.openai import OpenAISamplingHandler
-from fastmcp.server.context import Context
-
-
-async def async_main():
-    server = FastMCP(
-        name="OpenAI Sampling Fallback Example",
-        sampling_handler=OpenAISamplingHandler(
-            default_model="gpt-4o-mini",
-            client=OpenAI(
-                api_key=os.getenv("API_KEY"),
-                base_url=os.getenv("BASE_URL"),
-            ),
-        ),
-    )
-
-    @server.tool
-    async def test_sample_fallback(ctx: Context) -> ContentBlock:
-        return await ctx.sample(
-            messages=["hello world!"],
-        )
-
-    await server.run_http_async()
-
-
-if __name__ == "__main__":
-    asyncio.run(async_main())
-```
+<Note>
+如果客户端未提供采样处理器，服务器可以选择配置回退处理器。详情请参阅[服务器采样](/zh/servers/sampling#sampling-fallback-handler)。
+</Note>

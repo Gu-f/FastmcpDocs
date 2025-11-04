@@ -405,6 +405,14 @@ app = FastAPI()
 app.mount("/mcp", mcp.http_app())  # 会话管理器不会初始化
 ```
 
+如果您在路径前缀下挂载启用身份验证的 MCP 服务器，请参阅[挂载已认证服务器](/zh/deployment/http#mounting-authenticated-servers)，了解关键的 OAuth 路由注意事项。
+
+### CORS 中间件
+
+如果您的 FastAPI 应用使用了 `CORSMiddleware`，并且挂载了受 OAuth 保护的 FastMCP 服务器，请避免在整个应用上添加全局 CORS 中间件。FastMCP 与 MCP SDK 已经为 OAuth 路由处理了 CORS，叠加中间件可能导致冲突（例如 `.well-known` 路由或 OPTIONS 请求返回 404）。
+
+如果需要为自有 FastAPI 路由开启 CORS，请采用子应用模式：分别挂载您的 API 与 FastMCP，每个子应用使用各自的中间件，而不是在组合后的应用上添加顶层 `CORSMiddleware`。
+
 ### 合并生命周期
 
 如果您的 FastAPI 应用程序已经有生命周期（用于数据库连接、启动任务等），您不能简单地用 MCP 生命周期替换它。相反，您需要创建一个管理两个上下文的新生命周期函数。这确保您的应用程序初始化逻辑和 MCP 服务器的会话管理器都能正常运行：

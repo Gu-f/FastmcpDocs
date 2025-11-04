@@ -8,54 +8,68 @@ sidebarTitle: azure
 
 FastMCP 的 Azure（Microsoft Entra）OAuth 提供程序。
 
-此提供程序使用 OAuth 代理模式为非 DCR OAuth 流程实现 Azure/Microsoft Entra ID OAuth 身份验证。
+此提供程序使用 OAuth 代理模式为非 DCR OAuth 流程实现
+Azure/Microsoft Entra ID OAuth 身份验证。
 
 
+## Classes
 
-## 类
-
-### `AzureProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L23" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `AzureProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L29" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 Azure OAuth 提供程序的设置。
 
 
-### `AzureTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L47" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-
-Azure OAuth 令牌的令牌验证器。
-
-Azure 令牌是 JWT，但我们通过调用 Microsoft Graph API 来获取用户信息并验证令牌。
-
-
-
-**方法：**
-
-#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L69" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-verify_token(self, token: str) -> AccessToken | None
-```
-
-通过调用 Microsoft Graph API 验证 Azure OAuth 令牌。
-
-
-### `AzureProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L118" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `AzureProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L61" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 FastMCP 的 Azure（Microsoft Entra）OAuth 提供程序。
 
-此提供程序使用 OAuth 代理模式实现 Azure/Microsoft Entra ID 身份验证。根据租户配置，它支持组织账户和个人 Microsoft 账户。
+此提供程序使用 OAuth 代理模式实现 Azure/Microsoft Entra ID 身份验证。
+它根据租户配置支持组织账户和个人 Microsoft 账户。
+
+范围处理：
+- required_scopes：提供无前缀的范围名称（例如，["read", "write"]）
+  → 在初始化期间自动添加 identifier_uri 前缀
+  → 在所有令牌上验证并告知 MCP 客户端
+- additional_authorize_scopes：提供完整格式（例如，["User.Read"]）
+  → 不添加前缀，不验证，不告知客户端
+  → 用于请求 Microsoft Graph 或其他上游 API 权限
 
 功能：
-- 到 Azure/Microsoft 身份平台的透明 OAuth 代理
-- 通过 Microsoft Graph API 进行自动令牌验证
-- 用户信息提取
-- 支持不同的租户配置（common、organizations、consumers）
+- 到 Azure/Microsoft 身份平台的 OAuth 代理
+- 使用租户颁发者和 JWKS 进行 JWT 验证
+- 支持租户配置：特定租户 ID、"organizations" 或 "consumers"
+- 在单个提供程序中支持自定义 API 范围和 Microsoft Graph 范围
 
-设置要求：
-1. 在 Azure 门户（portal.azure.com）中注册应用程序
-2. 将重定向 URI 配置为：http://localhost:8000/auth/callback
-3. 记录您的应用程序（客户端）ID 并创建客户端密钥
-4. 可选地为单租户应用记录您的目录（租户）ID
+设置：
+1. 在 Azure 门户中创建应用程序注册
+2. 配置 Web 平台重定向 URI：http://localhost:8000/auth/callback（或您的自定义路径）
+3. 在"公开 API"下添加应用程序 ID URI（默认为 api://{client_id}）
+4. 在"公开 API"下添加自定义范围（例如，"read", "write"）
+5. 在应用程序清单中设置访问令牌版本为 2："requestedAccessTokenVersion": 2
+6. 创建客户端密钥
+7. 获取应用程序（客户端）ID、目录（租户）ID 和客户端密钥
+
+
+**Methods:**
+
+#### `authorize` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/azure.py#L270" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+authorize(self, client: OAuthClientInformationFull, params: AuthorizationParams) -> str
+```
+
+启动 OAuth 事务并重定向到 Azure AD。
+
+重写父类的 authorize 方法以过滤掉'resource'参数，
+Azure AD v2.0 端点不支持该参数。v2.0 端点使用范围
+来确定资源/受众，而不是单独的参数。
+
+**参数:**
+- `client`: OAuth 客户端信息
+- `params`: 来自客户端的授权参数
+
+**返回:**
+- 用于将用户重定向到 Azure AD 的授权 URL
 

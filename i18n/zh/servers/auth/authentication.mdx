@@ -3,7 +3,6 @@ title: 身份验证
 sidebarTitle: 概述
 description: 使用灵活的身份验证模式保护您的 FastMCP 服务器，从简单的 API 密钥到与外部身份提供商的完整 OAuth 2.1 集成。
 icon: user-shield
-tag: NEW
 ---
 
 import { VersionBadge } from "/snippets/version-badge.mdx"
@@ -99,9 +98,9 @@ mcp = FastMCP(name="受保护的服务器", auth=auth)
 
 `RemoteAuthProvider` 允许使用**支持动态客户端注册（DCR）**的身份提供程序进行身份验证，如Descope和WorkOS AuthKit。使用DCR，MCP客户端可以自动向身份提供者注册并获得凭据，而无需任何手动配置。
 
-此类将令牌验证与 OAuth 发现元数据结合起来。它通过添加 OAuth 2.0 受保护的资源端点来扩展 `TokenVerifier` 的功能，这些端点会声明你的认证要求。MCP 客户端会检查这些端点，以了解你信任哪些身份提供者以及如何获取有效令牌。
+此类将令牌验证与 OAuth 发现元数据相结合。它通过添加 OAuth 2.0 受保护资源端点来扩展 `TokenVerifier` 功能，这些端点发布您的身份验证要求。MCP 客户端检查这些端点以了解您信任哪些身份提供商以及如何获取有效令牌。
 
-关键要求是你的身份提供者必须支持 DCR——即客户端能够动态注册并获取凭证的能力。这正是实现 MCP 所需的无缝自动化认证流程的前提。
+关键要求是您的身份提供商必须支持 DCR - 客户端动态注册和获取凭据的能力。这就是实现 MCP 所需的无缝、自动化身份验证流程的原因。
 
 例如，内置的 `AuthKitProvider` 使用 WorkOS AuthKit，它完全支持 DCR：
 
@@ -117,23 +116,23 @@ auth = AuthKitProvider(
 mcp = FastMCP(name="企业服务器", auth=auth)
 ```
 
-此示例使用 WorkOS AuthKit 作为外部身份提供商。`AuthKitProvider` 自动配置针对 WorkOS 的令牌验证，并提供 MCP 客户端自动身份验证所需的 OAuth 元数据。
+此示例使用 WorkOS AuthKit 作为外部身份提供商。`AuthKitProvider` 自动配置针对 WorkOS 的令牌验证，并为 MCP 客户端提供自动身份验证所需的 OAuth 元数据。
 
-当你的身份提供者支持动态客户端注册（DCR）时，`RemoteAuthProvider` 非常适合用于生产环境应用。这可以实现完全自动化的认证，无需手动配置客户端。
+`RemoteAuthProvider` 非常适合您的身份提供商支持动态客户端注册（DCR）的生产应用程序。这实现了完全自动化的身份验证，无需手动客户端配置。
 
 → **完整指南**：[远程 OAuth](/zh/servers/auth/remote-oauth)
 
-### OAuth代理(OAuthProxy)
+### OAuth 代理(OAuthProxy)
 
 <VersionBadge version="2.12.0" />
 
-`OAuthProxy` 允许与**不支持动态客户端注册（DCR）**的OAuth提供者进行身份验证，如GitHub、Google、Azure、AWS和大多数传统的企业身份系统。
+`OAuthProxy` 允许与**不支持动态客户端注册（DCR）**的 OAuth 提供商进行身份验证，如 GitHub、Google、Azure、AWS 和大多数传统企业身份系统。
 
-当身份提供商需要手动应用注册和固定凭据时，`OAuthProxy` 充当桥梁。它向 MCP 客户端提供符合 DCR 的接口（接受任何注册请求），同时使用您在上游提供商处预注册的凭据。代理处理回调转发的复杂性，使动态客户端回调能够与需要固定重定向 URI 的提供商配合使用。
+当身份提供商需要手动应用注册和固定凭据时，`OAuthProxy` 弥补了这一差距。它向 MCP 客户端呈现符合 DCR 的接口（接受任何注册请求），同时使用您的预注册凭据与上游提供商。代理处理回调转发的复杂性，使动态客户端回调能够与需要固定重定向 URI 的提供商一起工作。
 
-此类解决了 MCP 对动态注册期望与传统 OAuth 提供商手动应用注册要求之间的根本不兼容性。
+此类解决了 MCP 对动态注册的期望与传统 OAuth 提供商对手动应用注册的要求之间的根本不兼容性。
 
-例如，内置的 `GitHubProvider` 扩展 `OAuthProxy` 以与 GitHub 的 OAuth 系统配合使用：
+例如，内置的 `GitHubProvider` 扩展 `OAuthProxy` 以与 GitHub 的 OAuth 系统一起工作：
 
 ```python
 from fastmcp import FastMCP
@@ -145,20 +144,20 @@ auth = GitHubProvider(
     base_url="https://your-server.com"
 )
 
-mcp = FastMCP(name="GitHub 保护的服务器", auth=auth)
+mcp = FastMCP(name="GitHub保护的服务器", auth=auth)
 ```
 
-此示例使用 GitHub 提供商，它使用 GitHub 特定的令牌验证扩展了 `OAuthProxy`。代理处理完整的 OAuth 流程，同时使 GitHub 的非 DCR 身份验证与 MCP 客户端无缝配合。
+此示例使用 GitHub 提供商，它扩展 `OAuthProxy` 并具有 GitHub 特定的令牌验证。代理处理完整的 OAuth 流，同时使 GitHub 的非 DCR 身份验证与 MCP 客户端无缝工作。
 
-当与不支持 DCR 的 OAuth 提供商集成时，`OAuthProxy` 是必不可少的。这包括大多数已建立的提供商，如 GitHub、Google 和 Azure，它们需要通过其开发者控制台进行手动应用注册。
+`OAuthProxy` 在与不支持 DCR 的 OAuth 提供商集成时至关重要。这包括大多数已建立的提供商，如 GitHub、Google 和 Azure，它们需要通过其开发者控制台进行手动应用注册。
 
 → **完整指南**：[OAuth 代理](/zh/servers/auth/oauth-proxy)
 
-### OAuth提供者(OAuthProvider)
+### OAuth 提供商(OAuthProvider)
 
-`OAuthProvider` 在您的 MCP 服务器内实现完整的 OAuth 2.0 授权服务器。此类处理从用户凭据验证到令牌管理的完整身份验证生命周期。
+`OAuthProvider` 在您的 MCP 服务器中实现完整的 OAuth 2.0 授权服务器。此类处理从用户凭据验证到令牌管理的完整身份验证生命周期。
 
-实现提供所有所需的 OAuth 端点，包括授权、令牌和发现端点。它管理客户端注册、用户同意和令牌生命周期，同时与您的用户存储和身份验证逻辑集成。
+实现提供所有必需的 OAuth 端点，包括授权、令牌和发现端点。它管理客户端注册、用户同意和令牌生命周期，同时与您的用户存储和身份验证逻辑集成。
 
 ```python
 from fastmcp import FastMCP
@@ -167,51 +166,51 @@ from fastmcp.server.auth.providers.oauth import MyOAuthProvider
 auth = MyOAuthProvider(
     user_store=your_user_database,
     client_store=your_client_registry,
-    # 额外配置...
+    # 其他配置...
 )
 
-mcp = FastMCP(name="身份验证服务器", auth=auth)
+mcp = FastMCP(name="认证服务器", auth=auth)
 ```
 
-此示例显示了自定义 OAuth 提供商的基本结构。实际实现需要在用户管理、客户端注册和安全策略方面进行大量额外配置。
+此示例显示自定义 OAuth 提供商的基本结构。实际实现需要大量额外的配置用于用户管理、客户端注册和安全策略。
 
-`OAuthProvider` 仅应在您有外部提供商无法满足的特定要求并且具备安全实现 OAuth 的专业知识时使用。
+`OAuthProvider` 应仅在外部提供商无法满足您的特定要求并且您拥有安全实施 OAuth 的专业知识时使用。
 
 → **完整指南**：[完整 OAuth 服务器](/zh/servers/auth/full-oauth-server)
 
 ## 配置方法
 
-FastMCP 支持编程式配置（以获得最大灵活性）和基于环境的配置（以简化部署）。
+FastMCP 支持编程式配置以获得最大灵活性，以及基于环境的配置以简化部署。
 
 ### 编程式配置
 
-编程式配置提供对身份验证设置的完全控制，并允许复杂的初始化逻辑。这种方法在开发期间和需要根据运行时条件自定义身份验证行为时效果很好。
+编程式配置提供对身份验证设置的完全控制，并允许复杂的初始化逻辑。这种方法在开发期间以及当您需要根据运行时条件自定义身份验证行为时效果很好。
 
-身份验证提供商在您的代码中直接使用其所需参数进行实例化。这使依赖关系明确，并允许您的 IDE 提供有用的自动完成和类型检查。
+身份验证提供商在代码中直接实例化，并带有其必需的参数。这使得依赖关系明确，并允许您的 IDE 提供有用的自动补全和类型检查。
 
 ### 环境配置
 
 <VersionBadge version="2.12.1" />
 
-基于环境的配置将身份验证设置与应用程序代码分离，使同一代码库能够在不同的部署环境中工作而无需修改。
+基于环境的配置将身份验证设置与应用程序代码分离，使相同的代码库能够在不同的部署环境中工作而无需修改。
 
-当未提供显式的 `auth` 参数时，FastMCP 会自动从环境变量中检测身份验证配置。配置系统支持所有身份验证提供程序及其各种选项。
+当没有提供显式 `auth` 参数时，FastMCP 自动检测来自环境变量的身份验证配置。配置系统支持所有身份验证提供商及其各种选项。
 
-#### 提供程序配置
+#### 提供商配置
 
-身份验证提供程序通过指定提供程序类的完整模块路径进行配置：
+身份验证提供商通过指定提供商类的完整模块路径来配置：
 
 <ParamField path="FASTMCP_SERVER_AUTH" type="string">
-身份验证提供程序类的完整模块路径。示例：
+身份验证提供商类的完整模块路径。示例：
 - `fastmcp.server.auth.providers.github.GitHubProvider` - GitHub OAuth
 - `fastmcp.server.auth.providers.google.GoogleProvider` - Google OAuth
 - `fastmcp.server.auth.providers.jwt.JWTVerifier` - JWT 令牌验证
 - `fastmcp.server.auth.providers.workos.WorkOSProvider` - WorkOS OAuth
 - `fastmcp.server.auth.providers.workos.AuthKitProvider` - WorkOS AuthKit
-- `mycompany.auth.CustomProvider` - 您的自定义提供程序类
+- `mycompany.auth.CustomProvider` - 您的自定义提供商类
 </ParamField>
 
-当使用 GitHub 或 Google 等提供程序时，您需要设置特定于提供程序的环境变量：
+当使用 GitHub 或 Google 等提供商时，您需要设置特定于提供商的环境变量：
 
 ```bash
 # GitHub OAuth
@@ -225,9 +224,9 @@ export FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_ID="123456.apps.googleusercontent.com"
 export FASTMCP_SERVER_AUTH_GOOGLE_CLIENT_SECRET="GOCSPX-..."
 ```
 
-#### 特定于提供程序的配置
+#### 特定于提供商的配置
 
-每个提供程序都有自己通过环境变量设置的配置选项：
+每个提供商都有自己的配置选项，通过环境变量设置：
 
 ```bash
 # JWT 令牌验证
@@ -236,32 +235,32 @@ export FASTMCP_SERVER_AUTH_JWT_JWKS_URI="https://auth.example.com/jwks"
 export FASTMCP_SERVER_AUTH_JWT_ISSUER="https://auth.example.com"
 export FASTMCP_SERVER_AUTH_JWT_AUDIENCE="mcp-server"
 
-# 自定义提供程序
+# 自定义提供商
 export FASTMCP_SERVER_AUTH=mycompany.auth.CustomProvider
-# 加上您的自定义提供程序期望的任何环境变量
+# 加上您的自定义提供商期望的任何环境变量
 ```
 
-设置了这些环境变量后，创建经过身份验证的 FastMCP 服务器不需要额外配置：
+设置这些环境变量后，创建经过身份验证的 FastMCP 服务器不需要额外的配置：
 
 ```python
 from fastmcp import FastMCP
 
-# 身份验证自动从环境中配置
+# 身份验证从环境自动配置
 mcp = FastMCP(name="我的服务器")
 ```
 
-这种方法简化了部署流水线，并遵循配置管理的十二因子应用原则。
+这种方法简化了部署管道，并遵循十二因子应用程序原则进行配置管理。
 
 ## 选择您的实现
 
-您选择的身份验证方法取决于您现有的基础设施、安全要求和操作约束。
+您选择的方法取决于您现有的基础设施、安全要求和操作约束。
 
-**对于不支持DCR的OAuth提供商（GitHub、Google、Azure、AWS、大多数企业系统），请使用OAuth代理。**这些提供商需要通过其开发人员控制台手动注册应用程序。OAuth代理通过向MCP客户端提供符合DCR的接口，同时使用您与提供商的固定凭据，弥合了这一差距。代理的回调转发模式使动态客户端端口能够与需要固定重定向URI的提供者一起工作。
+**对于不支持 DCR 的 OAuth 提供商（GitHub、Google、Azure、AWS、大多数企业系统），请使用 OAuth 代理。**这些提供商需要通过其开发者控制台进行手动应用注册。OAuth 代理通过向 MCP 客户端呈现符合 DCR 的接口，同时使用您与提供商的固定凭据来弥合差距。代理的回调转发模式使动态客户端端口能够与需要固定重定向 URI 的提供商一起工作。
 
-**对于支持DCR的身份提供程序（Descope、WorkOS AuthKit、现代身份验证平台），请使用RemoteAuthProvider。**这些提供程序允许客户端动态注册和获取凭据，而无需手动配置。这实现了MCP设计的全自动身份验证流程，提供了最佳的用户体验和最简单的实现。
+**对于支持 DCR 的身份提供商（Descope、WorkOS AuthKit、现代身份平台），请使用 RemoteAuthProvider。**这些提供商允许客户端动态注册和获取凭据，无需手动配置。这实现了 MCP 设计的完全自动化身份验证流程，提供最佳的用户体验和最简单的实现。
 
-**当您已经拥有发行结构化令牌的身份验证基础设施时，令牌验证工作得很好。** 如果您的组织已经使用基于 JWT 的系统、API 网关或可以生成令牌的企业 SSO，这种方法可以无缝集成，同时保持您的 MCP 服务器专注于其核心功能。简单性来自于利用现有的身份验证基础设施投资。
+**当您已经拥有发行结构化令牌的身份验证基础设施时，令牌验证效果很好。**如果您的组织已经使用基于 JWT 的系统、API 网关或可以生成令牌的企业 SSO，这种方法无缝集成，同时让您的 MCP 服务器专注于其核心功能。简单性来自于利用现有的身份验证基础设施投资。
 
-**除非您有外部提供程序无法解决的令人信服的理由，否则应避免完整的 OAuth 实现。** 隔离环境、专门的合规要求或独特的组织约束可能证明这种方法是合理的，但它需要重要的安全专业知识和持续的维护承诺。复杂性远远超出了初始实现，包括威胁监控、安全更新以及跟上不断发展的攻击载体。
+**除非有令人信服的理由表明外部提供商无法解决，否则应避免完整的 OAuth 实现。**空隙环境、专门的合规要求或独特的组织约束可能证明这种方法的合理性，但它需要显著的安全专业知识和持续的维护承诺。复杂性远超初始实现，包括威胁监控、安全更新以及跟上不断发展的攻击向量。
 
-FastMCP 的架构支持随着需求发展在这些方法之间迁移。您可以最初与现有令牌系统集成，并在应用程序扩展时迁移到外部身份提供程序，或者在需求超出标准模式时实现自定义解决方案。
+FastMCP 的架构支持在这些方法之间迁移，因为您的需求会演变。您可以最初与现有的令牌系统集成，并在应用程序扩展时迁移到外部身份提供商，或者在您的需求超出标准模式时实施自定义解决方案。

@@ -53,7 +53,7 @@ async with Client("https://fastmcp.cloud/mcp", auth=oauth) as client:
 - **`mcp_url`** (`str`)：目标 MCP 服务器端点的完整 URL。用于发现 OAuth 服务器元数据
 - **`scopes`** (`str | list[str]`，可选)：要请求的 OAuth 作用域。可以是空格分隔的字符串或字符串列表
 - **`client_name`** (`str`，可选)：用于动态注册的客户端名称。默认为 `"FastMCP Client"`
-- **`token_storage_cache_dir`** (`Path`，可选)：令牌缓存目录。默认为 `~/.fastmcp/oauth-mcp-client-cache/`
+- **`token_storage`** (`AsyncKeyValue`，可选)：用于持久化 OAuth 令牌的存储后端。默认使用内存存储（重启后令牌会丢失）。参阅[令牌存储](#令牌存储)了解加密存储选项
 - **`additional_client_metadata`** (`dict[str, Any]`，可选)：客户端注册的额外元数据
 - **`callback_port`** (`int`，可选)：OAuth 回调服务器的固定端口。如果未指定，则使用随机可用端口
 
@@ -64,7 +64,7 @@ async with Client("https://fastmcp.cloud/mcp", auth=oauth) as client:
 
 <Steps>
 <Step title="令牌检查">
-客户端首先检查 `token_storage_cache_dir` 中是否存在目标服务器的有效令牌。如果找到，它将用于验证客户端。
+客户端首先检查已配置的 `token_storage` 后端中是否存在目标服务器的有效令牌。如果找到，它将用于验证客户端。
 </Step>
 <Step title="OAuth 服务器发现">
 如果不存在有效令牌，客户端会尝试使用基于 `mcp_url` 的已知 URI（例如 `/.well-known/oauth-authorization-server`）来发现 OAuth 服务器的端点。
@@ -82,7 +82,7 @@ async with Client("https://fastmcp.cloud/mcp", auth=oauth) as client:
 批准后，OAuth 服务器将用户的浏览器重定向到本地回调服务器，并带有 `authorization_code`。客户端捕获此代码，并使用 PKCE 增强安全性，与 OAuth 服务器的令牌端点交换 `access_token`（通常还有 `refresh_token`）。
 </Step>
 <Step title="令牌缓存">
-获得的令牌保存到 `token_storage_cache_dir` 供将来使用，无需重复浏览器交互。
+获得的令牌会保存到已配置的 `token_storage` 后端，以便后续使用，从而避免重复的浏览器交互。
 </Step> 
 <Step title="已验证请求">
 访问令牌会自动包含在对 MCP 服务器请求的 `Authorization` 标头中。
@@ -92,27 +92,37 @@ async with Client("https://fastmcp.cloud/mcp", auth=oauth) as client:
 </Step>
 </Steps>
 
-## 令牌管理
+## 令牌存储
 
-### 令牌存储
+<VersionBadge version="2.13.0" />
 
-OAuth 访问令牌会自动缓存在 `~/.fastmcp/oauth-mcp-client-cache/` 中，并在应用程序运行之间保持。文件按 OAuth 服务器的基本 URL 键入。
+默认情况下，令牌存放在内存中，应用一旦重启就会丢失。若需持久化存储，请将兼容 `AsyncKeyValue` 的存储后端传入 `token_storage` 参数。
 
-### 管理缓存
-
-要清除特定服务器的令牌，请实例化 `FileTokenStorage` 实例并调用 `clear` 方法：
-
-```python
-from fastmcp.client.auth.oauth import FileTokenStorage
-
-storage = FileTokenStorage(server_url="https://fastmcp.cloud/mcp")
-await storage.clear()
-```
-
-要清除*所有*服务器的所有令牌，请在 `FileTokenStorage` 类上调用 `clear_all` 方法：
+<Warning>
+**安全注意事项**：生产环境请使用加密存储。MCP 客户端可能随着时间积累多个服务器的 OAuth 凭据，若令牌存储被入侵，可能会导致多个服务受影响。
+</Warning>
 
 ```python
-from fastmcp.client.auth.oauth import FileTokenStorage
+from fastmcp import Client
+from fastmcp.client.auth import OAuth
+from key_value.aio.stores.disk import DiskStore
+from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
+from cryptography.fernet import Fernet
+import os
 
-FileTokenStorage.clear_all()
+# 创建加密磁盘存储
+encrypted_storage = FernetEncryptionWrapper(
+    key_value=DiskStore(directory="~/.fastmcp/oauth-tokens"),
+    fernet=Fernet(os.environ["OAUTH_STORAGE_ENCRYPTION_KEY"])
+)
+
+oauth = OAuth(
+    mcp_url="https://fastmcp.cloud/mcp",
+    token_storage=encrypted_storage
+)
+
+async with Client("https://fastmcp.cloud/mcp", auth=oauth) as client:
+    await client.ping()
 ```
+
+你可以使用 [key-value 库](https://github.com/jlowin/key-value) 中任意兼容 `AsyncKeyValue` 的后端，例如 Redis、DynamoDB 等。请使用 `FernetEncryptionWrapper` 为存储添加加密保护。

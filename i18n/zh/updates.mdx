@@ -5,6 +5,34 @@ icon: "sparkles"
 tag: NEW
 ---
 
+<Update label="FastMCP 2.13.0" description="2025年10月25日" tags={["版本发布"]}>
+<Card
+title="FastMCP 2.13.0: Cache Me If You Can"
+href="https://github.com/jlowin/fastmcp/releases/tag/v2.13.0"
+cta="阅读发布说明"
+>
+FastMCP 2.13 “Cache Me If You Can” 体现了框架迈向成熟的关键一步。基于数月的身份验证与状态管理反馈，此版本带来了支撑生产负载所需的基础设施：持久化存储、响应缓存，以及贴合实际部署挑战的实用 OAuth 改进。
+
+💾 **可插拔存储后端** 为 FastMCP 服务器提供持久化状态能力。存储层构建于 FastMCP 维护者 Bill Easton（[@strawgate](https://github.com/strawgate)）的新库 [py-key-value-aio](https://github.com/strawgate/py-key-value) 之上，默认提供加密磁盘存储、平台感知的令牌管理以及简洁的键值接口，并可通过封装器为 Elasticsearch、Redis、DynamoDB、文件系统、内存等后端添加加密、TTL 与缓存。
+
+🔐 **OAuth 成熟度** 将生产经验融入框架。全新授权同意页阻止“困惑副手”与授权绕过攻击，OAuth 代理改为自动推导密钥并签发自有令牌。新增 RFC 7662 令牌内省、路径前缀挂载等能力，开箱即用支持 [WorkOS](https://gofastmcp.com/integrations/workos)、[AuthKit](https://gofastmcp.com/integrations/authkit)、[GitHub](https://gofastmcp.com/integrations/github)、[Google](https://gofastmcp.com/integrations/google)、[Azure](https://gofastmcp.com/integrations/azure)（Entra ID）、[AWS Cognito](https://gofastmcp.com/integrations/aws-cognito)、[Auth0](https://gofastmcp.com/integrations/auth0)、[Descope](https://gofastmcp.com/integrations/descope)、[Scalekit](https://gofastmcp.com/integrations/scalekit)、[JWT](https://gofastmcp.com/servers/auth/token-verification#jwt-token-verification) 以及 [RFC 7662 令牌内省](https://gofastmcp.com/servers/auth/token-verification#token-introspection-protocol)。
+
+⚡ **响应缓存中间件** 为高成本操作显著提速，而 **服务器生命周期** 则提供仅在服务器实例级别运行一次的初始化与清理钩子。
+
+✨ **开发体验提升** 包括 Pydantic 输入验证、图标支持、资源模板的 RFC 6570 查询参数、改进的 Context API 方法，以及异步文件/目录资源。
+</Card>
+</Update>
+
+<Update label="FastMCP 2.12.5" description="2025年10月17日" tags={["版本发布"]}>
+<Card
+title="FastMCP 2.12.5: Safety Pin"
+href="https://github.com/jlowin/fastmcp/releases/tag/v2.12.5"
+cta="阅读发布说明"
+>
+将 MCP SDK 版本固定在 1.17 以下，确保在复合应用中使用 FastMCP 身份验证提供方时，`.well-known` 响应仍然出现在预期位置。
+</Card>
+</Update>
+
 <Update label="FastMCP 2.12.4" description="2025年9月26日" tags={["版本发布"]}>
 <Card
 title="FastMCP 2.12.4: OIDC What You Did There"
@@ -287,4 +315,3 @@ cta="阅读更多"
 （翻译注：梦开始的地方！）
 </Card>
 </Update>
-

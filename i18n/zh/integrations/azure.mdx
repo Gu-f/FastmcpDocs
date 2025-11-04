@@ -1,6 +1,6 @@
 ---
-title: Azure (Microsoft Entra) OAuth 🤝 FastMCP
-sidebarTitle: Azure
+title: Azure（Microsoft Entra ID）OAuth 🤝 FastMCP
+sidebarTitle: Azure（Entra ID）
 description: 使用 Azure/Microsoft Entra OAuth 保护您的 FastMCP 服务器
 icon: microsoft
 tag: NEW
@@ -8,9 +8,9 @@ tag: NEW
 
 import { VersionBadge } from "/snippets/version-badge.mdx"
 
-<VersionBadge version="2.12.0" />
+<VersionBadge version="2.13.0" />
 
-本指南向您展示了如何使用**Azure OAuth**（Microsoft Entra ID）保护您的FastMCP服务器。由于Azure不支持动态客户端注册，此集成使用[**OAuth代理**]（/servers/auth/OAuth-Proxy）模式将Azure的传统OAuth与MCP的身份验证要求连接起来。FastMCP根据应用程序的client_id验证Azure JWT.
+本指南向您展示如何使用 **Azure OAuth**（Microsoft Entra ID）保护 FastMCP 服务器。由于 Azure 不支持动态客户端注册，此集成采用 [**OAuth 代理**](/zh/servers/auth/oauth-proxy) 模式，将 Azure 的传统 OAuth 与 MCP 的身份验证需求衔接起来。FastMCP 会基于应用程序的 `client_id` 验证 Azure JWT。
 
 ## 配置
 
@@ -75,7 +75,7 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
     </Warning>
 
     <Note>
-    在 FastMCP 的 `AzureProvider` 中，将 `identifier_uri` 设置为您的应用程序 ID URI（可选；默认为 `api://{client_id}`），并将 `required_scopes` 设置为未加前缀的作用域名称（例如，`read`、`write`）。在授权期间，FastMCP 会自动为作用域加上您的 `identifier_uri` 前缀。
+    在 FastMCP 的 `AzureProvider` 中，将 `identifier_uri` 设置为您的应用程序 ID URI（可选；默认为 `api://{client_id}`），并将 `required_scopes` 设置为未加前缀的作用域名称（例如 `read`、`write`）。授权流程中，FastMCP 会自动为作用域补上 `identifier_uri` 前缀。
     </Note>
 
 
@@ -122,7 +122,7 @@ auth_provider = AzureProvider(
     client_secret="your-client-secret",                 # 您的 Azure 应用客户端密钥
     tenant_id="08541b6e-646d-43de-a0eb-834e6713d6d5", # 您的 Azure 租户 ID（必需）
     base_url="http://localhost:8000",                   # 必须与您的应用注册匹配
-    required_scopes=["your-scope"],                 # 配置应用程序时创建的作用域名称
+    required_scopes=["your-scope"],                 # 必填：至少一个作用域，来自您的应用注册
     # identifier_uri 默认为 api://{client_id}
     # identifier_uri="api://your-api-id",
     # 可选：在授权请求中请求附加的上游作用域
@@ -157,6 +157,10 @@ async def get_user_info() -> dict:
 - **"consumers"**：仅限个人 Microsoft 账户
 
 推荐使用您的特定租户 ID 以获得更好的安全性和控制。
+</Note>
+
+<Note>
+**重要**：`required_scopes` 参数是**必填项**，必须至少包含一个作用域。Azure 的 OAuth API 要求每个授权请求都带上 `scope` 参数，否则无法完成认证。请使用 Azure 应用注册中“公开 API”所创建的未加前缀作用域名称（例如 `["read", "write"]`）。
 </Note>
 
 ## 测试
@@ -205,6 +209,48 @@ if __name__ == "__main__":
 客户端在本地缓存令牌，因此除非令牌过期或您显式清除缓存，否则您无需为后续运行重新进行身份验证。
 </Info>
 
+## 生产环境配置
+
+<VersionBadge version="2.13.0" />
+
+在生产部署中，为了在服务器重启后仍能保留令牌，请同时配置 `jwt_signing_key` 与 `client_storage`：
+
+```python server.py
+import os
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.azure import AzureProvider
+from key_value.aio.stores.redis import RedisStore
+from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
+from cryptography.fernet import Fernet
+
+# 使用加密的持久化令牌存储进行生产配置
+auth_provider = AzureProvider(
+    client_id="835f09b6-0f0f-40cc-85cb-f32c5829a149",
+    client_secret="your-client-secret",
+    tenant_id="08541b6e-646d-43de-a0eb-834e6713d6d5",
+    base_url="https://your-production-domain.com",
+    required_scopes=["your-scope"],
+
+    # 生产环境令牌管理
+    jwt_signing_key=os.environ["JWT_SIGNING_KEY"],
+    client_storage=FernetEncryptionWrapper(
+        key_value=RedisStore(
+            host=os.environ["REDIS_HOST"],
+            port=int(os.environ["REDIS_PORT"])
+        ),
+        fernet=Fernet(os.environ["STORAGE_ENCRYPTION_KEY"])
+    )
+)
+
+mcp = FastMCP(name="Production Azure App", auth=auth_provider)
+```
+
+<Note>
+`jwt_signing_key` 与 `client_storage` 需要配合使用，才能在服务器重启后保留令牌与客户端注册信息。**请使用 `FernetEncryptionWrapper` 加密存储中的敏感 OAuth 令牌**，否则将以明文保存。建议将密钥存放在环境变量中，并选择 Redis 等持久化后端以支持分布式部署。
+
+更多参数说明请参阅 [OAuth 代理文档](/zh/servers/auth/oauth-proxy#configuration-parameters)。
+</Note>
+
 ## 环境变量
 
 <VersionBadge version="2.12.1" />
@@ -243,15 +289,23 @@ if __name__ == "__main__":
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_AZURE_BASE_URL" default="http://localhost:8000">
-用于 OAuth 回调的 FastMCP 服务器公共 URL
+OAuth 端点可访问的公共 URL（包含任何挂载路径）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_ISSUER_URL" default="使用 BASE_URL">
+用于 OAuth 元数据的 Issuer URL（默认等于 `BASE_URL`）。当挂载在路径前缀下时，请设置为根级 URL 以避免 404 日志。详见 [HTTP 部署指南](/zh/deployment/http#mounting-authenticated-servers)。
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_AZURE_REDIRECT_PATH" default="/auth/callback">
 在您的 Azure 应用注册中配置的重定向路径
 </ParamField>
 
-<ParamField path="FASTMCP_SERVER_AUTH_AZURE_REQUIRED_SCOPES" default="">
-您的 API 所需的作用域的逗号、空格或 JSON 分隔列表。这些在令牌上进行验证，如果客户端未请求特定作用域，则用作默认值。
+<ParamField path="FASTMCP_SERVER_AUTH_AZURE_REQUIRED_SCOPES" required>
+您的 API 所需的作用域列表，使用逗号、空格或 JSON 分隔（至少需要一个作用域）。这些作用域会在令牌上验证，并在客户端未请求特定作用域时作为默认值。请使用应用注册中未加前缀的作用域名称（例如 `read,write`）。
+
+<Note>
+Azure 的 OAuth API 要求提供 `scope` 参数——必须至少配置一个作用域。
+</Note>
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_AZURE_ADDITIONAL_AUTHORIZE_SCOPES" default="">
@@ -294,4 +348,3 @@ async def protected_tool(query: str) -> str:
     # 您的工具实现在这里
     return f"处理经过身份验证的请求：{query}"
 ```
-

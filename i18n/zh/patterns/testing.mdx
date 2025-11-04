@@ -1,0 +1,85 @@
+---
+title: 测试你的 FastMCP 服务器
+sidebarTitle: 测试
+description: 如何测试 FastMCP 服务器。
+icon: vial
+---
+
+确保 FastMCP 服务器可靠且易于维护的最佳方式就是进行测试！FastMCP Client 搭配 Pytest，为测试服务器提供了简单而强大的组合。
+
+借助 Pytest Fixture，你可以将 FastMCP 服务器包装成一个 Client 实例，使与服务器交互变得快速而轻松。这在你构建自定义 MCP 服务器时尤其实用，可帮助你在开发阶段免于频繁切换到 MCP Inspector 等外部工具，从而保持紧凑的开发循环：
+
+```python
+import pytest
+from fastmcp.client import Client
+from fastmcp.client.transports import FastMCPTransport
+
+from my_project.main import mcp
+
+@pytest.fixture
+async def main_mcp_client():
+    async with Client(transport=mcp) as mcp_client:
+        yield mcp_client
+
+async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
+    list_tools = await main_mcp_client.list_tools()
+
+    assert len(list_tools) == 5
+```
+
+我们推荐使用 [inline-snapshot 库](https://github.com/15r10nk/inline-snapshot) 来断言来自 MCP 服务器的复杂数据结构。借助该库，你可以编写易读、易懂且在数据结构变化时便于更新的测试。
+
+```python
+from inline_snapshot import snapshot
+
+async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
+    list_tools = await main_mcp_client.list_tools()
+
+    assert list_tools == snapshot()
+```
+
+运行 `pytest --inline-snapshot=fix,create` 即可为 `snapshot()` 自动填充真实数据。
+
+<Tip>
+对于可能变化的值，可以结合 [dirty-equals](https://github.com/samuelcolvin/dirty-equals) 库，对动态或不可预测的值执行更灵活的相等性断言。
+</Tip>
+
+利用 pytest 的 `parametrize` 装饰器，你可以轻松使用多组不同输入来测试工具。
+
+```python
+import pytest
+from my_project.main import mcp
+
+from fastmcp.client import Client
+from fastmcp.client.transports import FastMCPTransport
+@pytest.fixture
+async def main_mcp_client():
+    async with Client(mcp) as client:
+        yield client
+
+
+@pytest.mark.parametrize(
+    "first_number, second_number, expected",
+    [
+        (1, 2, 3),
+        (2, 3, 5),
+        (3, 4, 7),
+    ],
+)
+async def test_add(
+    first_number: int,
+    second_number: int,
+    expected: int,
+    main_mcp_client: Client[FastMCPTransport],
+):
+    result = await main_mcp_client.call_tool(
+        name="add", arguments={"x": first_number, "y": second_number}
+    )
+    assert result.data is not None
+    assert isinstance(result.data, int)
+    assert result.data == expected
+```
+
+<Tip>
+[FastMCP 仓库中包含数千个测试用例](https://github.com/jlowin/fastmcp/tree/main/tests)，覆盖了从连接远程 MCP 服务器，到测试工具、资源与提示的一切场景，欢迎参考获取灵感！
+</Tip>

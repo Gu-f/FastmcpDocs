@@ -149,6 +149,48 @@ if __name__ == "__main__":
 2. 授权应用程序后，您将被重定向回来
 3. 客户端接收令牌并可以进行身份验证请求
 
+## 生产环境配置
+
+<VersionBadge version="2.13.0" />
+
+在生产部署中，为了在服务器重启后仍能保留令牌，需同时配置 `jwt_signing_key` 与 `client_storage`：
+
+```python server.py
+import os
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.auth0 import Auth0Provider
+from key_value.aio.stores.redis import RedisStore
+from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
+from cryptography.fernet import Fernet
+
+# 使用加密的持久化令牌存储进行生产配置
+auth_provider = Auth0Provider(
+    config_url="https://.../.well-known/openid-configuration",
+    client_id="tv2ObNgaZAWWhhycr7Bz1LU2mxlnsmsB",
+    client_secret="vPYqbjemq...",
+    audience="https://...",
+    base_url="https://your-production-domain.com",
+
+    # 生产环境令牌管理
+    jwt_signing_key=os.environ["JWT_SIGNING_KEY"],
+    client_storage=FernetEncryptionWrapper(
+        key_value=RedisStore(
+            host=os.environ["REDIS_HOST"],
+            port=int(os.environ["REDIS_PORT"])
+        ),
+        fernet=Fernet(os.environ["STORAGE_ENCRYPTION_KEY"])
+    )
+)
+
+mcp = FastMCP(name="Production Auth0 App", auth=auth_provider)
+```
+
+<Note>
+`jwt_signing_key` 与 `client_storage` 需要配套使用，以确保令牌与客户端注册在服务器重启后仍然有效。**请使用 `FernetEncryptionWrapper` 对存储中的敏感 OAuth 令牌进行加密**，否则将以明文形式保存。建议使用环境变量存放密钥，并选择 Redis 等持久化后端以支持分布式部署。
+
+更多参数说明请参阅 [OAuth 代理文档](/zh/servers/auth/oauth-proxy#configuration-parameters)。
+</Note>
+
 <Info>
 客户端在本地缓存令牌，因此除非令牌过期或您明确清除缓存，否则后续运行时无需重新认证。
 </Info>
@@ -189,7 +231,11 @@ if __name__ == "__main__":
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_AUTH0_BASE_URL" required>
-用于 OAuth 回调的 FastMCP 服务器公共 URL
+OAuth 端点可访问的公共 URL（包含任何挂载路径）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_AUTH0_ISSUER_URL" default="使用 BASE_URL">
+用于 OAuth 元数据的 Issuer URL（默认等于 `BASE_URL`）。当挂载在路径前缀下时，请设置为根级 URL 以避免 404 日志。详见 [HTTP 部署指南](/zh/deployment/http#mounting-authenticated-servers)。
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_AUTH0_REDIRECT_PATH" default="/auth/callback">

@@ -9,10 +9,10 @@
       "dark": "#222831",
       "light": "#EEEEEE"
     },
-    "decoration": "windows"
+    "decoration": "gradient"
   },
   "banner": {
-    "content": "Host your server on [FastMCP Cloud](https://fastmcp.cloud) for free!"
+    "content": "Join the [FastMCP community](https://discord.gg/uu8dJCgttd)!"
   },
   "colors": {
     "dark": "#f72585",
@@ -26,16 +26,23 @@
     ]
   },
   "description": "The fast, Pythonic way to build MCP servers and clients.",
+  "errors": {
+    "404": {
+      "description": "You\u2019ve wandered outside the context.",
+      "redirect": false,
+      "title": "Don't panic."
+    }
+  },
   "favicon": {
     "dark": "/assets/brand/favicon.svg",
     "light": "/assets/brand/favicon.svg"
   },
   "footer": {
     "socials": {
-      "bluesky": "https://bsky.app/profile/jlowin.dev",
+      "discord": "https://discord.gg/uu8dJCgttd",
       "github": "https://github.com/jlowin/fastmcp",
       "x": "https://x.com/jlowin",
-      "website": "https://github.com/Gu-f/FastmcpDocs"
+      "website": "https://prefect.ai"
     }
   },
   "integrations": {
@@ -66,6 +73,11 @@
         "href": "https://fastmcp.cloud",
         "label": "FastMCP Cloud",
         "icon": "cloud"
+      },
+      {
+        "href": "https://discord.gg/uu8dJCgttd",
+        "icon": "discord",
+        "label": "Discord"
       }
     ]
   },
@@ -85,7 +97,15 @@
   "search": {
     "prompt": "Search the docs..."
   },
-  "theme": "mint",
+  "styling": {
+    "codeblocks": {
+      "theme": {
+        "dark": "dark-plus",
+        "light": "snazzy-light"
+      }
+    }
+  },
+  "theme": "almond",
   "thumbnails": {
     "appearance": "light",
     "background": "/assets/brand/thumbnail-background.png"

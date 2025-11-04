@@ -1,0 +1,271 @@
+---
+title: 存储后端
+sidebarTitle: 存储后端
+description: 配置持久化和分布式存储用于缓存和 OAuth 状态管理
+icon: database
+tag: 新功能
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+<VersionBadge version="2.13.0" />
+
+FastMCP 使用可插拔的存储后端用于缓存响应和管理 OAuth 状态。默认情况下，所有存储都在内存中，这非常适合开发，但不能在重启之间持久化。FastMCP 支持多种存储后端，您可以轻松地通过自定义实现来扩展它。
+
+<Tip>
+存储层由 **[py-key-value-aio](https://github.com/strawgate/py-key-value)** 提供支持，这是一个由 FastMCP 核心维护者维护的异步键值库。该库为多种后端提供了统一接口，使您可以根据部署需求轻松切换实现。
+</Tip>
+
+## 可用的后端
+
+### 内存存储
+
+**最佳用于：** 开发、测试、单进程部署
+
+内存存储是所有 FastMCP 存储需求的默认设置。它速度快，无需设置，非常适合入门。
+
+```python
+from key_value.aio.stores.memory import MemoryStore
+
+# 默认使用 - 无需配置
+# 但您也可以明确指定：
+cache_store = MemoryStore()
+```
+
+**特点：**
+- ✅ 无需设置
+- ✅ 非常快
+- ❌ 重启时数据丢失
+- ❌ 不适合多进程部署
+
+### 磁盘存储
+
+**最佳用于：** 单服务器生产部署、持久化缓存
+
+磁盘存储将数据持久化到文件系统，使其能够在服务器重启后存活。
+
+```python
+from key_value.aio.stores.disk import DiskStore
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+
+# 持久化响应缓存
+middleware = ResponseCachingMiddleware(
+    cache_storage=DiskStore(directory="/var/cache/fastmcp")
+)
+```
+
+或者用于 OAuth 令牌存储：
+
+```python
+from fastmcp.server.auth.providers.github import GitHubProvider
+from key_value.aio.stores.disk import DiskStore
+
+auth = GitHubProvider(
+    client_id="your-id",
+    client_secret="your-secret",
+    base_url="https://your-server.com",
+    client_storage=DiskStore(directory="/var/lib/fastmcp/oauth")
+)
+```
+
+**特点：**
+- ✅ 数据在重启间持久化
+- ✅ 中等负载下性能良好
+- ❌ 不适合分布式部署
+- ❌ 需要文件系统访问
+
+### Redis
+
+**最佳用于：** 分布式生产部署、多服务器间共享缓存
+
+<Note>
+Redis 支持需要可选依赖：`pip install 'py-key-value-aio[redis]'`
+</Note>
+
+Redis 提供分布式缓存和状态管理，非常适合具有多个服务器实例的生产部署。
+
+```python
+from key_value.aio.stores.redis import RedisStore
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+
+# 分布式响应缓存
+middleware = ResponseCachingMiddleware(
+    cache_storage=RedisStore(host="redis.example.com", port=6379)
+)
+```
+
+用于身份验证：
+
+```python
+from key_value.aio.stores.redis import RedisStore
+
+cache_store = RedisStore(
+    host="redis.example.com",
+    port=6379,
+    password="your-redis-password"
+)
+```
+
+用于 OAuth 令牌存储：
+
+```python
+import os
+from fastmcp.server.auth.providers.github import GitHubProvider
+from key_value.aio.stores.redis import RedisStore
+
+auth = GitHubProvider(
+    client_id=os.environ["GITHUB_CLIENT_ID"],
+    client_secret=os.environ["GITHUB_CLIENT_SECRET"],
+    base_url="https://your-server.com",
+    jwt_signing_key=os.environ["JWT_SIGNING_KEY"],
+    client_storage=RedisStore(host="redis.example.com", port=6379)
+)
+```
+
+**特点：**
+- ✅ 分布式和高可用
+- ✅ 快速的内存性能
+- ✅ 跨多个服务器实例工作
+- ✅ 内置 TTL 支持
+- ❌ 需要 Redis 基础设施
+- ❌ 与本地存储相比的网络延迟
+
+### py-key-value-aio 的其他后端
+
+py-key-value-aio 库包含各种存储系统的额外实现：
+
+- **DynamoDB** - AWS 分布式数据库
+- **MongoDB** - NoSQL 文档存储
+- **Elasticsearch** - 分布式搜索和分析
+- **Memcached** - 分布式内存缓存
+- **RocksDB** - 嵌入式高性能键值存储
+- **Valkey** - Redis 兼容服务器
+
+有关这些后端的配置详情，请参阅 [py-key-value-aio 文档](https://github.com/strawgate/py-key-value)。
+
+## FastMCP 中的用例
+
+### 服务器端 OAuth 令牌存储
+
+[OAuth 代理](/zh/servers/auth/oauth-proxy) 和 OAuth 身份验证提供商使用存储来持久化 OAuth 客户端注册和上游令牌。**默认情况下，存储使用 `FernetEncryptionWrapper` 自动加密。** 提供自定义存储时，将其包装在 `FernetEncryptionWrapper` 中以加密静态的敏感 OAuth 令牌。
+
+**开发（默认行为）：**
+
+默认情况下，FastMCP 根据您的平台自动管理密钥和存储：
+- **Mac/Windows**：密钥通过系统密钥环自动管理，存储默认为磁盘。**仅**适合开发和本地测试。
+- **Linux**：密钥是临时的，存储默认为内存。
+
+无需配置：
+
+```python
+from fastmcp.server.auth.providers.github import GitHubProvider
+
+auth = GitHubProvider(
+    client_id="your-id",
+    client_secret="your-secret",
+    base_url="https://your-server.com"
+)
+```
+
+**生产：**
+
+对于生产部署，配置显式密钥和带有加密的持久化网络可访问存储：
+
+```python
+import os
+from fastmcp.server.auth.providers.github import GitHubProvider
+from key_value.aio.stores.redis import RedisStore
+from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
+from cryptography.fernet import Fernet
+
+auth = GitHubProvider(
+    client_id=os.environ["GITHUB_CLIENT_ID"],
+    client_secret=os.environ["GITHUB_CLIENT_SECRET"],
+    base_url="https://your-server.com",
+    # 显式 JWT 签名密钥（生产必需）
+    jwt_signing_key=os.environ["JWT_SIGNING_KEY"],
+    # 加密持久化存储（生产必需）
+    client_storage=FernetEncryptionWrapper(
+        key_value=RedisStore(host="redis.example.com", port=6379),
+        fernet=Fernet(os.environ["STORAGE_ENCRYPTION_KEY"])
+    )
+)
+```
+
+两个参数都是生产所必需的。**将您的存储包装在 `FernetEncryptionWrapper` 中以加密静态的敏感 OAuth 令牌** - 没有它，令牌将以明文存储。有关完整的设置详情，请参阅 [OAuth 令牌安全](/zh/deployment/http#oauth-token-security) 和 [密钥和存储管理](/zh/servers/auth/oauth-proxy#key-and-storage-management)。
+
+### 响应缓存中间件
+
+[响应缓存中间件](/zh/servers/middleware#caching-middleware) 缓存工具调用、资源读取和提示请求。存储配置通过 `cache_storage` 参数传递：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+from key_value.aio.stores.disk import DiskStore
+
+mcp = FastMCP("My Server")
+
+# 缓存到磁盘而不是内存
+mcp.add_middleware(ResponseCachingMiddleware(
+    cache_storage=DiskStore(directory="cache")
+))
+```
+
+对于共享 Redis 实例的多服务器部署：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+from key_value.aio.stores.redis import RedisStore
+from key_value.aio.wrappers.prefix_collections import PrefixCollectionsWrapper
+
+base_store = RedisStore(host="redis.example.com")
+namespaced_store = PrefixCollectionsWrapper(
+    key_value=base_store,
+    prefix="my-server"
+)
+
+middleware = ResponseCachingMiddleware(cache_storage=namespaced_store)
+```
+
+### 客户端 OAuth 令牌存储
+
+[FastMCP 客户端](/zh/clients/client) 使用存储在本地持久化 OAuth 令牌。默认情况下，令牌存储在内存中：
+
+```python
+from fastmcp.client.auth import OAuthClientProvider
+from key_value.aio.stores.disk import DiskStore
+
+# 在磁盘上存储令牌以在重启间持久化
+token_storage = DiskStore(directory="~/.local/share/fastmcp/tokens")
+
+oauth_provider = OAuthClientProvider(
+    mcp_url="https://your-mcp-server.com/mcp/sse",
+    token_storage=token_storage
+)
+```
+
+这允许客户端在重启后重新连接而无需重新身份验证。
+
+## 选择后端
+
+| 后端 | 开发 | 单服务器 | 多服务器 | 云原生 |
+|---------|-------------|---------------|--------------|--------------|
+| 内存 | ✅ 最佳 | ⚠️ 有限 | ❌ | ❌ |
+| 磁盘 | ✅ 良好 | ✅ 推荐 | ❌ | ⚠️ |
+| Redis | ⚠️ 过度 | ✅ 良好 | ✅ 最佳 | ✅ 最佳 |
+| DynamoDB | ❌ | ⚠️ | ✅ | ✅ 最佳 (AWS) |
+| MongoDB | ❌ | ⚠️ | ✅ | ✅ 良好 |
+
+**决策树：**
+
+1. **刚开始？** 使用 **内存**（默认）- 无需配置
+2. **单服务器，需要持久化？** 使用 **磁盘**
+3. **多服务器或云部署？** 使用 **Redis** 或 **DynamoDB**
+4. **现有基础设施？** 寻找匹配的 py-key-value-aio 后端
+
+## 更多资源
+
+- [py-key-value-aio GitHub](https://github.com/strawgate/py-key-value) - 完整库文档
+- [响应缓存中间件](/zh/servers/middleware#caching-middleware) - 使用存储进行缓存
+- [OAuth 令牌安全](/zh/deployment/http#oauth-token-security) - 生产 OAuth 配置
+- [HTTP 部署](/zh/deployment/http) - 完整部署指南

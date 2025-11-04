@@ -1,0 +1,62 @@
+---
+title: supabase
+sidebarTitle: supabase
+---
+
+# `fastmcp.server.auth.providers.supabase`
+
+
+用于 FastMCP 的 Supabase 身份验证提供程序。
+
+此模块提供 SupabaseProvider - 一个完整的身份验证解决方案，与
+Supabase Auth 的 JWT 验证集成，支持动态客户端注册（DCR）
+以实现无缝的 MCP 客户端身份验证。
+
+
+## 类
+
+### `SupabaseProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/supabase.py#L26" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+### `SupabaseProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/supabase.py#L43" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+用于 DCR（动态客户端注册）的 Supabase 元数据提供程序。
+
+此提供程序使用元数据转发实现 Supabase Auth 集成。
+这种方法允许 Supabase 直接处理 OAuth 流程，而 FastMCP
+作为资源服务器，验证由 Supabase Auth 签发的 JWT。
+
+重要设置要求：
+
+1. Supabase 项目设置：
+   - 在 https://supabase.com 创建 Supabase 项目
+   - 记录您的项目 URL（例如 "https://abc123.supabase.co"）
+   - 对于 2025 年 5 月 1 日之后创建的项目，默认使用非对称 RS256 密钥
+   - 对于较旧的项目，考虑迁移到非对称密钥以获得更好的安全性
+
+2. JWT 验证：
+   - FastMCP 使用 {project_url}/auth/v1/.well-known/jwks.json 的 JWKS 端点验证 JWT
+   - JWT 由 {project_url}/auth/v1 签发
+   - 令牌被 Supabase 的边缘服务器缓存最多 10 分钟
+
+详细设置说明请参见：
+https://supabase.com/docs/guides/auth/jwts
+
+
+**方法:**
+
+#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/supabase.py#L128" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_routes(self, mcp_path: str | None = None) -> list[Route]
+```
+
+获取包含 Supabase 授权服务器元数据转发的 OAuth 路由。
+
+这返回标准的受保护资源路由加上一个授权服务器
+元数据端点，将 Supabase 的 OAuth 元数据转发给客户端。
+
+**参数:**
+- `mcp_path`: MCP 端点挂载的路径（例如 "/mcp"）
+这用于在元数据中公布资源 URL。
+

@@ -81,6 +81,10 @@ def data_analysis_prompt(
   设置通过 MCP 暴露的显式提示名称。如果未提供，则使用函数名称
 </ParamField>
 
+<ParamField body="title" type="str | None">
+  提示的人类可读标题
+</ParamField>
+
 <ParamField body="description" type="str | None">
   提供通过 MCP 暴露的描述。如果设置，则为此目的忽略函数的文档字符串
 </ParamField>
@@ -93,9 +97,15 @@ def data_analysis_prompt(
   启用或禁用提示的布尔值。更多信息请参阅[禁用提示](#disabling-prompts)
 </ParamField>
 
+<ParamField body="icons" type="list[Icon] | None">
+  <VersionBadge version="2.14.0" />
+
+  此提示的可选图标表示列表。详细示例请参阅[图标](/zh/servers/icons)
+</ParamField>
+
 <ParamField body="meta" type="dict[str, Any] | None">
   <VersionBadge version="2.11.0" />
-  
+
   关于提示的可选元信息。此数据作为客户端提示对象的 `_meta` 字段传递给 MCP 客户端，可用于自定义元数据、版本控制或其他应用程序特定目的。
 </ParamField>
 </Card>
@@ -340,4 +350,4 @@ def greeting(): return "Hello, how can I help you today?"
 -   `"warn"`（默认）：记录警告，新提示替换旧的。
 -   `"error"`：引发 `ValueError`，阻止重复注册。
 -   `"replace"`：静默地用新提示替换现有提示。
--   `"ignore"`：保留原始提示并忽略新的注册尝试。 
+-   `"ignore"`：保留原始提示并忽略新的注册尝试。

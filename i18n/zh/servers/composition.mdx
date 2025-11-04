@@ -1,6 +1,6 @@
 ---
 title: 服务器组合
-sidebarTitle: 服务器组合
+sidebarTitle: 组合
 description: 使用挂载和导入将多个 FastMCP 服务器组合成一个更大的应用程序。
 icon: puzzle-piece
 ---
@@ -262,6 +262,64 @@ main_server.mount(remote_proxy, prefix="remote")
 ```
 
 
+
+## 组合中的标签过滤
+
+<VersionBadge version="2.9.0" />
+
+当在父服务器上使用 `include_tags` 或 `exclude_tags` 时，这些过滤器会**递归地**应用于所有组件，包括来自挂载或导入服务器的组件。这允许您控制在父级别暴露哪些组件，无论您的应用程序是如何组合的。
+
+```python
+import asyncio
+from fastmcp import FastMCP, Client
+
+# 创建一个带有为不同环境标记的工具的子服务器
+api_server = FastMCP(name="APIServer")
+
+@api_server.tool(tags={"production"})
+def prod_endpoint() -> str:
+    """生产就绪的端点。"""
+    return "生产数据"
+
+@api_server.tool(tags={"development"})
+def dev_endpoint() -> str:
+    """仅开发端点。"""
+    return "调试数据"
+
+# 在父级别挂载带有生产标签过滤的子服务器
+prod_app = FastMCP(name="ProductionApp", include_tags={"production"})
+prod_app.mount(api_server, prefix="api")
+
+# 测试过滤
+async def test_filtering():
+    async with Client(prod_app) as client:
+        tools = await client.list_tools()
+        print("可用工具:", [t.name for t in tools])
+        # 显示: ['api_prod_endpoint']
+        # 'api_dev_endpoint' 被过滤掉
+
+        # 调用被过滤的工具会引发错误
+        try:
+            await client.call_tool("api_dev_endpoint")
+        except Exception as e:
+            print(f"被过滤的工具无法访问: {e}")
+
+if __name__ == "__main__":
+    asyncio.run(test_filtering())
+```
+
+### 递归过滤如何工作
+
+标签过滤器按以下顺序应用：
+
+1. **子服务器过滤器**：每个挂载/导入的服务器首先对其组件应用自己的 `include_tags`/`exclude_tags`。
+2. **父服务器过滤器**：父服务器然后对其所有组件应用自己的 `include_tags`/`exclude_tags`，包括来自子服务器的组件。
+
+这确保父服务器标签策略作为父服务器暴露的所有内容的全局策略，无论您的应用程序是如何组合的。
+
+<Note>
+此过滤既适用于**列出**（例如 `list_tools()`）也适用于**执行**（例如 `call_tool()`）。被过滤的组件既不可见也不可通过父服务器执行。
+</Note>
 
 ## 资源前缀格式
 

@@ -1,0 +1,129 @@
+---
+title: 图标
+description: 为您的服务器、工具、资源和提示添加视觉图标
+icon: image
+tag: 新功能
+---
+
+import { VersionBadge } from '/snippets/version-badge.mdx'
+
+<VersionBadge version="2.14.0" />
+
+图标为您的 MCP 服务器和组件提供视觉表示，帮助客户端应用程序呈现更好的用户界面。当在 MCP 客户端中显示时，图标帮助用户快速识别和导航您服务器的功能。
+
+## 图标格式
+
+图标使用 MCP 协议规范中的标准 MCP 图标类型。每个图标指定：
+
+- **src**：指向图标图像的 URL 或数据 URI
+- **mimeType**（可选）：图像的 MIME 类型（例如，"image/png"、"image/svg+xml"）
+- **sizes**（可选）：大小描述符数组（例如，["48x48"]、["any"]）
+
+```python
+from mcp.types import Icon
+
+icon = Icon(
+    src="https://example.com/icon.png",
+    mimeType="image/png",
+    sizes=["48x48"]
+)
+```
+
+## 服务器图标
+
+为您的服务器添加图标和网站 URL 以在客户端应用程序中显示：
+
+```python
+from fastmcp import FastMCP
+from mcp.types import Icon
+
+mcp = FastMCP(
+    name="WeatherService",
+    website_url="https://weather.example.com",
+    icons=[
+        Icon(
+            src="https://weather.example.com/icon-48.png",
+            mimeType="image/png",
+            sizes=["48x48"]
+        ),
+        Icon(
+            src="https://weather.example.com/icon-96.png",
+            mimeType="image/png",
+            sizes=["96x96"]
+        ),
+    ]
+)
+```
+
+服务器图标出现在 MCP 客户端界面中，帮助用户在他们可能安装的其他服务器中识别您的服务器。
+
+## 组件图标
+
+可以为单个工具、资源、资源模板和提示添加图标：
+
+### 工具图标
+
+```python
+from mcp.types import Icon
+
+@mcp.tool(
+    icons=[Icon(src="https://example.com/calculator-icon.png")]
+)
+def calculate_sum(a: int, b: int) -> int:
+    """将两个数字相加。"""
+    return a + b
+```
+
+### 资源图标
+
+```python
+@mcp.resource(
+    "config://settings",
+    icons=[Icon(src="https://example.com/config-icon.png")]
+)
+def get_settings() -> dict:
+    """检索应用程序设置。"""
+    return {"theme": "dark", "language": "en"}
+```
+
+### 资源模板图标
+
+```python
+@mcp.resource(
+    "user://{user_id}/profile",
+    icons=[Icon(src="https://example.com/user-icon.png")]
+)
+def get_user_profile(user_id: str) -> dict:
+    """获取用户个人资料。"""
+    return {"id": user_id, "name": f"User {user_id}"}
+```
+
+### 提示图标
+
+```python
+@mcp.prompt(
+    icons=[Icon(src="https://example.com/prompt-icon.png")]
+)
+def analyze_code(code: str):
+    """创建用于代码分析的提示。"""
+    return f"请分析此代码：\n\n{code}"
+```
+
+## 使用数据 URI
+
+对于小图标或当您想要直接嵌入图标时，使用数据 URI：
+
+```python
+from mcp.types import Icon
+
+# SVG 图标作为数据 URI
+svg_icon = Icon(
+    src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6Ii8+PC9zdmc+",
+    mimeType="image/svg+xml"
+)
+
+@mcp.tool(icons=[svg_icon])
+def my_tool() -> str:
+    """带有嵌入 SVG 图标的工具。"""
+    return "result"
+```

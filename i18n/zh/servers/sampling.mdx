@@ -1,7 +1,7 @@
 ---
 title: LLM 采样
 sidebarTitle: 采样
-description: 通过 MCP 上下文请求客户端的 LLM 基于提供的消息生成文本。
+description: 通过 MCP 上下文请求客户端或配置的提供商进行 LLM 文本生成。
 icon: robot
 ---
 
@@ -9,7 +9,7 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 <VersionBadge version="2.0.0" />
 
-LLM 采样允许 MCP 工具请求客户端的 LLM 基于提供的消息生成文本。当工具需要利用 LLM 的能力来处理数据、生成响应或执行基于文本的分析时，这非常有用。
+LLM 采样允许 MCP 工具基于提供的消息请求 LLM 文本生成。默认情况下，采样请求发送到客户端的 LLM，但您也可以配置回退处理器或始终使用特定的 LLM 提供商。当工具需要利用 LLM 能力来处理数据、生成响应或执行基于文本的分析时，这非常有用。
 
 ## 为什么使用 LLM 采样？
 
@@ -182,10 +182,89 @@ async def multi_turn_analysis(user_query: str, context_data: str, ctx: Context) 
     return response.text
 ```
 
+## 采样回退处理器
+
+客户端对采样的支持是可选的。如果客户端不支持采样，服务器将报告错误，表明客户端不支持采样。
+
+但是，您可以为 FastMCP 服务器提供一个 `sampling_handler`，它将采样请求直接发送到 LLM 提供商，而不是通过客户端路由。`sampling_handler_behavior` 参数控制何时使用此处理器：
+
+- **`"fallback"`**（默认）：仅在客户端不支持采样时使用处理器。请求首先发送到客户端，必要时回退到处理器。
+- **`"always"`**：始终使用处理器，完全绕过客户端。当您想要完全控制用于采样的 LLM 时很有用。
+
+采样处理器可以使用任何 LLM 提供商实现，但作为贡献模块提供了 OpenAI 的示例实现。采样缺乏典型 LLM 完成的全部能力。因此，指向第三方提供商的 OpenAI 兼容 API 的 OpenAI 采样处理器通常足以实现采样处理器。
+
+### 回退模式（默认）
+
+仅在客户端不支持采样时使用处理器：
+
+```python
+import asyncio
+import os
+
+from mcp.types import ContentBlock
+from openai import OpenAI
+
+from fastmcp import FastMCP
+from fastmcp.experimental.sampling.handlers.openai import OpenAISamplingHandler
+from fastmcp.server.context import Context
+
+
+async def async_main():
+    server = FastMCP(
+        name="OpenAI 采样回退示例",
+        sampling_handler=OpenAISamplingHandler(
+            default_model="gpt-4o-mini",
+            client=OpenAI(
+                api_key=os.getenv("API_KEY"),
+                base_url=os.getenv("BASE_URL"),
+            ),
+        ),
+        sampling_handler_behavior="fallback",  # 默认 - 仅在客户端不支持采样时使用
+    )
+
+    @server.tool
+    async def test_sample_fallback(ctx: Context) -> ContentBlock:
+        # 如果可用，将使用客户端的 LLM，否则回退到处理器
+        return await ctx.sample(
+            messages=["hello world!"],
+        )
+
+    await server.run_http_async()
+
+
+if __name__ == "__main__":
+    asyncio.run(async_main())
+```
+
+### 始终模式
+
+始终使用处理器，绕过客户端：
+
+```python
+server = FastMCP(
+    name="服务器控制采样",
+    sampling_handler=OpenAISamplingHandler(
+        default_model="gpt-4o-mini",
+        client=OpenAI(api_key=os.getenv("API_KEY")),
+    ),
+    sampling_handler_behavior="always",  # 始终使用处理器，从不使用客户端
+)
+
+@server.tool
+async def analyze_data(data: str, ctx: Context) -> str:
+    # 将始终使用服务器配置的 LLM，而不是客户端的
+    result = await ctx.sample(
+        messages=f"分析此数据：{data}",
+        system_prompt="您是一个数据分析师。",
+    )
+    return result.text
+```
+
 ## 客户端要求
 
-LLM 采样需要客户端支持：
+默认情况下，LLM 采样需要客户端支持：
 
-- 客户端必须实现采样处理程序来处理请求
-- 如果客户端不支持采样，调用 `ctx.sample()` 将失败
-- 有关实现客户端采样处理程序的详细信息，请参阅[客户端采样](/zh/clients/sampling)
+- 客户端必须实现采样处理程序来处理请求（请参阅[客户端采样](/zh/clients/sampling)）
+- 如果客户端不支持采样且未配置回退处理器，`ctx.sample()` 将抛出错误
+- 配置具有 `sampling_handler_behavior="fallback"` 的 `sampling_handler` 以自动处理不支持采样的客户端
+- 使用 `sampling_handler_behavior="always"` 完全绕过客户端并控制使用哪个 LLM

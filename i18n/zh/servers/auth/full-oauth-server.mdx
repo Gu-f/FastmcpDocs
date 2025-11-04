@@ -1,9 +1,9 @@
 ---
 title: 完整 OAuth 服务器
 sidebarTitle: 完整 OAuth 服务器
-description: 构建一个自包含的身份验证系统，您的 FastMCP 服务器管理用户、颁发令牌并验证它们。
+description: 构建一个自包含的身份验证系统，您的 FastMCP 服务器在其中管理用户、发行令牌并验证它们。
 icon: users-between-lines
-tag: NEW
+
 ---
 
 import { VersionBadge } from "/snippets/version-badge.mdx"
@@ -11,57 +11,57 @@ import { VersionBadge } from "/snippets/version-badge.mdx"
 <VersionBadge version="2.11.0" />
 
 <Warning>
-**这是一个大多数用户应该避免的极其高级的模式。**构建安全的 OAuth 2.1 服务器需要在身份验证协议、密码学和安全最佳实践方面具备深度专业知识。复杂性远超初始实现，还包括持续的安全监控、威胁响应和合规维护。
+**这是一个大多数用户应该避免的极其高级的模式。**构建安全的 OAuth 2.1 服务器需要在身份验证协议、密码学和安全最佳实践方面具备深厚的专业知识。复杂性远超初始实现，包括持续的安全监控、威胁响应和合规维护。
 
-**请使用[远程 OAuth](/zh/servers/auth/remote-oauth)代替**，除非您有外部身份提供商无法满足的强制性要求，例如空隙环境或专门的合规需求。
+**请改用[远程 OAuth](/zh/servers/auth/remote-oauth)**，除非您有外部身份提供商无法满足的令人信服的要求，例如空隙环境或专门的合规需求。
 </Warning>
 
 完整 OAuth 服务器模式的存在是为了支持 MCP 协议规范的要求。您的 FastMCP 服务器成为授权服务器和资源服务器，处理从用户登录到令牌验证的完整身份验证生命周期。
 
-本文档的存在是为了完整性 - 绝大多数应用程序应该使用外部身份提供商代替。
+本文档的存在是为了完整性——绝大多数应用程序应该改用外部身份提供商。
 
-## OAuth提供者(OAuthProvider)
+## OAuth 提供商(OAuthProvider)
 
-FastMCP 提供了实现 OAuth 2.1 规范的 `OAuthProvider` 抽象类。要使用这种模式，您必须子类化 `OAuthProvider` 并实现所有必需的抽象方法。
+FastMCP 提供了实现 OAuth 2.1 规范的 `OAuthProvider` 抽象类。要使用此模式，您必须子类化 `OAuthProvider` 并实现所有必需的抽象方法。
 
 <Note>
 `OAuthProvider` 处理 OAuth 端点、协议流和安全要求，但将所有存储、用户管理和业务逻辑委托给您对抽象方法的实现。
 </Note>
 
-## 必需的实现
+## 必需实现
 
-您必须实现这些抽象方法来创建一个功能正常的 OAuth 服务器：
+您必须实现这些抽象方法来创建一个可正常工作的 OAuth 服务器：
 
 ### 客户端管理
 
 <Card icon="code" title="客户端管理方法">
-<ParamField body="get_client" type="异步方法">
-  从您的数据库中通过 ID 检索客户端信息。
-  
+<ParamField body="get_client" type="async method">
+  从数据库中按 ID 检索客户端信息。
+
   <Expandable title="参数">
     <ParamField body="client_id" type="str">
       要查找的客户端标识符
     </ParamField>
   </Expandable>
-  
-  <Expandable title="返回值">
-    <ParamField body="OAuthClientInformationFull | None" type="返回类型">
-      客户端信息对象，如果找不到客户端则返回 `None`
+
+  <Expandable title="返回">
+    <ParamField body="OAuthClientInformationFull | None" type="return type">
+      客户端信息对象，如果未找到客户端则为 `None`
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="register_client" type="异步方法">
-  在您的数据库中存储新的客户端注册信息。
-  
+<ParamField body="register_client" type="async method">
+  在数据库中存储新的客户端注册信息。
+
   <Expandable title="参数">
     <ParamField body="client_info" type="OAuthClientInformationFull">
       要存储的完整客户端注册信息
     </ParamField>
   </Expandable>
-  
-  <Expandable title="返回值">
-    <ParamField body="None" type="返回类型">
+
+  <Expandable title="返回">
+    <ParamField body="None" type="return type">
       无返回值
     </ParamField>
   </Expandable>
@@ -71,9 +71,9 @@ FastMCP 提供了实现 OAuth 2.1 规范的 `OAuthProvider` 抽象类。要使�
 ### 授权流程
 
 <Card icon="code" title="授权流程方法">
-<ParamField body="authorize" type="异步方法">
+<ParamField body="authorize" type="async method">
   处理授权请求并返回重定向 URL。必须实现用户身份验证和同意收集。
-  
+
   <Expandable title="参数">
     <ParamField body="client" type="OAuthClientInformationFull">
       发出授权请求的 OAuth 客户端
@@ -82,17 +82,17 @@ FastMCP 提供了实现 OAuth 2.1 规范的 `OAuthProvider` 抽象类。要使�
       来自客户端的授权请求参数
     </ParamField>
   </Expandable>
-  
-  <Expandable title="返回值">
-    <ParamField body="str" type="返回类型">
-      发送给客户端的重定向 URL
+
+  <Expandable title="返回">
+    <ParamField body="str" type="return type">
+      发送客户端到的重定向 URL
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="load_authorization_code" type="异步方法">
-  通过代码字符串从存储中加载授权代码。如果代码无效或已过期则返回 `None`。
-  
+<ParamField body="load_authorization_code" type="async method">
+  通过代码字符串从存储中加载授权代码。如果代码无效或已过期，返回 `None`。
+
   <Expandable title="参数">
     <ParamField body="client" type="OAuthClientInformationFull">
       尝试使用授权代码的 OAuth 客户端
@@ -101,10 +101,10 @@ FastMCP 提供了实现 OAuth 2.1 规范的 `OAuthProvider` 抽象类。要使�
       要查找的授权代码字符串
     </ParamField>
   </Expandable>
-  
-  <Expandable title="返回值">
-    <ParamField body="AuthorizationCode | None" type="返回类型">
-      授权代码对象，如果找不到则返回 `None`
+
+  <Expandable title="返回">
+    <ParamField body="AuthorizationCode | None" type="return type">
+      授权代码对象，如果未找到则为 `None`
     </ParamField>
   </Expandable>
 </ParamField>
@@ -113,9 +113,9 @@ FastMCP 提供了实现 OAuth 2.1 规范的 `OAuthProvider` 抽象类。要使�
 ### 令牌管理
 
 <Card icon="code" title="令牌管理方法">
-<ParamField body="exchange_authorization_code" type="异步方法">
-  将授权代码交换为访问令牌和刷新令牌。必须验证代码并创建新令牌。
-  
+<ParamField body="exchange_authorization_code" type="async method">
+  用授权代码交换访问和刷新令牌。必须验证代码并创建新令牌。
+
   <Expandable title="参数">
     <ParamField body="client" type="OAuthClientInformationFull">
       交换授权代码的 OAuth 客户端
@@ -124,17 +124,17 @@ FastMCP 提供了实现 OAuth 2.1 规范的 `OAuthProvider` 抽象类。要使�
       要交换的有效授权代码对象
     </ParamField>
   </Expandable>
-  
-  <Expandable title="返回值">
-    <ParamField body="OAuthToken" type="返回类型">
-      包含访问令牌和刷新令牌的新 OAuth 令牌
+
+  <Expandable title="返回">
+    <ParamField body="OAuthToken" type="return type">
+      包含访问和刷新令牌的新 OAuth 令牌
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="load_refresh_token" type="异步方法">
-  通过令牌字符串从存储中加载刷新令牌。如果令牌无效或已过期则返回 `None`。
-  
+<ParamField body="load_refresh_token" type="async method">
+  通过令牌字符串从存储中加载刷新令牌。如果令牌无效或已过期，返回 `None`。
+
   <Expandable title="参数">
     <ParamField body="client" type="OAuthClientInformationFull">
       尝试使用刷新令牌的 OAuth 客户端
@@ -143,17 +143,17 @@ FastMCP 提供了实现 OAuth 2.1 规范的 `OAuthProvider` 抽象类。要使�
       要查找的刷新令牌字符串
     </ParamField>
   </Expandable>
-  
-  <Expandable title="返回值">
-    <ParamField body="RefreshToken | None" type="返回类型">
-      刷新令牌对象，如果找不到则返回 `None`
+
+  <Expandable title="返回">
+    <ParamField body="RefreshToken | None" type="return type">
+      刷新令牌对象，如果未找到则为 `None`
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="exchange_refresh_token" type="异步方法">
-  将刷新令牌交换为新的访问/刷新令牌对。必须验证范围和令牌。
-  
+<ParamField body="exchange_refresh_token" type="async method">
+  用刷新令牌交换新的访问/刷新令牌对。必须验证范围和令牌。
+
   <Expandable title="参数">
     <ParamField body="client" type="OAuthClientInformationFull">
       使用刷新令牌的 OAuth 客户端
@@ -165,65 +165,65 @@ FastMCP 提供了实现 OAuth 2.1 规范的 `OAuthProvider` 抽象类。要使�
       新访问令牌的请求范围
     </ParamField>
   </Expandable>
-  
-  <Expandable title="返回值">
-    <ParamField body="OAuthToken" type="返回类型">
-      具有更新的访问令牌和刷新令牌的新 OAuth 令牌
+
+  <Expandable title="返回">
+    <ParamField body="OAuthToken" type="return type">
+      具有更新访问和刷新令牌的新 OAuth 令牌
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="load_access_token" type="异步方法">
-  通过令牌字符串加载访问令牌。
-  
+<ParamField body="load_access_token" type="async method">
+  通过其令牌字符串加载访问令牌。
+
   <Expandable title="参数">
     <ParamField body="token" type="str">
       要验证的访问令牌
     </ParamField>
   </Expandable>
-  
-  <Expandable title="返回值">
-    <ParamField body="AccessToken | None" type="返回类型">
-      访问令牌对象，如果令牌无效则返回 `None`
+
+  <Expandable title="返回">
+    <ParamField body="AccessToken | None" type="return type">
+      访问令牌对象，如果令牌无效则为 `None`
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="revoke_token" type="异步方法">
-  撤销访问令牌或刷新令牌，在存储中将其标记为无效。
-  
+<ParamField body="revoke_token" type="async method">
+  撤销访问或刷新令牌，在存储中将其标记为无效。
+
   <Expandable title="参数">
     <ParamField body="token" type="AccessToken | RefreshToken">
       要撤销并标记为无效的令牌对象
     </ParamField>
   </Expandable>
-  
-  <Expandable title="返回值">
-    <ParamField body="None" type="返回类型">
+
+  <Expandable title="返回">
+    <ParamField body="None" type="return type">
       无返回值
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="verify_token" type="异步方法">
+<ParamField body="verify_token" type="async method">
   验证传入请求的承载令牌。如果有效则返回 `AccessToken`，如果无效则返回 `None`。
-  
+
   <Expandable title="参数">
     <ParamField body="token" type="str">
       来自传入请求的承载令牌字符串
     </ParamField>
   </Expandable>
-  
-  <Expandable title="返回值">
-    <ParamField body="AccessToken | None" type="返回类型">
-      如果有效则返回访问令牌对象，如果无效或已过期则返回 `None`
+
+  <Expandable title="返回">
+    <ParamField body="AccessToken | None" type="return type">
+      如果有效则为访问令牌对象，如果无效或已过期则为 `None`
     </ParamField>
   </Expandable>
 </ParamField>
 </Card>
 
-每个方法都必须根据 OAuth 2.1 规范处理存储、验证、安全性和错误情况。实现复杂性相当大，需要在 OAuth 安全考虑方面具备专业知识。
+每个方法必须根据 OAuth 2.1 规范处理存储、验证、安全和错误情况。实现复杂性很大，需要 OAuth 安全考虑方面的专业知识。
 
 <Warning>
-**安全通知：**OAuth 服务器实现涉及许多安全考虑，包括 PKCE、状态参数、重定向 URI 验证、令牌绑定、重放攻击防护和安全存储要求。错误可能导致严重的安全漏洞。
+**安全通知：** OAuth 服务器实现涉及众多安全考虑，包括 PKCE、状态参数、重定向 URI 验证、令牌绑定、重放攻击预防和安全存储要求。错误可能导致严重的安全漏洞。
 </Warning>

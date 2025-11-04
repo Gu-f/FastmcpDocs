@@ -14,10 +14,11 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 - **日志记录**：向客户端发送调试、信息、警告和错误消息
 - **进度报告**：向客户端更新长时间运行操作的进度
-- **资源访问**：从服务器注册的资源中读取数据
+- **资源访问**：列出并从服务器注册的资源中读取数据
+- **提示访问**：列出并检索服务器注册的提示
 - **LLM 采样**：请求客户端的 LLM 基于提供的消息生成文本
 - **用户征询**：在工具执行期间从用户请求结构化输入
-- **状态管理**：在请求中的中间件和工具调用之间存储和共享数据
+- **状态管理**：在单个请求中的中间件和处理程序之间存储和共享数据
 - **请求信息**：访问当前请求的元数据
 - **服务器访问**：需要时，访问底层 FastMCP 服务器实例
 
@@ -34,6 +35,7 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 - 上下文是可选的 - 不需要它的函数可以完全省略该参数。
 - 上下文方法是异步的，因此您的函数通常也需要是异步的。
 - 类型提示可以是联合类型（`Context | None`）或使用 `Annotated[]`，它仍然可以正常工作。
+- **每个 MCP 请求都会收到一个新的上下文对象。** 上下文范围限定为单个请求；在一个请求中设置的状态或数据在后续请求中将不可用。
 - 上下文仅在请求期间可用；在请求之外尝试使用上下文方法将引发错误。如果您需要在请求之外调试或调用上下文方法，可以将变量类型设置为 `Context | None=None` 以避免缺少参数的错误。
 
 #### 工具
@@ -176,15 +178,39 @@ await ctx.report_progress(progress=50, total=100)  # 50% 完成
 
 ### 资源访问
 
-从在 FastMCP 服务器中注册的资源读取数据，允许访问文件、配置或动态内容。
+列出并从在 FastMCP 服务器中注册的资源读取数据，允许访问文件、配置或动态内容。
 
 ```python
+# 列出可用资源
+resources = await ctx.list_resources()
+
+# 读取特定资源
 content_list = await ctx.read_resource("resource://config")
 content = content_list[0].content
 ```
 
 **方法签名：**
+- **`ctx.list_resources() -> list[MCPResource]`**：<VersionBadge version="2.13.0" /> 返回所有可用资源的列表
 - **`ctx.read_resource(uri: str | AnyUrl) -> list[ReadResourceContents]`**：返回资源内容部分的列表
+
+### 提示访问
+
+<VersionBadge version="2.13.0" />
+
+列出并检索在 FastMCP 服务器中注册的提示，允许工具和中间件以编程方式发现和使用可用的提示。
+
+```python
+# 列出可用提示
+prompts = await ctx.list_prompts()
+
+# 使用参数获取特定提示
+result = await ctx.get_prompt("analyze_data", {"dataset": "users"})
+messages = result.messages
+```
+
+**方法签名：**
+- **`ctx.list_prompts() -> list[MCPPrompt]`**：返回所有可用提示的列表
+- **`ctx.get_prompt(name: str, arguments: dict[str, Any] | None = None) -> GetPromptResult`**：使用可选参数获取特定提示
 
 ### 状态管理
 
@@ -193,6 +219,10 @@ content = content_list[0].content
 在请求中的中间件和工具调用之间存储和共享数据。上下文对象维护一个状态字典，特别适用于从[中间件](/zh/servers/middleware)向工具传递信息。
 
 要在上下文状态中存储值，请使用 `ctx.set_state(key, value)`。要检索值，请使用 `ctx.get_state(key)`。
+
+<Warning>
+上下文状态的作用域限定在单个 MCP 请求内。每个操作（工具调用、资源读取、列表操作等）都会收到一个新的上下文对象。在一个请求中设置的状态在后续请求中将不可用。对于跨请求的持久数据存储，请使用外部存储机制，如数据库、文件或内存缓存。
+</Warning>
 
 这个简化示例展示了如何使用 MCP 中间件在上下文状态中存储用户信息，以及如何在工具中访问该状态：
 
@@ -205,8 +235,8 @@ class UserAuthMiddleware(Middleware):
         # 中间件在上下文状态中存储用户信息
         context.fastmcp_context.set_state("user_id", "user_123")
         context.fastmcp_context.set_state("permissions", ["read", "write"])
-        
-        return await call_next()
+
+        return await call_next(context)
 
 @mcp.tool
 async def secure_operation(data: str, ctx: Context) -> str:

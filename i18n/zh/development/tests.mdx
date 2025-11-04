@@ -4,6 +4,8 @@ description: "FastMCP 的测试模式和要求"
 icon: vial
 ---
 
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
 良好的测试是可靠软件的基础。在 FastMCP 中，我们将测试视为一流的文档，展示功能如何工作的同时防止回归。每个新功能都需要全面的测试来证明正确性。
 
 ## FastMCP 测试
@@ -297,7 +299,55 @@ async def test_database_tool():
 
 ### 测试网络传输
 
-虽然内存测试涵盖了大部分单元测试需求，但您偶尔需要测试实际的网络传输。使用 `run_server_in_process` 实用程序在单独的进程中生成服务器进行测试：
+虽然内存测试涵盖了大部分单元测试需求，但您偶尔需要测试实际的网络传输，例如 HTTP 或 SSE。FastMCP 提供两种方式：使用 AnyIO 任务组的进程内异步服务器（推荐），以及单独的子进程服务器（特殊场景）。
+
+#### 进程内网络测试（推荐）
+
+<VersionBadge version="2.13.0" />
+
+对于大多数网络传输测试，请结合 AnyIO 任务组使用 `run_server_async`。这会在同一进程中作为任务运行服务器，具备快速、可预测且完全支持调试器的特性：
+
+```python
+import pytest
+from anyio.abc import TaskGroup
+from fastmcp import FastMCP, Client
+from fastmcp.client.transports import StreamableHttpTransport
+from fastmcp.utilities.tests import run_server_async
+
+def create_test_server() -> FastMCP:
+    """创建用于测试的服务器实例。"""
+    server = FastMCP("TestServer")
+    
+    @server.tool
+    def greet(name: str) -> str:
+        return f"你好，{name}！"
+    
+    return server
+
+@pytest.fixture
+async def http_server(task_group: TaskGroup) -> str:
+    """使用任务组在进程内启动服务器。"""
+    server = create_test_server()
+    url = await run_server_async(task_group, server, transport="http")
+    return url
+
+async def test_http_transport(http_server: str):
+    """测试真实的 HTTP 传输行为。"""
+    async with Client(
+        transport=StreamableHttpTransport(http_server)
+    ) as client:
+        result = await client.ping()
+        assert result is True
+        
+        greeting = await client.call_tool("greet", {"name": "World"})
+        assert greeting.data == "你好，World！"
+```
+
+`conftest.py` 全局提供的 `task_group` fixture 会自动处理服务器的生命周期与清理。与基于子进程的测试相比，这种方法更快且错误提示更清晰。
+
+#### 子进程测试（特殊场景）
+
+对于需要完全进程隔离的测试（例如 STDIO 传输或验证子进程行为），请使用 `run_server_in_process`：
 
 ```python
 import pytest
@@ -328,12 +378,9 @@ async def test_http_transport(http_server: str):
     ) as client:
         result = await client.ping()
         assert result is True
-        
-        greeting = await client.call_tool("greet", {"name": "World"})
-        assert greeting.data == "你好，World！"
 ```
 
-`run_server_in_process` 实用程序自动处理服务器生命周期、端口分配和清理。这种模式对于测试传输特定行为（如超时、标头和身份验证）至关重要。请注意，FastMCP 经常使用 `client_process` 标记来隔离生成进程的测试，因为它们可能在 CI 中创建争用。
+`run_server_in_process` 实用工具会自动处理服务器生命周期、端口分配和清理。仅在确实需要子进程隔离时使用它，因为它比进程内测试更慢也更难调试。FastMCP 会使用 `client_process` 标记在 CI 中隔离此类测试。
 
 ### 文档测试
 

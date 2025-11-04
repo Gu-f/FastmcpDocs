@@ -40,6 +40,22 @@ mcp_with_instructions = FastMCP(
   如何与此服务器交互的描述。这些说明帮助客户端了解服务器的用途和可用功能
 </ParamField>
 
+<ParamField body="version" type="str | None">
+  服务器的版本字符串。如果未提供，默认为 FastMCP 库版本
+</ParamField>
+
+<ParamField body="website_url" type="str | None">
+  <VersionBadge version="2.14.0" />
+
+  包含有关服务器更多信息的网站 URL。在客户端应用程序中显示
+</ParamField>
+
+<ParamField body="icons" type="list[Icon] | None">
+  <VersionBadge version="2.14.0" />
+
+  服务器的图标表示列表。图标帮助用户在客户端应用程序中视觉识别您的服务器。详细示例请参阅[图标](/zh/servers/icons)
+</ParamField>
+
 <ParamField body="auth" type="OAuthProvider | TokenVerifier | None">
   用于保护基于 HTTP 的传输的认证提供程序。配置选项请参见[认证](/zh/servers/auth/authentication)
 </ParamField>
@@ -66,16 +82,22 @@ mcp_with_instructions = FastMCP(
 </ParamField>
 
 <ParamField body="on_duplicate_resources" type='Literal["error", "warn", "replace"]' default="warn">
-  如何处理重复的资源注册
+  如何处理重复资源注册
 </ParamField>
 
 <ParamField body="on_duplicate_prompts" type='Literal["error", "warn", "replace"]' default="replace">
   如何处理重复的提示注册
 </ParamField>
 
+
+<ParamField body="strict_input_validation" type="bool" default="False">
+  <VersionBadge version="2.13.0" />
+  控制如何验证工具输入参数。当为 `False`（默认）时，FastMCP 使用 Pydantic 的灵活验证，强制转换兼容的输入（例如，`"10"` → `10` 用于整数参数）。当为 `True` 时，使用 MCP SDK 的 JSON Schema 验证在将输入传递给函数之前根据确切架构验证输入，拒绝任何类型不匹配。默认模式提高了与 LLM 客户端的兼容性，同时保持类型安全。详细信息请参阅[输入验证模式](/zh/servers/tools#input-validation-modes)
+</ParamField>
+
 <ParamField body="include_fastmcp_meta" type="bool" default="True">
   <VersionBadge version="2.11.0" />
-  
+
   是否在组件响应中包含 FastMCP 元数据。当为 `True` 时，组件标签和其他 FastMCP 特定的元数据包含在每个组件的 `meta` 字段的 `_fastmcp` 命名空间中。当为 `False` 时，此元数据被省略，从而实现与外部系统的更清晰的集成。可通过 `FASTMCP_INCLUDE_FASTMCP_META` 环境变量全局覆盖
 </ParamField>
 </Card>
@@ -236,7 +258,7 @@ if __name__ == "__main__":
 - 简单的状态或信息端点
 - 基本的 Webhook 或回调
 
-对于更复杂的 Web 应用程序，请考虑[将您的 MCP 服务器挂载到 FastAPI 或 Starlette 应用程序中](/zh/deployment/self-hosted#integration-with-web-frameworks)。
+对于更复杂的 Web 应用程序，请考虑[将您的 MCP 服务器挂载到 FastAPI 或 Starlette 应用程序中](/zh/deployment/http#integration-with-web-frameworks)。
 
 ## 组合服务器
 
@@ -336,6 +358,7 @@ import fastmcp
 print(fastmcp.settings.log_level)        # 默认："INFO"
 print(fastmcp.settings.mask_error_details)  # 默认：False
 print(fastmcp.settings.resource_prefix_format)  # 默认："path"
+print(fastmcp.settings.strict_input_validation)  # 默认：False
 print(fastmcp.settings.include_fastmcp_meta)   # 默认：True
 ```
 
@@ -343,7 +366,9 @@ print(fastmcp.settings.include_fastmcp_meta)   # 默认：True
 - **`log_level`**：日志级别（"DEBUG"、"INFO"、"WARNING"、"ERROR"、"CRITICAL"），使用 `FASTMCP_LOG_LEVEL` 设置
 - **`mask_error_details`**：是否向客户端隐藏详细错误信息，使用 `FASTMCP_MASK_ERROR_DETAILS` 设置
 - **`resource_prefix_format`**：格式化资源前缀（"path" 或 "protocol"），使用 `FASTMCP_RESOURCE_PREFIX_FORMAT` 设置
+- **`strict_input_validation`**：控制工具输入验证模式（默认：False 进行灵活强制转换），使用 `FASTMCP_STRICT_INPUT_VALIDATION` 设置。详细信息请参阅[输入验证模式](/zh/servers/tools#input-validation-modes)
 - **`include_fastmcp_meta`**：是否在组件响应中包含 FastMCP 元数据（默认：True），使用 `FASTMCP_INCLUDE_FASTMCP_META` 设置
+- **`env_file`**：要从中加载设置的环境文件路径（默认：".env"），使用 `FASTMCP_ENV_FILE` 设置。当您的项目使用语法与 python-dotenv 不兼容的 `.env` 文件时很有用
 
 ### 传输特定配置
 
@@ -375,6 +400,7 @@ await mcp.run_async(
 export FASTMCP_LOG_LEVEL=DEBUG
 export FASTMCP_MASK_ERROR_DETAILS=True
 export FASTMCP_RESOURCE_PREFIX_FORMAT=protocol
+export FASTMCP_STRICT_INPUT_VALIDATION=False
 export FASTMCP_INCLUDE_FASTMCP_META=False
 ```
 

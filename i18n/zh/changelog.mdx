@@ -4,6 +4,55 @@ icon: "list-check"
 rss: true
 ---
 
+<Update label="v2.13.0" description="2025-10-25">
+
+**[v2.13.0：Cache Me If You Can](https://github.com/jlowin/fastmcp/releases/tag/v2.13.0)**
+
+FastMCP 2.13 “Cache Me If You Can” 标志着框架迈向成熟的关键一步。历经数月针对身份验证与状态管理的社区反馈，这个版本为 FastMCP 带来了应对生产负载所需的基础设施：持久化存储、响应缓存，以及贴近真实部署挑战的实用 OAuth 改进。
+
+💾 **可插拔存储后端** 为 FastMCP 服务器带来持久化状态能力。存储层构建于 FastMCP 维护者 Bill Easton（[@strawgate](https://github.com/strawgate)）的新库 [py-key-value-aio](https://github.com/strawgate/py-key-value) 之上，默认提供加密磁盘存储、平台感知的令牌管理，以及简洁的键值接口。我们非常高兴将这款优雅的库引入 FastMCP 生态——它既强大又易用，提供封装器可为 Elasticsearch、Redis、DynamoDB、文件系统、内存等后端添加加密、TTL、缓存等能力！OAuth 提供方现在会在重启之间自动持久化令牌，开发者也可以无需外部数据库即可存储任意状态。这一基础让长连接会话、凭据缓存以及构建于 MCP 之上的有状态应用成为可能。
+
+🔐 **OAuth 成熟度** 将多个月的生产经验融入框架。全新的授权同意页可以阻止早期版本中发现的“困惑副手”与授权绕过攻击，并提供可定制品牌的清爽体验。OAuth 代理现在会根据客户端密钥自动推导签名密钥，自行签发令牌，同时新增 RFC 7662 令牌内省以支持企业级身份验证流程。路径前缀挂载使启用 OAuth 的服务器可以集成进现有 Web 应用（例如挂载到 `/api`），对 MCP 1.17+ 的 RFC 9728 兼容保证了协议一致性。再加上改进的错误处理与平台感知令牌存储，OAuth 现已达到了生产可用、强化安全的水准。
+
+FastMCP 现已开箱支持以下身份验证方案：
+- **[WorkOS](https://gofastmcp.com/integrations/workos)** 与 **[AuthKit](https://gofastmcp.com/integrations/authkit)**
+- **[GitHub](https://gofastmcp.com/integrations/github)**
+- **[Google](https://gofastmcp.com/integrations/google)**
+- **[Azure](https://gofastmcp.com/integrations/azure)**（Entra ID）
+- **[AWS Cognito](https://gofastmcp.com/integrations/aws-cognito)**
+- **[Auth0](https://gofastmcp.com/integrations/auth0)**
+- **[Descope](https://gofastmcp.com/integrations/descope)**
+- **[Scalekit](https://gofastmcp.com/integrations/scalekit)**
+- **[JWTs](https://gofastmcp.com/servers/auth/token-verification#jwt-token-verification)**
+- **[RFC 7662 令牌内省](https://gofastmcp.com/servers/auth/token-verification#token-introspection-protocol)**
+
+⚡ **响应缓存中间件** 可以为高成本操作显著提速。你可以按需设置 TTL，对工具与资源的响应进行缓存，减少重复请求并加快重复查询的效率。
+
+🔄 **服务器生命周期** 提供在服务器级别运行一次的初始化与清理钩子，不再针对每个客户端会话重复执行。这修复了 MCP SDK 长久以来的困扰，有助于你正确管理数据库连接、后台任务等服务器级状态。注意：如果你以前在使用 `lifespan` 参数，此行为会有破坏性变更。
+
+✨ **开发者体验提升** 包括基于 Pydantic 的输入验证以提高类型安全性、支持自定义图标以丰富体验、在资源模板中支持 RFC 6570 查询参数，以及改进的 Context API（支持 list_resources、list_prompts、get_prompt）与异步文件/目录资源。
+
+本次发布包含 **20 位** 新贡献者的成果，也是近期功能最丰富的版本。感谢所有测试预发布版本并提交 issue 的朋友——你们的反馈塑造了这些改进！
+
+**完整更新内容**： [v2.12.5...v2.13.0](https://github.com/jlowin/fastmcp/compare/v2.12.5...v2.13.0)
+
+</Update>
+
+<Update label="v2.12.5" description="2025-10-17">
+
+**[v2.12.5：Safety Pin](https://github.com/jlowin/fastmcp/releases/tag/v2.12.5)**
+
+FastMCP 2.12.5 是一个补丁版本，将 MCP SDK 固定在 1.17 以下。因为 1.17 对在复合应用中挂载身份验证提供方的 FastMCP 用户产生了影响，此举可以确保使用 FastMCP 身份验证提供方时，`.well-known` 响应仍然出现在预期位置。
+
+## 变更内容
+
+### 修复 🐞
+* Pin MCP SDK version below 1.17 by [@jlowin](https://github.com/jlowin) in [a1b2c3d](https://github.com/jlowin/fastmcp/commit/dab2b316ddc3883b7896a86da21cacb68da01e5c)
+
+**完整更新内容**： [v2.12.4...v2.12.5](https://github.com/jlowin/fastmcp/compare/v2.12.4...v2.12.5)
+
+</Update>
+
 <Update label="v2.12.4" description="2025-09-26">
 
 **[v2.12.4: OIDC What You Did There](https://github.com/jlowin/fastmcp/releases/tag/v2.12.4)**

@@ -8,26 +8,17 @@ sidebarTitle: resource_manager
 
 资源管理器功能。
 
-## 类
+## Classes
 
-### `ResourceManager` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L28" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `ResourceManager` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L25" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 管理 FastMCP 资源。
 
 
-**方法：**
+**Methods:**
 
-#### `mount` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L60" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-mount(self, server: MountedServer) -> None
-```
-
-添加挂载的服务器作为资源和模板的来源。
-
-
-#### `get_resources` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L64" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_resources` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L56" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_resources(self) -> dict[str, Resource]
@@ -36,7 +27,7 @@ get_resources(self) -> dict[str, Resource]
 获取所有已注册的资源，以 URI 为键。
 
 
-#### `get_resource_templates` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L68" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_resource_templates` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L60" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_resource_templates(self) -> dict[str, ResourceTemplate]
@@ -45,25 +36,7 @@ get_resource_templates(self) -> dict[str, ResourceTemplate]
 获取所有已注册的模板，以 URI 模板为键。
 
 
-#### `list_resources` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L178" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-list_resources(self) -> list[Resource]
-```
-
-列出所有资源，应用协议过滤。
-
-
-#### `list_resource_templates` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L185" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-list_resource_templates(self) -> list[ResourceTemplate]
-```
-
-列出所有模板，应用协议过滤。
-
-
-#### `add_resource_or_template_from_fn` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L192" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_resource_or_template_from_fn` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L64" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_resource_or_template_from_fn(self, fn: Callable[..., Any], uri: str, name: str | None = None, description: str | None = None, mime_type: str | None = None, tags: set[str] | None = None) -> Resource | ResourceTemplate
@@ -80,11 +53,11 @@ add_resource_or_template_from_fn(self, fn: Callable[..., Any], uri: str, name: s
 - `tags`: 用于分类资源或模板的可选标签集合
 
 **返回值：**
-- 已添加的资源或模板。如果已存在具有相同 URI 的资源或模板，
+- 添加的资源或模板。如果已存在相同 URI 的资源或模板，
 - 则返回现有的资源或模板。
 
 
-#### `add_resource_from_fn` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L240" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_resource_from_fn` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L112" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_resource_from_fn(self, fn: Callable[..., Any], uri: str, name: str | None = None, description: str | None = None, mime_type: str | None = None, tags: set[str] | None = None) -> Resource
@@ -101,11 +74,11 @@ add_resource_from_fn(self, fn: Callable[..., Any], uri: str, name: str | None = 
 - `tags`: 用于分类资源的可选标签集合
 
 **返回值：**
-- 已添加的资源。如果已存在具有相同 URI 的资源，
+- 添加的资源。如果已存在相同 URI 的资源，
 - 则返回现有的资源。
 
 
-#### `add_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L280" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L152" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_resource(self, resource: Resource) -> Resource
@@ -115,11 +88,11 @@ add_resource(self, resource: Resource) -> Resource
 
 **参数：**
 - `resource`: 要添加的 Resource 实例。资源的 .key 属性
-将用作存储键。要覆盖它，请在调用此方法之前调用
+将用作存储键。要覆盖它，请在调用此方法前调用
 Resource.model_copy(key=new_key)。
 
 
-#### `add_template_from_fn` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L302" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_template_from_fn` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L174" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_template_from_fn(self, fn: Callable[..., Any], uri_template: str, name: str | None = None, description: str | None = None, mime_type: str | None = None, tags: set[str] | None = None) -> ResourceTemplate
@@ -128,7 +101,7 @@ add_template_from_fn(self, fn: Callable[..., Any], uri_template: str, name: str 
 从函数创建模板。
 
 
-#### `add_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L329" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L201" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_template(self, template: ResourceTemplate) -> ResourceTemplate
@@ -138,15 +111,15 @@ add_template(self, template: ResourceTemplate) -> ResourceTemplate
 
 **参数：**
 - `template`: 要添加的 ResourceTemplate 实例。模板的 .key 属性
-将用作存储键。要覆盖它，请在调用此方法之前调用
+将用作存储键。要覆盖它，请在调用此方法前调用
 ResourceTemplate.model_copy(key=new_key)。
 
 **返回值：**
-- 已添加的模板。如果已存在具有相同 URI 的模板，
+- 添加的模板。如果已存在相同 URI 的模板，
 - 则返回现有的模板。
 
 
-#### `has_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L355" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `has_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L227" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 has_resource(self, uri: AnyUrl | str) -> bool
@@ -155,27 +128,26 @@ has_resource(self, uri: AnyUrl | str) -> bool
 检查资源是否存在。
 
 
-#### `get_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L372" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L244" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_resource(self, uri: AnyUrl | str) -> Resource
 ```
 
-根据 URI 获取资源，首先检查具体资源，然后检查模板。
+通过 URI 获取资源，先检查具体资源，然后检查模板。
 
 **参数：**
 - `uri`: 要获取的资源的 URI
 
 **异常：**
-- `NotFoundError`: 如果未找到匹配 URI 的资源或模板。
+- `NotFoundError`: 如果找不到与 URI 匹配的资源或模板。
 
 
-#### `read_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L417" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `read_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/resources/resource_manager.py#L289" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 read_resource(self, uri: AnyUrl | str) -> str | bytes
 ```
 
-服务器内部 API：查找并读取资源，遵循
-过滤的协议路径。
+服务器内部 API：查找并读取资源，遵循过滤的协议路径。
 

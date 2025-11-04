@@ -9,10 +9,10 @@
       "dark": "#222831",
       "light": "#EEEEEE"
     },
-    "decoration": "windows"
+    "decoration": "gradient"
   },
   "banner": {
-    "content": "Host your server on [FastMCP Cloud](https://fastmcp.cloud) for free!"
+    "content": "Join the [FastMCP community](https://discord.gg/uu8dJCgttd)!"
   },
   "colors": {
     "dark": "#f72585",
@@ -26,16 +26,23 @@
     ]
   },
   "description": "The fast, Pythonic way to build MCP servers and clients.",
+  "errors": {
+    "404": {
+      "description": "You’ve wandered outside the context.",
+      "redirect": false,
+      "title": "Don't panic."
+    }
+  },
   "favicon": {
     "dark": "/assets/brand/favicon.svg",
     "light": "/assets/brand/favicon.svg"
   },
   "footer": {
     "socials": {
-      "bluesky": "https://bsky.app/profile/jlowin.dev",
+      "discord": "https://discord.gg/uu8dJCgttd",
       "github": "https://github.com/jlowin/fastmcp",
       "x": "https://x.com/jlowin",
-      "website": "https://github.com/Gu-f/FastmcpDocs"
+      "website": "https://prefect.ai"
     }
   },
   "integrations": {
@@ -66,6 +73,11 @@
         "href": "https://fastmcp.cloud",
         "label": "FastMCP Cloud",
         "icon": "cloud"
+      },
+      {
+        "href": "https://discord.gg/uu8dJCgttd",
+        "icon": "discord",
+        "label": "Discord"
       }
     ]
   },
@@ -73,15 +85,18 @@
     "languages": [
       {
         "language": "zh",
-        "tabs": [
+        "dropdowns": [
           {
+            "dropdown": "文档",
+            "icon": "book",
             "groups": [
               {
                 "group": "开始",
                 "pages": [
                   "zh/getting-started/welcome",
                   "zh/getting-started/installation",
-                  "zh/getting-started/quickstart"
+                  "zh/getting-started/quickstart",
+                  "zh/updates"
                 ]
               },
               {
@@ -108,7 +123,9 @@
                       "zh/servers/logging",
                       "zh/servers/progress",
                       "zh/servers/sampling",
-                      "zh/servers/middleware"
+                      "zh/servers/middleware",
+                      "zh/servers/icons",
+                      "zh/servers/storage-backends"
                     ]
                   },
                   {
@@ -129,7 +146,7 @@
                     "pages": [
                       "zh/deployment/running-server",
                       "zh/deployment/server-configuration",
-                      "zh/deployment/self-hosted",
+                      "zh/deployment/http",
                       "zh/deployment/fastmcp-cloud"
                     ]
                   }
@@ -225,10 +242,9 @@
                     ]
                   },
                   {
-                    "group": "Web 框架",
+                    "group": "API 集成",
                     "icon": "globe",
                     "pages": [
-                      "zh/integrations/asgi",
                       "zh/integrations/fastapi",
                       "zh/integrations/openapi"
                     ]
@@ -241,7 +257,8 @@
                   "zh/patterns/tool-transformation",
                   "zh/patterns/decorating-methods",
                   "zh/patterns/cli",
-                  "zh/patterns/contrib"
+                  "zh/patterns/contrib",
+                  "zh/patterns/testing"
                 ]
               },
               {
@@ -249,18 +266,12 @@
                 "pages": [
                   "zh/development/contributing",
                   "zh/development/tests",
-                  "zh/development/releases"
+                  "zh/development/releases",
+                  "zh/development/upgrade-guide",
+                  "zh/changelog"
                 ]
               }
-            ],
-            "tab": "文档"
-          },
-          {
-            "pages": [
-              "zh/updates",
-              "zh/changelog"
-            ],
-            "tab": "最新动态"
+            ]
           },
           {
             "anchors": [
@@ -275,7 +286,6 @@
                     "group": "fastmcp.cli",
                     "pages": [
                       "zh/python-sdk/fastmcp-cli-__init__",
-                      "zh/python-sdk/fastmcp-cli-claude",
                       "zh/python-sdk/fastmcp-cli-cli",
                       {
                         "group": "install",
@@ -342,6 +352,8 @@
                         "pages": [
                           "zh/python-sdk/fastmcp-server-auth-__init__",
                           "zh/python-sdk/fastmcp-server-auth-auth",
+                          "zh/python-sdk/fastmcp-server-auth-jwt_issuer",
+                          "zh/python-sdk/fastmcp-server-auth-middleware",
                           "zh/python-sdk/fastmcp-server-auth-oauth_proxy",
                           "zh/python-sdk/fastmcp-server-auth-oidc_proxy",
                           {
@@ -356,8 +368,10 @@
                               "zh/python-sdk/fastmcp-server-auth-providers-github",
                               "zh/python-sdk/fastmcp-server-auth-providers-google",
                               "zh/python-sdk/fastmcp-server-auth-providers-in_memory",
+                              "zh/python-sdk/fastmcp-server-auth-providers-introspection",
                               "zh/python-sdk/fastmcp-server-auth-providers-jwt",
                               "zh/python-sdk/fastmcp-server-auth-providers-scalekit",
+                              "zh/python-sdk/fastmcp-server-auth-providers-supabase",
                               "zh/python-sdk/fastmcp-server-auth-providers-workos"
                             ]
                           },
@@ -373,11 +387,13 @@
                         "group": "middleware",
                         "pages": [
                           "zh/python-sdk/fastmcp-server-middleware-__init__",
+                          "zh/python-sdk/fastmcp-server-middleware-caching",
                           "zh/python-sdk/fastmcp-server-middleware-error_handling",
                           "zh/python-sdk/fastmcp-server-middleware-logging",
                           "zh/python-sdk/fastmcp-server-middleware-middleware",
                           "zh/python-sdk/fastmcp-server-middleware-rate_limiting",
-                          "zh/python-sdk/fastmcp-server-middleware-timing"
+                          "zh/python-sdk/fastmcp-server-middleware-timing",
+                          "zh/python-sdk/fastmcp-server-middleware-tool_injection"
                         ]
                       },
                       "zh/python-sdk/fastmcp-server-openapi",
@@ -438,29 +454,33 @@
                         ]
                       },
                       "zh/python-sdk/fastmcp-utilities-openapi",
-                      "zh/python-sdk/fastmcp-utilities-storage",
                       "zh/python-sdk/fastmcp-utilities-tests",
-                      "zh/python-sdk/fastmcp-utilities-types"
+                      "zh/python-sdk/fastmcp-utilities-types",
+                      "zh/python-sdk/fastmcp-utilities-ui"
                     ]
                   }
                 ]
               }
             ],
-            "tab": "SDK 参考文档"
+            "dropdown": "SDK 参考文档",
+            "icon": "code"
           }
         ]
       },
       {
         "language": "en",
-        "tabs": [
+        "dropdowns": [
           {
+            "dropdown": "Documentation",
+            "icon": "book",
             "groups": [
               {
                 "group": "Get Started",
                 "pages": [
                   "en/getting-started/welcome",
                   "en/getting-started/installation",
-                  "en/getting-started/quickstart"
+                  "en/getting-started/quickstart",
+                  "en/updates"
                 ]
               },
               {
@@ -487,7 +507,9 @@
                       "en/servers/logging",
                       "en/servers/progress",
                       "en/servers/sampling",
-                      "en/servers/middleware"
+                      "en/servers/middleware",
+                      "en/servers/icons",
+                      "en/servers/storage-backends"
                     ]
                   },
                   {
@@ -508,7 +530,7 @@
                     "pages": [
                       "en/deployment/running-server",
                       "en/deployment/server-configuration",
-                      "en/deployment/self-hosted",
+                      "en/deployment/http",
                       "en/deployment/fastmcp-cloud"
                     ]
                   }
@@ -604,10 +626,9 @@
                     ]
                   },
                   {
-                    "group": "Web Frameworks",
+                    "group": "API Integration",
                     "icon": "globe",
                     "pages": [
-                      "en/integrations/asgi",
                       "en/integrations/fastapi",
                       "en/integrations/openapi"
                     ]
@@ -620,7 +641,8 @@
                   "en/patterns/tool-transformation",
                   "en/patterns/decorating-methods",
                   "en/patterns/cli",
-                  "en/patterns/contrib"
+                  "en/patterns/contrib",
+                  "en/patterns/testing"
                 ]
               },
               {
@@ -628,18 +650,12 @@
                 "pages": [
                   "en/development/contributing",
                   "en/development/tests",
-                  "en/development/releases"
+                  "en/development/releases",
+                  "en/development/upgrade-guide",
+                  "en/changelog"
                 ]
               }
-            ],
-            "tab": "Documentation"
-          },
-          {
-            "pages": [
-              "en/updates",
-              "en/changelog"
-            ],
-            "tab": "What's New"
+            ]
           },
           {
             "anchors": [
@@ -654,7 +670,6 @@
                     "group": "fastmcp.cli",
                     "pages": [
                       "en/python-sdk/fastmcp-cli-__init__",
-                      "en/python-sdk/fastmcp-cli-claude",
                       "en/python-sdk/fastmcp-cli-cli",
                       {
                         "group": "install",
@@ -721,6 +736,8 @@
                         "pages": [
                           "en/python-sdk/fastmcp-server-auth-__init__",
                           "en/python-sdk/fastmcp-server-auth-auth",
+                          "en/python-sdk/fastmcp-server-auth-jwt_issuer",
+                          "en/python-sdk/fastmcp-server-auth-middleware",
                           "en/python-sdk/fastmcp-server-auth-oauth_proxy",
                           "en/python-sdk/fastmcp-server-auth-oidc_proxy",
                           {
@@ -735,8 +752,10 @@
                               "en/python-sdk/fastmcp-server-auth-providers-github",
                               "en/python-sdk/fastmcp-server-auth-providers-google",
                               "en/python-sdk/fastmcp-server-auth-providers-in_memory",
+                              "en/python-sdk/fastmcp-server-auth-providers-introspection",
                               "en/python-sdk/fastmcp-server-auth-providers-jwt",
                               "en/python-sdk/fastmcp-server-auth-providers-scalekit",
+                              "en/python-sdk/fastmcp-server-auth-providers-supabase",
                               "en/python-sdk/fastmcp-server-auth-providers-workos"
                             ]
                           },
@@ -752,11 +771,13 @@
                         "group": "middleware",
                         "pages": [
                           "en/python-sdk/fastmcp-server-middleware-__init__",
+                          "en/python-sdk/fastmcp-server-middleware-caching",
                           "en/python-sdk/fastmcp-server-middleware-error_handling",
                           "en/python-sdk/fastmcp-server-middleware-logging",
                           "en/python-sdk/fastmcp-server-middleware-middleware",
                           "en/python-sdk/fastmcp-server-middleware-rate_limiting",
-                          "en/python-sdk/fastmcp-server-middleware-timing"
+                          "en/python-sdk/fastmcp-server-middleware-timing",
+                          "en/python-sdk/fastmcp-server-middleware-tool_injection"
                         ]
                       },
                       "en/python-sdk/fastmcp-server-openapi",
@@ -817,15 +838,16 @@
                         ]
                       },
                       "en/python-sdk/fastmcp-utilities-openapi",
-                      "en/python-sdk/fastmcp-utilities-storage",
                       "en/python-sdk/fastmcp-utilities-tests",
-                      "en/python-sdk/fastmcp-utilities-types"
+                      "en/python-sdk/fastmcp-utilities-types",
+                      "en/python-sdk/fastmcp-utilities-ui"
                     ]
                   }
                 ]
               }
             ],
-            "tab": "SDK Reference"
+            "dropdown": "SDK Reference",
+            "icon": "code"
           }
         ]
       }
@@ -844,7 +866,15 @@
   "search": {
     "prompt": "Search the docs..."
   },
-  "theme": "mint",
+  "styling": {
+    "codeblocks": {
+      "theme": {
+        "dark": "dark-plus",
+        "light": "snazzy-light"
+      }
+    }
+  },
+  "theme": "almond",
   "thumbnails": {
     "appearance": "light",
     "background": "/assets/brand/thumbnail-background.png"

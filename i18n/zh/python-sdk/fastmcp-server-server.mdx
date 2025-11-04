@@ -6,27 +6,27 @@ sidebarTitle: server
 # `fastmcp.server.server`
 
 
-FastMCP - MCP 服务器的更优雅接口。
+FastMCP - 为 MCP 服务器提供更符合人体工程学的接口。
 
-## 函数
+## Functions
 
-### `default_lifespan` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L94" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `default_lifespan` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L108" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 default_lifespan(server: FastMCP[LifespanResultT]) -> AsyncIterator[Any]
 ```
 
 
-不执行任何操作的默认生命周期上下文管理器。
+默认的生命周期上下文管理器，不执行任何操作。
 
-**参数：**
-- `server`: 此生命周期管理的服务器实例
+**参数:**
+- `server`: 此生命周期正在管理的服务器实例
 
-**返回值：**
-- 一个空的上下文对象
+**返回:**
+- 作为生命周期结果的空字典。
 
 
-### `add_resource_prefix` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2229" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `add_resource_prefix` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2705" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_resource_prefix(uri: str, prefix: str, prefix_format: Literal['protocol', 'path'] | None = None) -> str
@@ -35,36 +35,36 @@ add_resource_prefix(uri: str, prefix: str, prefix_format: Literal['protocol', 'p
 
 为资源 URI 添加前缀。
 
-**参数：**
+**参数:**
 - `uri`: 原始资源 URI
 - `prefix`: 要添加的前缀
 
-**返回值：**
+**返回:**
 - 添加了前缀的资源 URI
 
-**示例：**
+**示例:**
 
-新样式：
+使用新样式：
 ```python
 add_resource_prefix("resource://path/to/resource", "prefix")
 "resource://prefix/path/to/resource"
 ```
-传统样式：
+使用旧样式：
 ```python
 add_resource_prefix("resource://path/to/resource", "prefix")
 "prefix+resource://path/to/resource"
 ```
-绝对路径：
+使用绝对路径：
 ```python
 add_resource_prefix("resource:///absolute/path", "prefix")
 "resource://prefix//absolute/path"
 ```
 
-**异常：**
-- `ValueError`: 如果 URI 不匹配预期的 protocol\://path 格式
+**异常:**
+- `ValueError`: 如果 URI 不符合预期的 protocol\://path 格式
 
 
-### `remove_resource_prefix` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2289" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `remove_resource_prefix` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2765" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 remove_resource_prefix(uri: str, prefix: str, prefix_format: Literal['protocol', 'path'] | None = None) -> str
@@ -73,37 +73,37 @@ remove_resource_prefix(uri: str, prefix: str, prefix_format: Literal['protocol',
 
 从资源 URI 中移除前缀。
 
-**参数：**
+**参数:**
 - `uri`: 带有前缀的资源 URI
 - `prefix`: 要移除的前缀
 - `prefix_format`: 要移除的前缀格式
 
-**返回值：**
-    移除前缀后的资源 URI
+返回:
+    移除了前缀的资源 URI
 
-**示例：**
+**示例:**
 
-新样式：
+使用新样式：
 ```python
 remove_resource_prefix("resource://prefix/path/to/resource", "prefix")
 "resource://path/to/resource"
 ```
-传统样式：
+使用旧样式：
 ```python
 remove_resource_prefix("prefix+resource://path/to/resource", "prefix")
 "resource://path/to/resource"
 ```
-绝对路径：
+使用绝对路径：
 ```python
 remove_resource_prefix("resource://prefix//absolute/path", "prefix")
 "resource:///absolute/path"
 ```
 
-**异常：**
-- `ValueError`: 如果 URI 不匹配预期的 protocol\://path 格式
+**异常:**
+- `ValueError`: 如果 URI 不符合预期的 protocol\://path 格式
 
 
-### `has_resource_prefix` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2356" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `has_resource_prefix` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2832" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 has_resource_prefix(uri: str, prefix: str, prefix_format: Literal['protocol', 'path'] | None = None) -> bool
@@ -112,72 +112,84 @@ has_resource_prefix(uri: str, prefix: str, prefix_format: Literal['protocol', 'p
 
 检查资源 URI 是否具有特定前缀。
 
-**参数：**
+**参数:**
 - `uri`: 要检查的资源 URI
 - `prefix`: 要查找的前缀
 
-**返回值：**
+**返回:**
 - 如果 URI 具有指定前缀则为 True，否则为 False
 
-**示例：**
+**示例:**
 
-新样式：
+使用新样式：
 ```python
 has_resource_prefix("resource://prefix/path/to/resource", "prefix")
 True
 ```
-传统样式：
+使用旧样式：
 ```python
 has_resource_prefix("prefix+resource://path/to/resource", "prefix")
 True
 ```
-其他路径：
+使用其他路径：
 ```python
 has_resource_prefix("resource://other/path/to/resource", "prefix")
 False
 ```
 
-**异常：**
-- `ValueError`: 如果 URI 不匹配预期的 protocol\://path 格式
+**异常:**
+- `ValueError`: 如果 URI 不符合预期的 protocol\://path 格式
 
 
-## 类
+## Classes
 
-### `FastMCP` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L125" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `FastMCP` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L144" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 **Methods:**
 
-#### `settings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L310" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `settings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L344" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 settings(self) -> Settings
 ```
 
-#### `name` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L321" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `name` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L355" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 name(self) -> str
 ```
 
-#### `instructions` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L325" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `instructions` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L359" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 instructions(self) -> str | None
 ```
 
-#### `instructions` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L329" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `instructions` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L363" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 instructions(self, value: str | None) -> None
 ```
 
-#### `version` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L333" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `version` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L367" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 version(self) -> str | None
 ```
 
-#### `run_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L336" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `website_url` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L371" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+website_url(self) -> str | None
+```
+
+#### `icons` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L375" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+icons(self) -> list[mcp.types.Icon]
+```
+
+#### `run_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L402" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 run_async(self, transport: Transport | None = None, show_banner: bool = True, **transport_kwargs: Any) -> None
@@ -185,11 +197,11 @@ run_async(self, transport: Transport | None = None, show_banner: bool = True, **
 
 异步运行 FastMCP 服务器。
 
-**参数：**
+**参数:**
 - `transport`: 要使用的传输协议（"stdio"、"sse" 或 "streamable-http"）
 
 
-#### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L366" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L432" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 run(self, transport: Transport | None = None, show_banner: bool = True, **transport_kwargs: Any) -> None
@@ -197,56 +209,56 @@ run(self, transport: Transport | None = None, show_banner: bool = True, **transp
 
 运行 FastMCP 服务器。注意这是一个同步函数。
 
-**参数：**
+**参数:**
 - `transport`: 要使用的传输协议（"stdio"、"sse" 或 "streamable-http"）
 
 
-#### `add_middleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L408" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_middleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L476" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_middleware(self, middleware: Middleware) -> None
 ```
 
-#### `get_tools` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L411" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_tools` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L479" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_tools(self) -> dict[str, Tool]
 ```
 
-获取所有已注册的工具，按注册键索引。
+获取所有工具（未过滤），包括挂载的服务器，按键索引。
 
 
-#### `get_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L415" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L499" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_tool(self, key: str) -> Tool
 ```
 
-#### `get_resources` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L421" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_resources` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L505" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_resources(self) -> dict[str, Resource]
 ```
 
-获取所有已注册的资源，按注册键索引。
+获取所有资源（未过滤），包括挂载的服务器，按键索引。
 
 
-#### `get_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L425" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L538" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_resource(self, key: str) -> Resource
 ```
 
-#### `get_resource_templates` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L431" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_resource_templates` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L544" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_resource_templates(self) -> dict[str, ResourceTemplate]
 ```
 
-获取所有已注册的资源模板，按注册键索引。
+获取所有资源模板（未过滤），包括挂载的服务器，按键索引。
 
 
-#### `get_resource_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L435" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_resource_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L577" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_resource_template(self, key: str) -> ResourceTemplate
@@ -255,43 +267,42 @@ get_resource_template(self, key: str) -> ResourceTemplate
 按键获取已注册的资源模板。
 
 
-#### `get_prompts` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L442" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_prompts` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L584" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_prompts(self) -> dict[str, Prompt]
 ```
 
-列出所有可用的提示。
+获取所有提示（未过滤），包括挂载的服务器，按键索引。
 
 
-#### `get_prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L448" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L604" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_prompt(self, key: str) -> Prompt
 ```
 
-#### `custom_route` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L454" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `custom_route` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L610" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 custom_route(self, path: str, methods: list[str], name: str | None = None, include_in_schema: bool = True) -> Callable[[Callable[[Request], Awaitable[Response]]], Callable[[Request], Awaitable[Response]]]
 ```
 
-在 FastMCP 服务器上注册自定义 HTTP 路由的装饰器。
+装饰器用于在 FastMCP 服务器上注册自定义 HTTP 路由。
 
 允许在标准 MCP 协议之外添加任意 HTTP 端点，
-这对 OAuth 回调、健康检查或管理 API 很有用。
-处理函数必须是接受 Starlette Request 并返回 Response 的异步函数。
+这对于 OAuth 回调、健康检查或管理 API 很有用。
+处理函数必须是一个接受 Starlette
+Request 并返回 Response 的异步函数。
+
+**参数:**
+- `path`: 路由的 URL 路径（例如，"/auth/callback"）
+- `methods`: 要支持的 HTTP 方法列表（例如，["GET", "POST"]）
+- `name`: 路由的可选名称（用于通过 Starlette 的反向 URL 查找功能引用此路由）
+- `include_in_schema`: 是否包含在 OpenAPI 模式中，默认为 True
 
 
-**参数：**
-- `path`: 路由的 URL 路径（例如 "/auth/callback"）
-- `methods`: 要支持的 HTTP 方法列表（例如 ["GET", "POST"]）
-- `name`: 路由的可选名称（用于 Starlette 的反向 URL 查找功能）
-- `include_in_schema`: 是否包含在 OpenAPI 架构中，默认为 True
-
-
-
-#### `add_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L858" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1307" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_tool(self, tool: Tool) -> Tool
@@ -299,32 +310,32 @@ add_tool(self, tool: Tool) -> Tool
 
 向服务器添加工具。
 
-工具函数可以通过添加带有 Context 类型注释的参数
-来可选地请求 Context 对象。参见 @tool 装饰器的示例。
+工具函数可以通过添加带有 Context 类型注解的参数
+来选择性地请求 Context 对象。请参阅 @tool 装饰器以获取示例。
 
-**参数：**
+**参数:**
 - `tool`: 要注册的 Tool 实例
 
-**返回值：**
-- 添加到服务器的工具实例。
+**返回:**
+- 已添加到服务器的工具实例。
 
 
-#### `remove_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L883" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `remove_tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1332" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 remove_tool(self, name: str) -> None
 ```
 
-从服务器移除工具。
+从服务器中移除工具。
 
-**参数：**
-- `name`: 要移除的工具名称
+**参数:**
+- `name`: 要移除的工具的名称
 
-**异常：**
-- `NotFoundError`: 如果未找到工具
+**异常:**
+- `NotFoundError`: 如果找不到工具
 
 
-#### `add_tool_transformation` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L903" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_tool_transformation` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1352" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_tool_transformation(self, tool_name: str, transformation: ToolTransformConfig) -> None
@@ -333,7 +344,7 @@ add_tool_transformation(self, tool_name: str, transformation: ToolTransformConfi
 添加工具转换。
 
 
-#### `remove_tool_transformation` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L909" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `remove_tool_transformation` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1358" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 remove_tool_transformation(self, tool_name: str) -> None
@@ -342,57 +353,57 @@ remove_tool_transformation(self, tool_name: str) -> None
 移除工具转换。
 
 
-#### `tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L914" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1363" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 tool(self, name_or_fn: AnyFunction) -> FunctionTool
 ```
 
-#### `tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L930" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1380" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 tool(self, name_or_fn: str | None = None) -> Callable[[AnyFunction], FunctionTool]
 ```
 
-#### `tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L945" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `tool` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1396" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 tool(self, name_or_fn: str | AnyFunction | None = None) -> Callable[[AnyFunction], FunctionTool] | FunctionTool
 ```
 
-注册工具的装饰器。
+装饰器用于注册工具。
 
-工具可以通过添加带有 Context 类型注释的参数来可选地请求 Context 对象。
-上下文提供对 MCP 功能的访问，如日志记录、进度报告和资源访问。
-
+工具可以通过添加带有 Context 类型注解的参数
+来选择性地请求 Context 对象。上下文提供对 MCP 功能的访问，如
+日志记录、进度报告和资源访问。
 
 此装饰器支持多种调用模式：
-- @server.tool（无括号）
+- @server.tool（不带括号）
 - @server.tool（带空括号）
 - @server.tool("custom_name")（名称作为第一个参数）
 - @server.tool(name="custom_name")（名称作为关键字参数）
 - server.tool(function, name="custom_name")（直接函数调用）
 
-**参数：**
-- `name_or_fn`: 函数（用作 @tool 时）、字符串名称或 None
+**参数:**
+- `name_or_fn`: 函数（当用作 @tool 时）、字符串名称或 None
 - `name`: 工具的可选名称（仅关键字，name_or_fn 的替代）
 - `description`: 工具功能的可选描述
-- `tags`: 用于分类工具的可选标签集
-- `output_schema`: 工具输出的可选 JSON 架构
-- `annotations`: 关于工具行为的可选注释
-- `exclude_args`: 要从工具架构中排除的参数名称的可选列表
+- `tags`: 用于工具分类的可选标签集
+- `output_schema`: 工具输出的可选 JSON 模式
+- `annotations`: 关于工具行为的可选注解
+- `exclude_args`: 要从工具模式中排除的参数名称的可选列表
 - `meta`: 关于工具的可选元信息
-- `enabled`: 启用或禁用工具的可选布尔值
+- `enabled`: 用于启用或禁用工具的可选布尔值
 
-**示例：**
+**示例:**
 
-注册带自定义名称的工具：
+使用自定义名称注册工具：
 ```python
 @server.tool
 def my_tool(x: int) -> str:
     return str(x)
 
-# 注册带自定义名称的工具
+# 使用自定义名称注册工具
 @server.tool
 def my_tool(x: int) -> str:
     return str(x)
@@ -410,7 +421,7 @@ server.tool(my_function, name="custom_name")
 ```
 
 
-#### `add_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1076" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1530" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_resource(self, resource: Resource) -> Resource
@@ -418,14 +429,14 @@ add_resource(self, resource: Resource) -> Resource
 
 向服务器添加资源。
 
-**参数：**
+**参数:**
 - `resource`: 要添加的 Resource 实例
 
-**返回值：**
-- 添加到服务器的资源实例。
+**返回:**
+- 已添加到服务器的资源实例。
 
 
-#### `add_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1098" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_template` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1552" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_template(self, template: ResourceTemplate) -> ResourceTemplate
@@ -433,14 +444,14 @@ add_template(self, template: ResourceTemplate) -> ResourceTemplate
 
 向服务器添加资源模板。
 
-**参数：**
+**参数:**
 - `template`: 要添加的 ResourceTemplate 实例
 
-**返回值：**
-- 添加到服务器的模板实例。
+**返回:**
+- 已添加到服务器的模板实例。
 
 
-#### `add_resource_fn` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1120" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_resource_fn` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1574" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_resource_fn(self, fn: AnyFunction, uri: str, name: str | None = None, description: str | None = None, mime_type: str | None = None, tags: set[str] | None = None) -> None
@@ -449,78 +460,78 @@ add_resource_fn(self, fn: AnyFunction, uri: str, name: str | None = None, descri
 从函数向服务器添加资源或模板。
 
 如果 URI 包含参数（例如 "resource://{param}"）或函数
-具有参数，它将被注册为模板资源。
+有参数，它将被注册为模板资源。
 
-**参数：**
+**参数:**
 - `fn`: 要注册为资源的函数
 - `uri`: 资源的 URI
 - `name`: 资源的可选名称
 - `description`: 资源的可选描述
 - `mime_type`: 资源的可选 MIME 类型
-- `tags`: 用于分类资源的可选标签集
+- `tags`: 用于资源分类的可选标签集
 
 
-#### `resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1158" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `resource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1612" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 resource(self, uri: str) -> Callable[[AnyFunction], Resource | ResourceTemplate]
 ```
 
-将函数注册为资源的装饰器。
+装饰器用于将函数注册为资源。
 
-当读取资源时将调用函数来生成其内容。
+读取资源时将调用该函数以生成其内容。
 函数可以返回：
-- 文本内容的 str
-- 二进制内容的 bytes
-- 其他类型将转换为 JSON
+- str 用于文本内容
+- bytes 用于二进制内容
+- 其他类型将被转换为 JSON
 
-资源可以通过添加带有 Context 类型注释的参数来可选地请求 Context 对象。
-上下文提供对 MCP 功能的访问，如日志记录、进度报告和会话信息。
-
+资源可以通过添加带有 Context 类型注解的参数
+来选择性地请求 Context 对象。上下文提供对 MCP 功能的访问，如
+日志记录、进度报告和会话信息。
 
 如果 URI 包含参数（例如 "resource://{param}"）或函数
-具有参数，它将被注册为模板资源。
+有参数，它将被注册为模板资源。
 
-**参数：**
+**参数:**
 - `uri`: 资源的 URI（例如 "resource\://my-resource" 或 "resource\://{param}"）
 - `name`: 资源的可选名称
 - `description`: 资源的可选描述
 - `mime_type`: 资源的可选 MIME 类型
-- `tags`: 用于分类资源的可选标签集
-- `enabled`: 启用或禁用资源的可选布尔值
-- `annotations`: 关于资源行为的可选注释
+- `tags`: 用于资源分类的可选标签集
+- `enabled`: 用于启用或禁用资源的可选布尔值
+- `annotations`: 关于资源行为的可选注解
 - `meta`: 关于资源的可选元信息
 
-**示例：**
+**示例:**
 
-注册带自定义名称的资源：
+使用自定义名称注册资源：
 ```python
 @server.resource("resource://my-resource")
 def get_data() -> str:
-    return "你好，世界！"
+    return "Hello, world!"
 
 @server.resource("resource://my-resource")
-async def get_data() -> str:
+async get_data() -> str:
     data = await fetch_data()
-    return f"你好，世界！ {data}"
+    return f"Hello, world! {data}"
 
 @server.resource("resource://{city}/weather")
 def get_weather(city: str) -> str:
-    return f"{city} 的天气"
+    return f"Weather for {city}"
 
 @server.resource("resource://{city}/weather")
 async def get_weather_with_context(city: str, ctx: Context) -> str:
     await ctx.info(f"Fetching weather for {city}")
-    return f"{city} 的天气"
+    return f"Weather for {city}"
 
 @server.resource("resource://{city}/weather")
 async def get_weather(city: str) -> str:
     data = await fetch_weather(city)
-    return f"{city} 的天气： {data}"
+    return f"Weather for {city}: {data}"
 ```
 
 
-#### `add_prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1295" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `add_prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1752" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 add_prompt(self, prompt: Prompt) -> Prompt
@@ -528,104 +539,104 @@ add_prompt(self, prompt: Prompt) -> Prompt
 
 向服务器添加提示。
 
-**参数：**
+**参数:**
 - `prompt`: 要添加的 Prompt 实例
 
-**返回值：**
-- 添加到服务器的提示实例。
+**返回:**
+- 已添加到服务器的提示实例。
 
 
-#### `prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1318" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1775" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 prompt(self, name_or_fn: AnyFunction) -> FunctionPrompt
 ```
 
-#### `prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1331" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1789" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 prompt(self, name_or_fn: str | None = None) -> Callable[[AnyFunction], FunctionPrompt]
 ```
 
-#### `prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1343" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `prompt` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1802" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 prompt(self, name_or_fn: str | AnyFunction | None = None) -> Callable[[AnyFunction], FunctionPrompt] | FunctionPrompt
 ```
 
-注册提示的装饰器。
+装饰器用于注册提示。
 
-        提示可以通过添加带有 Context 类型注释的参数来可选地请求 Context 对象。
-        上下文提供对 MCP 功能的访问，如日志记录、进度报告和会话信息。
+提示可以通过添加带有 Context 类型注解的参数
+来选择性地请求 Context 对象。上下文提供对 MCP 功能的访问，如
+日志记录、进度报告和会话信息。
 
+此装饰器支持多种调用模式：
+- @server.prompt（不带括号）
+- @server.prompt()（带空括号）
+- @server.prompt("custom_name")（名称作为第一个参数）
+- @server.prompt(name="custom_name")（名称作为关键字参数）
+- server.prompt(function, name="custom_name")（直接函数调用）
 
-        此装饰器支持多种调用模式：
-        - @server.prompt（无括号）
-        - @server.prompt()（带空括号）
-        - @server.prompt("custom_name")（名称作为第一个参数）
-        - @server.prompt(name="custom_name")（名称作为关键字参数）
-        - server.prompt(function, name="custom_name")（直接函数调用）
+参数：
+    name_or_fn: 函数（当用作 @prompt 时）、字符串名称或 None
+    name: 提示的可选名称（仅关键字，name_or_fn 的替代）
+    description: 提示功能的可选描述
+    tags: 用于提示分类的可选标签集
+    enabled: 用于启用或禁用提示的可选布尔值
+    meta: 关于提示的可选元信息
 
-        参数：
-            name_or_fn: 函数（用作 @prompt 时）、字符串名称或 None
-            name: 提示的可选名称（仅关键字，name_or_fn 的替代）
-            description: 提示功能的可选描述
-            tags: 用于分类提示的可选标签集
-            enabled: 启用或禁用提示的可选布尔值
-            meta: 关于提示的可选元信息
+示例：
 
-        示例：
+    ```python
+    @server.prompt
+    def analyze_table(table_name: str) -> list[Message]:
+        schema = read_table_schema(table_name)
+        return [
+            {
+                "role": "user",
+                "content": f"Analyze this schema:
+{schema}"
+            }
+        ]
 
-            ```python
-            @server.prompt
-            def analyze_table(table_name: str) -> list[Message]:
-                schema = read_table_schema(table_name)
-                return [
-                    {
-                        "role": "user",
-                        "content": f"分析此架构：\n{schema}"
+    @server.prompt()
+    async def analyze_with_context(table_name: str, ctx: Context) -> list[Message]:
+        await ctx.info(f"Analyzing table {table_name}")
+        schema = read_table_schema(table_name)
+        return [
+            {
+                "role": "user",
+                "content": f"Analyze this schema:
+{schema}"
+            }
+        ]
+
+    @server.prompt("custom_name")
+    async def analyze_file(path: str) -> list[Message]:
+        content = await read_file(path)
+        return [
+            {
+                "role": "user",
+                "content": {
+                    "type": "resource",
+                    "resource": {
+                        "uri": f"file://{path}",
+                        "text": content
                     }
-                ]
+                }
+            }
+        ]
+
+    @server.prompt(name="custom_name")
+    def another_prompt(data: str) -> list[Message]:
+        return [{"role": "user", "content": data}]
+
+    # 直接函数调用
+    server.prompt(my_function, name="custom_name")
+    ```
 
 
-            @server.prompt()
-            async def analyze_with_context(table_name: str, ctx: Context) -> list[Message]:
-                await ctx.info(f"Analyzing table {table_name}")
-                schema = read_table_schema(table_name)
-                return [
-                    {
-                        "role": "user",
-                        "content": f"分析此架构：\n{schema}"
-                    }
-                ]
-
-
-            @server.prompt("custom_name")
-            async def analyze_file(path: str) -> list[Message]:
-                content = await read_file(path)
-                return [
-                    {
-                        "role": "user",
-                        "content": {
-                            "type": "resource",
-                            "resource": {
-                                "uri": f"file://{path}",
-                                "text": content
-                            }
-                        }
-                    }
-                ]
-
-            @server.prompt(name="custom_name")
-            def another_prompt(data: str) -> list[Message]:
-                return [{"role": "user", "content": data}]
-
-            # 直接函数调用
-            server.prompt(my_function, name="custom_name")
-            ```
-
-
-#### `run_stdio_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1484" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `run_stdio_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1946" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 run_stdio_async(self, show_banner: bool = True, log_level: str | None = None) -> None
@@ -633,31 +644,32 @@ run_stdio_async(self, show_banner: bool = True, log_level: str | None = None) ->
 
 使用 stdio 传输运行服务器。
 
-**Args:**
-- `show_banner`: 是否显示服务器banner
+**参数:**
+- `show_banner`: 是否显示服务器横幅
 - `log_level`: 服务器的日志级别
 
 
-#### `run_http_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1511" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `run_http_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1976" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-run_http_async(self, show_banner: bool = True, transport: Literal['http', 'streamable-http', 'sse'] = 'http', host: str | None = None, port: int | None = None, log_level: str | None = None, path: str | None = None, uvicorn_config: dict[str, Any] | None = None, middleware: list[ASGIMiddleware] | None = None, stateless_http: bool | None = None) -> None
+run_http_async(self, show_banner: bool = True, transport: Literal['http', 'streamable-http', 'sse'] = 'http', host: str | None = None, port: int | None = None, log_level: str | None = None, path: str | None = None, uvicorn_config: dict[str, Any] | None = None, middleware: list[ASGIMiddleware] | None = None, json_response: bool | None = None, stateless_http: bool | None = None) -> None
 ```
 
 使用 HTTP 传输运行服务器。
 
-**参数：**
+**参数:**
 - `transport`: 要使用的传输协议 - "streamable-http"（默认）或 "sse"
 - `host`: 要绑定的主机地址（默认为 settings.host）
 - `port`: 要绑定的端口（默认为 settings.port）
 - `log_level`: 服务器的日志级别（默认为 settings.log_level）
 - `path`: 端点的路径（默认为 settings.streamable_http_path 或 settings.sse_path）
-- `uvicorn_config`: Uvicorn 服务器的附加配置
-- `middleware`: 要应用到应用程序的中间件列表
+- `uvicorn_config`: Uvicorn 服务器的额外配置
+- `middleware`: 要应用于应用程序的中间件列表
+- `json_response`: 是否使用 JSON 响应格式（默认为 settings.json_response）
 - `stateless_http`: 是否使用无状态 HTTP（默认为 settings.stateless_http）
 
 
-#### `run_sse_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1585" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `run_sse_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2055" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 run_sse_async(self, host: str | None = None, port: int | None = None, log_level: str | None = None, path: str | None = None, uvicorn_config: dict[str, Any] | None = None) -> None
@@ -666,7 +678,7 @@ run_sse_async(self, host: str | None = None, port: int | None = None, log_level:
 使用 SSE 传输运行服务器。
 
 
-#### `sse_app` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1613" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `sse_app` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2083" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 sse_app(self, path: str | None = None, message_path: str | None = None, middleware: list[ASGIMiddleware] | None = None) -> StarletteWithLifespan
@@ -674,13 +686,13 @@ sse_app(self, path: str | None = None, message_path: str | None = None, middlewa
 
 为 SSE 服务器创建 Starlette 应用程序。
 
-**参数：**
+**参数:**
 - `path`: SSE 端点的路径
 - `message_path`: 消息端点的路径
-- `middleware`: 要应用到应用程序的中间件列表
+- `middleware`: 要应用于应用程序的中间件列表
 
 
-#### `streamable_http_app` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1644" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `streamable_http_app` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2114" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 streamable_http_app(self, path: str | None = None, middleware: list[ASGIMiddleware] | None = None) -> StarletteWithLifespan
@@ -688,12 +700,12 @@ streamable_http_app(self, path: str | None = None, middleware: list[ASGIMiddlewa
 
 为 StreamableHTTP 服务器创建 Starlette 应用程序。
 
-**参数：**
+**参数:**
 - `path`: StreamableHTTP 端点的路径
-- `middleware`: 要应用到应用程序的中间件列表
+- `middleware`: 要应用于应用程序的中间件列表
 
 
-#### `http_app` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1665" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `http_app` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2135" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 http_app(self, path: str | None = None, middleware: list[ASGIMiddleware] | None = None, json_response: bool | None = None, stateless_http: bool | None = None, transport: Literal['http', 'streamable-http', 'sse'] = 'http') -> StarletteWithLifespan
@@ -701,117 +713,114 @@ http_app(self, path: str | None = None, middleware: list[ASGIMiddleware] | None 
 
 使用指定的 HTTP 传输创建 Starlette 应用程序。
 
-**参数：**
+**参数:**
 - `path`: HTTP 端点的路径
-- `middleware`: 要应用到应用程序的中间件列表
+- `middleware`: 要应用于应用程序的中间件列表
 - `transport`: 要使用的传输协议 - "streamable-http"（默认）或 "sse"
 
-**返回值：**
-- 使用指定传输配置的 Starlette 应用程序
+**返回:**
+- 配置了指定传输的 Starlette 应用程序
 
 
-#### `run_streamable_http_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1714" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `run_streamable_http_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2184" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 run_streamable_http_async(self, host: str | None = None, port: int | None = None, log_level: str | None = None, path: str | None = None, uvicorn_config: dict[str, Any] | None = None) -> None
 ```
 
-#### `mount` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1739" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `mount` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2209" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 mount(self, server: FastMCP[LifespanResultT], prefix: str | None = None, as_proxy: bool | None = None) -> None
 ```
 
-在此服务器上挂载另一个 FastMCP 服务器，可选使用前缀。
+在此服务器上挂载另一个 FastMCP 服务器，可选择添加前缀。
 
 与导入（使用 import_server）不同，挂载在服务器之间建立动态连接。
-当客户端通过父服务器与挂载服务器的对象交互时，请求会实时转发给挂载服务器。
-这意味着对挂载服务器的更改在通过父服务器访问时会立即反映出来。
-
-
+当客户端通过父服务器与挂载服务器的对象交互时，请求会实时转发到挂载服务器。
+这意味着对挂载服务器的更改在通过父服务器访问时立即反映出来。
 
 当使用前缀挂载服务器时：
-- 挂载服务器的工具可以通过前缀名称访问。
-  示例：如果服务器有一个名为 "get_weather" 的工具，它将以 "prefix_get_weather" 的形式可用。
-- 资源可以通过前缀 URI 访问。
-  示例：如果服务器有一个 URI 为 "weather://forecast" 的资源，它将以
-  "weather://prefix/forecast" 的形式可用。
-- 模板可以通过前缀 URI 模板访问。
-  示例：如果服务器有一个 URI 为 "weather://location/{id}" 的模板，它将以
-  "weather://prefix/location/{id}" 的形式可用。
-- 提示可以通过前缀名称访问。
-  示例：如果服务器有一个名为 "weather_prompt" 的提示，它将以
-  "prefix_weather_prompt" 的形式可用。
+- 来自挂载服务器的工具可以通过带前缀的名称访问。
+  示例：如果服务器有一个名为 "get_weather" 的工具，它将作为 "prefix_get_weather" 可用。
+- 资源可以通过带前缀的 URI 访问。
+  示例：如果服务器有一个 URI 为 "weather://forecast" 的资源，它将作为
+  "weather://prefix/forecast" 可用。
+- 模板可以通过带前缀的 URI 模板访问。
+  示例：如果服务器有一个 URI 为 "weather://location/{id}" 的模板，它将作为
+  "weather://prefix/location/{id}" 可用。
+- 提示可以通过带前缀的名称访问。
+  示例：如果服务器有一个名为 "weather_prompt" 的提示，它将作为
+  "prefix_weather_prompt" 可用。
 
-当不使用前缀挂载服务器时（prefix=None），其工具、资源、模板
-和提示可以使用其原始名称访问。可以挂载多个无前缀的服务器，
-它们将按顺序尝试直到找到匹配项。
+当服务器不使用前缀挂载时（prefix=None），其工具、资源、模板
+和提示可以通过其原始名称访问。可以挂载多个服务器
+而不使用前缀，它们将按顺序尝试，直到找到匹配项。
 
 挂载服务器有两种模式：
-1. 直接挂载（服务器无自定义生命周期时的默认模式）：父服务器
-   直接在内存中访问挂载服务器的对象，以获得更好的性能。
-   在此模式下，挂载服务器上不会发生客户端生命周期事件，
-   包括生命周期执行。
+1. 直接挂载（服务器没有自定义生命周期时的默认模式）：父服务器
+   直接在内存中访问挂载服务器的对象以获得更好的性能。
+   在此模式下，挂载服务器上不会发生客户端生命周期事件，包括
+   生命周期执行。
 
 2. 代理挂载（服务器有自定义生命周期时的默认模式）：父服务器
-   将挂载服务器视为单独的实体，并通过 Client 传输与其通信。
-   这保留了所有面向客户端的行为，包括生命周期执行，
-   但开销略高一些。
+   将挂载服务器视为单独的实体，并通过客户端传输与其通信。
+   这保留了所有面向客户端的行为，包括生命周期
+   执行，但开销略高。
 
-**参数：**
+**参数:**
 - `server`: 要挂载的 FastMCP 服务器。
-- `prefix`: 挂载服务器对象使用的可选前缀。如果为 None，
-服务器的对象可以使用其原始名称访问。
+- `prefix`: 用于挂载服务器对象的可选前缀。如果为 None，
+服务器的对象可以通过其原始名称访问。
 - `as_proxy`: 是否将挂载服务器视为代理。如果为 None（默认），
-根据服务器是否有自定义生命周期自动确定
+基于服务器是否有自定义生命周期自动确定
 （如果有自定义生命周期则为 True，否则为 False）。
 - `tool_separator`: 已弃用。工具名称的分隔符。
 - `resource_separator`: 已弃用。资源 URI 的分隔符。
 - `prompt_separator`: 已弃用。提示名称的分隔符。
 
 
-#### `import_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1861" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `import_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2328" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 import_server(self, server: FastMCP[LifespanResultT], prefix: str | None = None, tool_separator: str | None = None, resource_separator: str | None = None, prompt_separator: str | None = None) -> None
 ```
 
-从另一个 FastMCP 服务器将 MCP 对象导入到此服务器，
-可选使用给定的前缀。
+将另一个 FastMCP 服务器的 MCP 对象导入到此服务器中，
+可选择添加给定前缀。
 
-注意，当服务器被 *导入* 时，其对象会立即
-注册到导入服务器。这是一次性操作，
-被导入服务器的未来更改不会在导入服务器中反映出来。
-服务器级别的配置和生命周期不会被导入。
+请注意，当服务器被*导入*时，其对象会立即
+注册到导入服务器。这是一次性操作，未来对导入服务器的更改不会反映在
+导入服务器中。服务器级别的配置和生命周期不会被导入。
 
 当使用前缀导入服务器时：
-- 工具以前缀名称导入
-  示例：如果服务器有一个名为 "get_weather" 的工具，它将
-  以 "prefix_get_weather" 的形式可用
-- 资源使用新格式以前缀 URI 导入
+- 工具使用带前缀的名称导入
+  示例：如果服务器有一个名为 "get_weather" 的工具，它将作为
+  "prefix_get_weather" 可用
+- 资源使用新格式以带前缀的 URI 导入
   示例：如果服务器有一个 URI 为 "weather://forecast" 的资源，它将
-  以 "weather://prefix/forecast" 的形式可用
-- 模板使用新格式以前缀 URI 模板导入
+  作为 "weather://prefix/forecast" 可用
+- 模板使用新格式以带前缀的 URI 模板导入
   示例：如果服务器有一个 URI 为 "weather://location/{id}" 的模板，它将
-  以 "weather://prefix/location/{id}" 的形式可用
-- 提示以前缀名称导入
-  示例：如果服务器有一个名为 "weather_prompt" 的提示，它将以
-  "prefix_weather_prompt" 的形式可用
+  作为 "weather://prefix/location/{id}" 可用
+- 提示使用带前缀的名称导入
+  示例：如果服务器有一个名为 "weather_prompt" 的提示，它将作为
+  "prefix_weather_prompt" 可用
 
-当不使用前缀导入服务器时（prefix=None），其工具、资源、
-模板和提示以其原始名称导入。
+当服务器不使用前缀导入时（prefix=None），其工具、资源、
+模板和提示使用其原始名称导入。
 
-**参数：**
+**参数:**
 - `server`: 要导入的 FastMCP 服务器
-- `prefix`: 导入服务器对象使用的可选前缀。如果为 None，
-对象以其原始名称导入。
+- `prefix`: 用于导入服务器对象的可选前缀。如果为 None，
+对象使用其原始名称导入。
 - `tool_separator`: 已弃用。工具名称的分隔符。
-- `resource_separator`: 已弃用且被忽略。现在使用
- protocol\://prefix/path 格式应用前缀
+- `resource_separator`: 已弃用并忽略。前缀现在
+使用 protocol\://prefix/path 格式应用
 - `prompt_separator`: 已弃用。提示名称的分隔符。
 
 
-#### `from_openapi` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L1990" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `from_openapi` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2466" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 from_openapi(cls, openapi_spec: dict[str, Any], client: httpx.AsyncClient, route_maps: list[RouteMap] | list[RouteMapNew] | None = None, route_map_fn: OpenAPIRouteMapFn | OpenAPIRouteMapFnNew | None = None, mcp_component_fn: OpenAPIComponentFn | OpenAPIComponentFnNew | None = None, mcp_names: dict[str, str] | None = None, tags: set[str] | None = None, **settings: Any) -> FastMCPOpenAPI | FastMCPOpenAPINew
@@ -820,7 +829,7 @@ from_openapi(cls, openapi_spec: dict[str, Any], client: httpx.AsyncClient, route
 从 OpenAPI 规范创建 FastMCP 服务器。
 
 
-#### `from_fastapi` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2039" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `from_fastapi` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2515" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 from_fastapi(cls, app: Any, name: str | None = None, route_maps: list[RouteMap] | list[RouteMapNew] | None = None, route_map_fn: OpenAPIRouteMapFn | OpenAPIRouteMapFnNew | None = None, mcp_component_fn: OpenAPIComponentFn | OpenAPIComponentFnNew | None = None, mcp_names: dict[str, str] | None = None, httpx_client_kwargs: dict[str, Any] | None = None, tags: set[str] | None = None, **settings: Any) -> FastMCPOpenAPI | FastMCPOpenAPINew
@@ -829,21 +838,20 @@ from_fastapi(cls, app: Any, name: str | None = None, route_maps: list[RouteMap] 
 从 FastAPI 应用程序创建 FastMCP 服务器。
 
 
-#### `as_proxy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2102" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `as_proxy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2578" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 as_proxy(cls, backend: Client[ClientTransportT] | ClientTransport | FastMCP[Any] | AnyUrl | Path | MCPConfig | dict[str, Any] | str, **settings: Any) -> FastMCPProxy
 ```
 
-为给定的后端创建 FastMCP 代理服务器。
+为给定后端创建 FastMCP 代理服务器。
 
 `backend` 参数可以是现有的 `fastmcp.client.Client`
-实例，或者任何被 `fastmcp.client.Client` 的 `transport` 参数
-接受的值。这反映了 `fastmcp.client.Client` 构造函数的便利性。
+实例或任何被 `fastmcp.client.Client` 的 `transport` 参数接受的值。
+这镜像了 `fastmcp.client.Client` 构造函数的便利性。
 
 
-
-#### `from_client` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2161" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `from_client` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2637" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 from_client(cls, client: Client[ClientTransportT], **settings: Any) -> FastMCPProxy
@@ -852,10 +860,10 @@ from_client(cls, client: Client[ClientTransportT], **settings: Any) -> FastMCPPr
 从 FastMCP 客户端创建 FastMCP 代理服务器。
 
 
-#### `generate_name` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2213" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `generate_name` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2689" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 generate_name(cls, name: str | None = None) -> str
 ```
 
-### `MountedServer` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2223" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `MountedServer` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/server.py#L2699" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>

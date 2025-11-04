@@ -10,6 +10,8 @@ FastMCP的AWS Cognito OAuth提供程序。
 
 此模块提供了一个完整的AWS Cognito OAuth集成，可以通过用户池ID、域名前缀、客户端ID和客户端密鑰即可使用。它处理了AWS Cognito的OAuth流程、令牌验证和用户管理的所有复杂性。
 
+
+
 示例：
     ```python
     from fastmcp import FastMCP
@@ -29,13 +31,13 @@ FastMCP的AWS Cognito OAuth提供程序。
 
 ## 类
 
-### `AWSCognitoProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L40" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `AWSCognitoProviderSettings` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L42" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 AWS Cognito OAuth提供程序的设置。
 
 
-### `AWSCognitoTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L64" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `AWSCognitoTokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L68" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 将声明过滤为Cognito特定子集的令牌验证器。
@@ -43,7 +45,7 @@ AWS Cognito OAuth提供程序的设置。
 
 **方法:**
 
-#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L67" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L71" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 verify_token(self, token: str) -> AccessToken | None
@@ -52,12 +54,14 @@ verify_token(self, token: str) -> AccessToken | None
 验证令牌并将声明过滤为Cognito特定子集。
 
 
-### `AWSCognitoProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L91" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `AWSCognitoProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L95" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 FastMCP的完整AWS Cognito OAuth提供程序。
 
 此提供程序使用OIDC发现为任何FastMCP服务器添加AWS Cognito OAuth保护变得非常简单。只需提供您的Cognito用户池详细信息、客户端凭据和基础URL，即可开始使用。
+
+
 
 功能：
 - 从AWS Cognito用户池自动OIDC发现
@@ -68,7 +72,7 @@ FastMCP的完整AWS Cognito OAuth提供程序。
 
 **方法:**
 
-#### `get_token_verifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L215" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_token_verifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/providers/aws.py#L241" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_token_verifier(self) -> TokenVerifier

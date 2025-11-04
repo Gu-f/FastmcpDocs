@@ -1,0 +1,50 @@
+---
+title: 升级指南
+sidebarTitle: 升级指南
+description: 在不同 FastMCP 版本之间升级时的迁移说明
+icon: up
+tag: NEW
+---
+
+本指南提供在升级 FastMCP 版本时涉及重大更新或破坏性变更的迁移指引。
+
+## v2.13.0
+
+### OAuth 令牌密钥管理
+
+OAuth 代理现在会向客户端签发自有的 JWT 令牌，而不是转发上游提供方的令牌。通过保持正确的令牌受众边界，这一改动显著提高了安全性。
+
+**发生了什么变化：**
+
+OAuth 代理实现了“令牌工厂”模式——它从 OAuth 提供方（GitHub、Google 等）接收令牌，对其加密并存储，然后向客户端签发 FastMCP 的自有 JWT 令牌。这需要用于 JWT 签名与令牌加密的密钥。
+
+**默认行为（开发环境）：**
+
+在默认情况下，FastMCP 会根据你的运行平台自动管理密钥：
+- **Mac/Windows**：通过系统钥匙串自动管理密钥，即使服务器重启也能保持，适用于**仅限开发与本地测试**。
+- **Linux**：密钥是临时的（启动时随机生成，每次重启都会重新生成）。
+
+在你可以接受重启后重新认证的开发与测试场景中，这样的默认行为完全可行。
+
+**面向生产环境：**
+
+生产部署必须显式提供密钥并使用持久化存储。请补充以下三项配置：
+
+```python
+auth = GitHubProvider(
+    client_id=os.environ["GITHUB_CLIENT_ID"],
+    client_secret=os.environ["GITHUB_CLIENT_SECRET"],
+    base_url="https://your-server.com",
+
+    # 显式密钥（生产环境必需）
+    jwt_signing_key=os.environ["JWT_SIGNING_KEY"],
+
+    # 持久化的网络存储（生产环境必需）
+    client_storage=RedisStore(host="redis.example.com", port=6379)
+)
+```
+
+**查看更多信息：**
+- [OAuth 令牌安全性](/zh/deployment/http#oauth-token-security) —— 生产环境完整配置指南
+- [密钥与存储管理](/zh/servers/auth/oauth-proxy#key-and-storage-management) —— 默认行为与生产要求的详细说明
+- [OAuth 代理参数](/zh/servers/auth/oauth-proxy#configuration-parameters) —— 参数文档

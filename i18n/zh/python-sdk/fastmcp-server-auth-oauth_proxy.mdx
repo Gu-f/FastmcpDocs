@@ -8,55 +8,100 @@ sidebarTitle: oauth_proxy
 
 FastMCP 的 OAuth 代理提供程序。
 
-此提供程序充当上游 OAuth 授权服务器的透明代理，
-在本地处理动态客户端注册的同时转发所有其他 OAuth 流程。
-这使得能够与不支持 DCR 或具有
-受限客户端注册策略的上游提供商进行身份验证。
+此提供程序作为上游 OAuth 授权服务器的透明代理，
+在本地处理动态客户端注册，同时转发所有其他 OAuth 流程。
+这支持与不支持 DCR 或具有受限客户端注册策略的上游提供程序进行身份验证。
 
 主要功能：
 - 将授权和令牌端点代理到上游服务器
 - 使用固定的上游凭据实现本地动态客户端注册
 - 使用上游 JWKS 验证令牌
-- 维护最少的本地状态用于记录
-- 通过请求关联增强日志记录
+- 维护最少的本地状态用于记账
+- 增强的请求关联日志记录
 
-此实现基于 OAuth 2.1 规范，专为
-企业身份提供商的生产使用而设计。
-
-
-## 类
-
-### `ProxyDCRClient` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L60" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+此实现基于 OAuth 2.1 规范，专为企业身份提供程序的生产使用而设计。
 
 
-带有可配置重定向 URI 验证的 DCR 代理客户端。
+## Functions
 
-这个特殊的客户端类对于 OAuth 代理与
-动态客户端注册（DCR）正常工作至关重要。它存在的原因如下：
+### `create_consent_html` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L236" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+create_consent_html(client_id: str, redirect_uri: str, scopes: list[str], txn_id: str, csrf_token: str, client_name: str | None = None, title: str = 'Application Access Request', server_name: str | None = None, server_icon_url: str | None = None, server_website_url: str | None = None, client_website_url: str | None = None) -> str
+```
+
+
+为 OAuth 授权请求创建样式化的 HTML 同意页面。
+
+
+## Classes
+
+### `OAuthTransaction` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L108" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+同意流程的 OAuth 事务状态。
+
+存储在服务器端以跟踪具有客户端上下文的活动授权流程。
+包含用于同意保护的 CSRF 令牌，符合 MCP 安全最佳实践。
+
+
+### `ClientCode` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L129" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+包含 PKCE 和上游令牌的客户端授权码。
+
+在上游 IdP 回调后存储在服务器端。包含绑定到客户端 PKCE 挑战的上游
+令牌，用于安全的令牌交换。
+
+
+### `UpstreamTokenSet` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L147" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+从身份提供程序存储的上游 OAuth 令牌。
+
+这些令牌从上游提供程序（Google、GitHub 等）获取，
+并以明文形式存储在此模型中。加密通过存储层的
+FernetEncryptionWrapper 透明处理。令牌永远不会暴露给 MCP 客户端。
+
+
+### `JTIMapping` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L169" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+将 FastMCP 令牌 JTI 映射到上游令牌 ID。
+
+这允许无状态的 JWT 验证，同时仍能够在工具需要访问上游 API 时
+查找相应的上游令牌。
+
+
+### `ProxyDCRClient` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L181" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+具有可配置重定向 URI 验证的 DCR 代理客户端。
+
+这个特殊的客户端类对于 OAuth 代理正确工作至关重要
+与动态客户端注册（DCR）配合。以下是它存在的原因：
 
 问题：
 --------
-当 MCP 客户端使用 OAuth 时，它们会使用随机 localhost
-端口动态注册（例如，http://localhost:55454/callback）。OAuth 代理需要：
+当 MCP 客户端使用 OAuth 时，它们动态注册随机本地主机
+端口（例如，http://localhost:55454/callback）。OAuth 代理需要：
 1. 根据配置的模式接受来自客户端的这些动态重定向 URI
-2. 与上游提供商（Google、GitHub 等）使用自己的固定重定向 URI
-3. 将授权代码转发回客户端的动态 URI
+2. 在上游提供程序（Google、GitHub 等）使用其自己的固定重定向 URI
+3. 将授权码转发回客户端的动态 URI
 
 解决方案：
 ---------
 此类根据可配置模式验证重定向 URI，
-同时代理在内部与上游
-提供商使用自己的固定重定向 URI。这允许即使客户端使用
-不同端口重新连接或缓存令牌时流程仍然有效。
+而代理在内部与上游提供程序使用其自己的固定重定向 URI。
+这允许流程在客户端以不同端口重新连接或令牌被缓存时也能正常工作。
 
-如果没有适当的验证，客户端在尝试使用缓存令牌进行身份验证时可能遇到“重定向 URI 未注册”错误，
-或者由于接受任意重定向 URI 而产生安全漏洞。
-
+如果没有适当的验证，客户端在尝试使用缓存令牌进行身份验证时可能会收到
+"重定向 URI 未注册"错误，或者从接受任意重定向 URI 可能产生安全漏洞。
 
 
-**方法：**
+**方法:**
 
-#### `validate_redirect_uri` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L99" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `validate_redirect_uri` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L210" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 validate_redirect_uri(self, redirect_uri: AnyUrl | None) -> AnyUrl
@@ -64,66 +109,97 @@ validate_redirect_uri(self, redirect_uri: AnyUrl | None) -> AnyUrl
 
 根据允许的模式验证重定向 URI。
 
-由于我们充当代理且客户端动态注册，
-我们根据可配置模式验证它们的重定向 URI。
-这对于缓存令牌场景至关重要，在这种情况下客户端可能
+由于我们作为代理服务器且客户端动态注册，
+我们根据可配置的模式验证其重定向 URI。
+这对于缓存令牌场景至关重要，因为客户端可能
 使用不同端口重新连接。
 
 
-### `OAuthProxy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L125" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `TokenHandler` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L383" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-在代理到非 DCR IdP 的同时展示符合 DCR 的接口的 OAuth 提供程序。
+返回符合 OAuth 2.1 标准的错误响应的 TokenHandler。
+
+MCP SDK 对于所有客户端身份验证问题总是返回 HTTP 400。
+然而，OAuth 2.1 第 5.3 节和 MCP 规范要求
+无效或过期的令牌必须接收 HTTP 401 响应。
+
+此处理器扩展了基础 MCP SDK TokenHandler，将客户端
+身份验证失败转换为符合 OAuth 2.1 标准的响应：
+- 将 'unauthorized_client' 错误代码更改为 'invalid_client'
+- 对于客户端身份验证失败返回 HTTP 401 状态码而不是 400
+
+根据 OAuth 2.1 第 5.3 节："授权服务器可以返回 HTTP 401
+(未授权) 状态码以指示支持哪些 HTTP 身份验证方案。"
+
+根据 MCP 规范："无效或过期的令牌必须接收 HTTP 401 响应。"
+
+
+**方法:**
+
+#### `response` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L402" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+response(self, obj: TokenSuccessResponse | TokenErrorResponse)
+```
+
+重写响应方法以提供符合 OAuth 2.1 标准的错误处理。
+
+
+### `OAuthProxy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L432" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+呈现符合 DCR 标准的接口同时代理到非 DCR 身份提供者的 OAuth 提供者。
 
 目的
--------
-MCP 客户端希望 OAuth 提供程序支持动态客户端注册（DCR），
-即客户端可以动态注册自己并接收唯一凭据。
-大多数企业 IdP（Google、GitHub、Azure AD 等）不支持 DCR，需要
-预先注册的具有固定凭据的 OAuth 应用程序。
+-----
+MCP 客户端期望 OAuth 提供者支持动态客户端注册（DCR），
+客户端可以动态注册并接收唯一凭据。
+大多数企业身份提供者（Google、GitHub、Azure AD 等）不支持 DCR，需要
+具有固定凭据的预注册 OAuth 应用程序。
 
 此代理通过以下方式弥合这一差距：
-- 向 MCP 客户端展示完整的符合 DCR 的 OAuth 接口
+- 向 MCP 客户端呈现完整的符合 DCR 标准的 OAuth 接口
 - 将 DCR 注册请求转换为使用预配置的上游凭据
-- 将所有 OAuth 流程代理到上游 IDP，并进行适当的转换
+- 将所有 OAuth 流程代理到上游身份提供者并进行适当的转换
 - 管理两种协议的状态和安全要求
 
-架构概览
---------------------
-代理与上游提供商维护单个 OAuth 应用注册，
-同时允许无限数量的 MCP 客户端动态注册和身份验证。
-它为客户端实现完整的 OAuth 2.1 + DCR 规范，同时
-转换为上游提供商所需的任何 OAuth 变体。
+架构概述
+--------
+代理与上游提供者维护单个 OAuth 应用注册，
+同时允许无限的 MCP 客户端动态注册和身份验证。
+它为客户端实现完整的 OAuth 2.1 + DCR 规范，
+同时转换到上游提供者所需的任何 OAuth 变体。
 
 解决的关键转换挑战
----------------------------------
+-------------------
 1. 动态客户端注册：
-   - MCP 客户端希望动态注册并获取唯一凭据
-   - 上游 IDP 需要具有固定凭据的预先注册应用
+   - MCP 客户端期望动态注册并获取唯一凭据
+   - 上游身份提供者需要具有固定凭据的预注册应用程序
    - 解决方案：接受 DCR 请求，返回共享的上游凭据
 
 2. 动态重定向 URI：
-   - MCP 客户端使用在会话间更改的随机 localhost 端口
-   - 上游 IDP 需要固定、预先注册的重定向 URI
-   - 解决方案：与上游使用代理的固定回调 URL，转发到客户端的动态 URI
+   - MCP 客户端使用会话之间更改的随机 localhost 端口
+   - 上游身份提供者需要固定的、预注册的重定向 URI
+   - 解决方案：对上游使用代理的固定回调 URL，转发到客户端的动态 URI
 
 3. 授权代码映射：
    - 上游为代理的重定向 URI 返回代码
-   - 客户端希望为自己的重定向 URI 获取代码
-   - 解决方案：在服务器端交换上游代码，向客户端发放新代码
+   - 客户端期望为其自己的重定向 URI 返回代码
+   - 解决方案：在服务器端交换上游代码，向客户端发出新代码
 
 4. 状态参数冲突：
-   - 客户端和代理都需要在整个流程中维护状态
+   - 客户端和代理都需要在流程中保持状态
    - OAuth 中只有一个状态参数可用
-   - 解决方案：与上游使用事务 ID 作为状态，保留客户端的状态
+   - 解决方案：使用事务 ID 作为与上游的状态参数，保留客户端的状态
 
 5. 令牌管理：
-   - 客户端可能希望不同于上游提供的令牌格式/声明
+   - 客户端可能期望与上游提供者不同的令牌格式/声明
    - 需要跟踪令牌以进行撤销和刷新
    - 解决方案：存储令牌关系，透明转发上游令牌
 
 OAuth 流程实现
-------------------------
+--------------
 1. 客户端注册（DCR）：
    - 接受任何客户端注册请求
    - 存储接受动态重定向 URI 的 ProxyDCRClient
@@ -131,69 +207,68 @@ OAuth 流程实现
 2. 授权：
    - 存储将客户端详细信息映射到代理流程的事务
    - 使用代理的固定重定向 URI 重定向到上游
-   - 与上游使用事务 ID 作为状态参数
+   - 使用事务 ID 作为与上游的状态参数
 
 3. 上游回调：
-   - 交换上游授权代码获取令牌（服务器端）
+   - 将上游授权代码交换为令牌（服务器端）
    - 生成绑定到客户端 PKCE 挑战的新授权代码
    - 重定向到客户端的原始动态重定向 URI
 
 4. 令牌交换：
-   - 验证客户端的代码和 PKCE 验证程序
-   - 返回之前获取的上游令牌
+   - 验证客户端的代码和 PKCE 验证器
+   - 返回先前获得的上游令牌
    - 清理一次性使用的授权代码
 
 5. 令牌刷新：
    - 使用 authlib 将刷新请求转发到上游
-   - 处理上游发放新刷新令牌时的令牌轮转
+   - 如果上游发出新的刷新令牌，处理令牌轮换
    - 更新本地令牌映射
 
 状态管理
----------------
+--------
 代理维护最小但至关重要的状态：
-- _clients：DCR 注册（所有都使用 ProxyDCRClient 以获得灵活性）
-- _oauth_transactions：带有客户端上下文的活跃授权流程
-- _client_codes：带有 PKCE 挑战和上游令牌的授权代码
+- _oauth_transactions：具有客户端上下文的活跃授权流程
+- _client_codes：具有 PKCE 挑战和上游令牌的授权代码
 - _access_tokens、_refresh_tokens：用于撤销的令牌存储
-- 用于清理和轮转的令牌关系映射
+- 用于清理和轮换的令牌关系映射
 
-安全考量
-----------------------
-- 端对端强制执行 PKCE（客户端到代理，代理到上游）
-- 授权代码是单次使用的，具有短期过期时间
+安全注意事项
+------------
+- 端到端强制执行 PKCE（客户端到代理，代理到上游）
+- 授权代码为一次性使用，具有较短的过期时间
 - 事务 ID 是加密随机的
-- 所有状态在使用后都会被清理以防止重放
-- 令牌验证委托给上游提供商
+- 所有状态在使用后清理以防止重放
+- 令牌验证委托给上游提供者
 
-提供商兼容性
----------------------
-与支持以下功能的任何 OAuth 2.0 提供商兼容：
+提供者兼容性
+------------
+适用于任何支持以下功能的 OAuth 2.0 提供者：
 - 授权代码流程
-- 固定重定向 URI（在提供商的应用设置中配置）
+- 固定重定向 URI（在提供者的应用程序设置中配置）
 - 标准令牌端点
 
-处理提供商特定要求：
+处理特定提供者的要求：
 - Google：确保最小范围要求
-- GitHub：与 OAuth 应用和 GitHub 应用兼容
-- Azure AD：处理租户特定的端点
-- 通用：与任何符合规范的提供商兼容
+- GitHub：与 OAuth Apps 和 GitHub Apps 兼容
+- Azure AD：处理租户特定端点
+- 通用：与任何符合规范的提供者一起工作
 
 
-**方法：**
+**方法:**
 
-#### `get_client` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L396" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_client` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L813" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_client(self, client_id: str) -> OAuthClientInformationFull | None
 ```
 
-按 ID 获取客户端信息。这通常是在注册期间
-提供给 DCR 客户端的随机 ID，而不是上游客户端 ID。
+根据 ID 获取客户端信息。这通常是注册期间提供给
+DCR 客户端的随机 ID，而不是上游客户端 ID。
 
 对于未注册的客户端，返回 None（这将在 SDK 中引发错误）。
 
 
-#### `register_client` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L417" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `register_client` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L829" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 register_client(self, client_info: OAuthClientInformationFull) -> None
@@ -201,28 +276,30 @@ register_client(self, client_info: OAuthClientInformationFull) -> None
 
 在本地注册客户端
 
-当客户端注册时，我们创建一个 ProxyDCRClient，它在
-验证重定向 URI 方面更宽容，因为 DCR 客户端的
-重定向 URI 很可能是 localhost 或代理的 IDP 未知的。
-代理的 IDP 只知道此服务器的固定重定向 URI。
+当客户端注册时，我们创建一个 ProxyDCRClient，它在验证
+重定向 URI 方面更为宽松，因为 DCR 客户端的
+重定向 URI 可能是 localhost 或对代理的身份提供者未知。
+代理的身份提供者只知道此服务器的固定重定向 URI。
 
 
-#### `authorize` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L464" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `authorize` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L876" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 authorize(self, client: OAuthClientInformationFull, params: AuthorizationParams) -> str
 ```
 
-开始 OAuth 事务并重定向到上游 IdP。
+启动 OAuth 事务并通过同意中间页面路由。
 
-这实现了符合 DCR 的代理模式：
-1. 存储包含客户端详细信息和 PKCE 挑战的事务
-2. 如果启用了转发，则生成代理自己的 PKCE 参数
-3. 使用事务 ID 作为 IdP 的状态
-4. 使用我们的固定回调 URL 和代理的 PKCE 重定向到 IdP
+流程：
+1. 存储包含客户端详细信息和 PKCE（如果转发）的事务
+2. 返回本地 /consent URL；浏览器首先访问同意页面
+3. 同意处理器如果已批准/已批准则重定向到上游身份提供者
+
+如果禁用同意（require_authorization_consent=False），跳过同意屏幕
+并直接重定向到上游身份提供者。
 
 
-#### `load_authorization_code` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L565" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `load_authorization_code` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L951" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 load_authorization_code(self, client: OAuthClientInformationFull, authorization_code: str) -> AuthorizationCode | None
@@ -230,23 +307,29 @@ load_authorization_code(self, client: OAuthClientInformationFull, authorization_
 
 加载授权代码进行验证。
 
-查找我们的客户端代码并返回
-带有 PKCE 挑战的授权代码对象用于验证。
+查找我们的客户端代码并返回包含 PKCE 挑战的授权代码对象
+以进行验证。
 
 
-#### `exchange_authorization_code` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L607" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `exchange_authorization_code` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L994" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 exchange_authorization_code(self, client: OAuthClientInformationFull, authorization_code: AuthorizationCode) -> OAuthToken
 ```
 
-交换授权代码获取存储的 IdP 令牌。
+将授权代码交换为 FastMCP 颁发的令牌。
 
-对于符合 DCR 的代理流程，我们返回在
-IdP 回调交换期间获得的 IdP 令牌。PKCE 验证由 MCP 框架处理。
+实现令牌工厂模式：
+1. 从存储的授权代码中检索上游令牌
+2. 从上游令牌中提取用户身份
+3. 加密并存储上游令牌
+4. 颁发 FastMCP 签名的 JWT 令牌
+5. 返回 FastMCP 令牌（不是上游令牌）
+
+PKCE 验证在调用此方法之前由 MCP 框架处理。
 
 
-#### `load_refresh_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L674" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `load_refresh_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L1159" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 load_refresh_token(self, client: OAuthClientInformationFull, refresh_token: str) -> RefreshToken | None
@@ -255,51 +338,67 @@ load_refresh_token(self, client: OAuthClientInformationFull, refresh_token: str)
 从本地存储加载刷新令牌。
 
 
-#### `exchange_refresh_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L682" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `exchange_refresh_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L1167" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 exchange_refresh_token(self, client: OAuthClientInformationFull, refresh_token: RefreshToken, scopes: list[str]) -> OAuthToken
 ```
 
-使用 authlib 交换刷新令牌获取新的访问令牌。
+将 FastMCP 刷新令牌交换为新的 FastMCP 访问令牌。
+
+实现双层刷新：
+1. 验证 FastMCP 刷新令牌
+2. 通过 JTI 映射查找上游令牌
+3. 使用上游提供者刷新上游令牌
+4. 更新存储的上游令牌
+5. 颁发新的 FastMCP 访问令牌
+6. 保持相同的 FastMCP 刷新令牌（除非上游轮换）
 
 
-#### `load_access_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L758" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `load_access_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L1368" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 load_access_token(self, token: str) -> AccessToken | None
 ```
 
-使用上游 JWKS 验证访问令牌。
+通过交换为上游令牌来验证 FastMCP JWT。
 
-委托给 JWT 验证器，该验证器使用上游 JWKS 处理签名验证、
-过期检查和声明验证。
+这实现了令牌交换模式：
+1. 验证 FastMCP JWT 签名（证明它是我们的令牌）
+2. 通过 JTI 映射查找上游令牌
+3. 解密上游令牌
+4. 使用提供者验证上游令牌（GitHub API、JWT 验证等）
+5. 返回上游验证结果
+
+FastMCP JWT 是一个引用令牌 - 所有授权数据都
+来自通过 TokenVerifier 验证上游令牌。
 
 
-#### `revoke_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L775" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `revoke_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L1424" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 revoke_token(self, token: AccessToken | RefreshToken) -> None
 ```
 
-在本地撤销令牌，如果支持的话也在上游服务器撤销。
+在本地撤销令牌，如果支持则与上游服务器一起撤销。
 
-从本地存储中移除令牌，如果配置了撤销端点，
-则尝试在上游服务器上撤销它们。
+从本地存储中删除令牌，并尝试在配置了撤销端点的情况下
+与上游服务器撤销它们。
 
 
-#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L819" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oauth_proxy.py#L1468" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -> list[Route]
+get_routes(self, mcp_path: str | None = None) -> list[Route]
 ```
 
-获取带有自定义代理令牌处理程序的 OAuth 路由。
+获取具有自定义处理程序的 OAuth 路由以获得更好的错误用户体验。
 
-此方法创建标准 OAuth 路由，并将令牌端点替换为
-将请求转发到上游 OAuth 服务器的代理处理程序。
+此方法创建标准 OAuth 路由并替换：
+- /authorize 端点：为未注册客户端增强错误响应
+- /token 端点：符合 OAuth 2.1 标准的错误代码
 
-**参数：**
+**参数:**
 - `mcp_path`: MCP 端点挂载的路径（例如，"/mcp"）
-- `mcp_endpoint`: 要使用身份验证保护的 MCP 端点处理程序
+这用于在元数据中公布资源 URL。
 

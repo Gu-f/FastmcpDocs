@@ -6,24 +6,25 @@ sidebarTitle: oidc_proxy
 # `fastmcp.server.auth.oidc_proxy`
 
 
-FastMCP的OIDC代理提供程序。
+FastMCP 的 OIDC 代理提供程序。
 
-此提供程序充当上游OIDC兼容授权服务器的透明代理。它利用OAuthProxy类来处理动态客户端注册和所有OAuth流程的转发。
+此提供程序作为上游 OIDC 合规授权服务器的透明代理。
+它利用 OAuthProxy 类来处理动态客户端注册和所有 OAuth 流程的转发。
 
 此实现基于：
     OpenID Connect Discovery 1.0 - https://openid.net/specs/openid-connect-discovery-1_0.html
     OAuth 2.0 Authorization Server Metadata - https://datatracker.ietf.org/doc/html/rfc8414
 
 
-## 类
+## Classes
 
 ### `OIDCConfiguration` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oidc_proxy.py#L27" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-OIDC配置。
+OIDC 配置。
 
 
-**方法:**
+**Methods:**
 
 #### `get_oidc_configuration` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oidc_proxy.py#L142" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
@@ -31,49 +32,49 @@ OIDC配置。
 get_oidc_configuration(cls, config_url: AnyHttpUrl) -> Self
 ```
 
-获取指定配置URL的OIDC配置。
+获取指定配置 URL 的 OIDC 配置。
 
 **参数:**
-- `config_url`: OIDC配置URL
+- `config_url`: OIDC 配置 URL
 - `strict`: 配置的严格标志
-- `timeout_seconds`: HTTP请求超时时间（秒）
+- `timeout_seconds`: HTTP 请求超时时间（秒）
 
 
 ### `OIDCProxy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oidc_proxy.py#L172" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-通过OIDC配置URL提供配置的OAuth提供程序，它包装了OAuthProxy。
+OAuth 提供程序，封装 OAuthProxy 以通过 OIDC 配置 URL 提供配置。
 
-此提供程序使为任何符合OIDC的上游提供程序添加OAuth保护变得更加容易。
+此提供程序使得为任何符合 OIDC 标准的上游提供程序添加 OAuth 保护变得更加容易。
 
 
-**方法:**
+**Methods:**
 
-#### `get_oidc_configuration` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oidc_proxy.py#L309" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_oidc_configuration` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oidc_proxy.py#L326" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_oidc_configuration(self, config_url: AnyHttpUrl, strict: bool | None, timeout_seconds: int | None) -> OIDCConfiguration
 ```
 
-获取指定配置URL的OIDC配置。
+获取指定配置 URL 的 OIDC 配置。
 
 **参数:**
-- `config_url`: OIDC配置URL
+- `config_url`: OIDC 配置 URL
 - `strict`: 配置的严格标志
-- `timeout_seconds`: HTTP请求超时时间（秒）
+- `timeout_seconds`: HTTP 请求超时时间（秒）
 
 
-#### `get_token_verifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oidc_proxy.py#L326" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_token_verifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/oidc_proxy.py#L343" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_token_verifier(self) -> TokenVerifier
 ```
 
-为指定的OIDC配置和参数创建令牌验证器。
+为指定的 OIDC 配置和参数创建令牌验证器。
 
 **参数:**
 - `algorithm`: 可选的令牌验证器算法
 - `audience`: 可选的令牌验证器受众
-- `required_scopes`: 可选的令牌验证器所需作用域
-- `timeout_seconds`: HTTP请求超时时间（秒）
+- `required_scopes`: 可选的令牌验证器必需范围
+- `timeout_seconds`: HTTP 请求超时时间（秒）
 

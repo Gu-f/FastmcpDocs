@@ -1,0 +1,139 @@
+---
+title: ui
+sidebarTitle: ui
+---
+
+# `fastmcp.utilities.ui`
+
+
+
+FastMCP HTML 页面的共享 UI 工具。
+
+该模块为 OAuth 回调、同意页面和其他面向用户的界面提供可重用的 HTML/CSS 组件。
+
+
+
+## 函数
+
+### `create_page` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/ui.py#L453" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+create_page(content: str, title: str = 'FastMCP', additional_styles: str = '', csp_policy: str = "default-src 'none'; style-src 'unsafe-inline'; img-src https:; base-uri 'none'") -> str
+```
+
+
+创建具有 FastMCP 样式的完整 HTML 页面。
+
+**参数：**
+- `content`: 要放置在页面内的 HTML 内容
+- `title`: 页面标题
+- `additional_styles`: 要包含的额外 CSS
+- `csp_policy`: 内容安全策略标头值
+
+**返回：**
+- 完整的 HTML 页面字符串
+
+
+### `create_logo` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/ui.py#L492" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+create_logo(icon_url: str | None = None, alt_text: str = 'FastMCP') -> str
+```
+
+
+创建徽标 HTML。
+
+**参数：**
+- `icon_url`: 可选的自定义图标 URL。如果未提供，则使用 FastMCP 徽标。
+- `alt_text`: 徽标图像的替代文本。
+
+**返回：**
+- 徽标图像标签的 HTML。
+
+
+### `create_status_message` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/ui.py#L507" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+create_status_message(message: str, is_success: bool = True) -> str
+```
+
+
+创建带图标的状态消息。
+
+**参数：**
+- `message`: 状态消息文本
+- `is_success`: 成功为 True（✓），错误为 False（✕）
+
+**返回：**
+- 状态消息的 HTML
+
+
+### `create_info_box` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/ui.py#L530" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+create_info_box(content: str, is_error: bool = False, centered: bool = False, monospace: bool = False) -> str
+```
+
+
+创建信息框。
+
+**参数：**
+- `content`: 信息框的 HTML 内容
+- `is_error`: 错误样式为 True，普通样式为 False
+- `centered`: 居中文本为 True，左对齐为 False
+- `monospace`: 使用灰色等宽字体样式而不是蓝色为 True
+
+**返回：**
+- 信息框的 HTML
+
+
+### `create_detail_box` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/ui.py#L559" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+create_detail_box(rows: list[tuple[str, str]]) -> str
+```
+
+
+创建带键值对的详细信息框。
+
+**参数：**
+- `rows`: （标签，值）元组列表
+
+**返回：**
+- 详细信息框的 HTML
+
+
+### `create_button_group` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/ui.py#L582" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+create_button_group(buttons: list[tuple[str, str, str]]) -> str
+```
+
+
+创建按钮组。
+
+**参数：**
+- `buttons`: （文本，值，css_class）元组列表
+
+**返回：**
+- 按钮组的 HTML
+
+
+### `create_secure_html_response` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/ui.py#L600" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+create_secure_html_response(html: str, status_code: int = 200) -> HTMLResponse
+```
+
+
+创建带有安全标头的 HTMLResponse。
+
+根据 MCP 安全最佳实践添加 X-Frame-Options: DENY 以防止点击劫持攻击。
+
+**参数：**
+- `html`: 要返回的 HTML 内容
+- `status_code`: HTTP 状态码
+
+**返回：**
+- 带有安全标头的 HTMLResponse
+

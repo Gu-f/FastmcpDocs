@@ -7,13 +7,13 @@ sidebarTitle: auth
 
 ## 类
 
-### `AccessToken` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L35" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `AccessToken` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L32" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 包含所有 JWT 声明的访问令牌。
 
 
-### `AuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L41" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `AuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L38" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 所有 FastMCP 认证提供者的基类。
@@ -26,7 +26,7 @@ sidebarTitle: auth
 
 **方法：**
 
-#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L68" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L65" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 verify_token(self, token: str) -> AccessToken | None
@@ -43,14 +43,15 @@ verify_token(self, token: str) -> AccessToken | None
 - 如果有效则返回 AccessToken 对象，如果无效或过期则返回 None
 
 
-#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L81" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L78" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -> list[Route]
+get_routes(self, mcp_path: str | None = None) -> list[Route]
 ```
 
-获取此认证提供者的路由。
+获取此认证提供者的所有路由。
 
+这包括众所周知的发现路由和操作路由。
 每个提供者负责创建其所需的路由：
 - TokenVerifier：通常没有路由（默认实现）
 - RemoteAuthProvider：受保护资源元数据路由
@@ -59,25 +60,54 @@ get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -
 
 **参数：**
 - `mcp_path`: MCP 端点挂载的路径（例如，"/mcp"）
-- `mcp_endpoint`: 要使用身份验证保护的 MCP 端点处理程序
+这用于在元数据中公布资源 URL，但
+提供者不会创建实际的 MCP 端点路由。
 
 **返回值：**
-- 此提供者的路由列表，包括提供的受保护 MCP 端点（如果有）
+- 此提供者的所有路由列表（不包括 MCP 端点本身）
 
 
-#### `get_middleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L121" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_well_known_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L101" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_well_known_routes(self, mcp_path: str | None = None) -> list[Route]
+```
+
+获取此认证提供者的众所周知的发现路由。
+
+这是一个实用方法，用于过滤 get_routes() 以仅返回
+众所周知的发现路由（以 /.well-known/ 开头的路由）。
+
+众所周知的路由提供 OAuth 元数据和发现端点，
+客户端使用它们来发现认证能力。这些路由应该
+挂载在应用程序的根级别以符合 RFC 8414
+和 RFC 9728。
+
+常见的众所周知的路由：
+- /.well-known/oauth-authorization-server (授权服务器元数据)
+- /.well-known/oauth-protected-resource/* (受保护资源元数据)
+
+**参数：**
+- `mcp_path`: MCP 端点挂载的路径（例如，"/mcp"）
+这用于构造路径范围的众所周知的 URL。
+
+**返回值：**
+- 众所周知的发现路由列表（通常挂载在根级别）
+
+
+#### `get_middleware` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L133" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 get_middleware(self) -> list
 ```
 
-获取此身份验证提供者的 HTTP 应用程序级中间件。
+获取此认证提供者的 HTTP 应用程序级中间件。
 
 **返回值：**
 - 要应用到 HTTP 应用程序的 Starlette 中间件实例列表
 
 
-### `TokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L154" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `TokenVerifier` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L166" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 令牌验证器（资源服务器）的基类。
@@ -88,7 +118,7 @@ get_middleware(self) -> list
 
 **方法：**
 
-#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L175" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L187" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 verify_token(self, token: str) -> AccessToken | None
@@ -97,7 +127,7 @@ verify_token(self, token: str) -> AccessToken | None
 验证承载令牌并在有效时返回访问信息。
 
 
-### `RemoteAuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L180" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `RemoteAuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L192" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 用于资源服务器的认证提供者，验证来自已知授权服务器的令牌。
@@ -114,7 +144,7 @@ verify_token(self, token: str) -> AccessToken | None
 
 **方法：**
 
-#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L221" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L233" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 verify_token(self, token: str) -> AccessToken | None
@@ -123,18 +153,18 @@ verify_token(self, token: str) -> AccessToken | None
 使用配置的令牌验证器验证令牌。
 
 
-#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L225" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L237" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -> list[Route]
+get_routes(self, mcp_path: str | None = None) -> list[Route]
 ```
 
-获取此提供者的 OAuth 路由。
+获取此提供者的路由。
 
-创建受保护资源元数据路由，并可选择用身份验证包装 MCP 端点。
+创建受保护资源元数据路由（RFC 9728）。
 
 
-### `OAuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L255" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `OAuthProvider` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L265" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 OAuth 授权服务器提供者。
@@ -145,7 +175,7 @@ OAuth 授权服务器提供者。
 
 **方法：**
 
-#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L311" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `verify_token` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L321" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 verify_token(self, token: str) -> AccessToken | None
@@ -163,10 +193,10 @@ verify_token(self, token: str) -> AccessToken | None
 - 如果有效则返回 AccessToken 对象，如果无效或过期则返回 None
 
 
-#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L326" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_routes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/server/auth/auth.py#L336" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -> list[Route]
+get_routes(self, mcp_path: str | None = None) -> list[Route]
 ```
 
 获取 OAuth 授权服务器路由和可选的受保护资源路由。
@@ -174,7 +204,6 @@ get_routes(self, mcp_path: str | None = None, mcp_endpoint: Any | None = None) -
 此方法创建完整的 OAuth 路由集，包括：
 - 标准 OAuth 授权服务器路由（/.well-known/oauth-authorization-server、/authorize、/token 等）
 - 可选的受保护资源路由
-- 提供的受保护 MCP 端点（如果有）
 
 **返回值：**
 - OAuth 路由列表

@@ -1,11 +1,11 @@
 ---
 title: 运行您的服务器
-sidebarTitle: 运行
+sidebarTitle: 运行您的服务器
 description: 学习如何在本地运行您的 FastMCP 服务器进行开发和测试
 icon: circle-play
 ---
 
-FastMCP 服务器可以根据您的需求以不同方式运行。本指南专注于在本地运行服务器进行开发和测试。有关生产部署到 URL 的信息，请参阅[自托管部署](/zh/deployment/self-hosted)指南。
+FastMCP 服务器可以根据您的需求以不同方式运行。本指南专注于在本地运行服务器进行开发和测试。有关生产部署到 URL 的信息，请参阅[HTTP 部署](/zh/deployment/http)指南。
 
 ## `run()` 方法
 
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 - 与 Web 基础设施的集成
 - 远程部署功能
 
-有关具有身份验证和高级配置的生产 HTTP 部署，请参阅[自托管部署](/zh/deployment/self-hosted)指南。
+有关具有身份验证和高级配置的生产 HTTP 部署，请参阅[HTTP 部署](/zh/deployment/http)指南。
 
 ### SSE 传输（遗留）
 
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     mcp.run(transport="http")  # 健康检查 http://localhost:8000/health
 ```
 
-自定义路由由与 MCP 端点相同的 Web 服务器提供服务。它们在您域名的根目录下可用，而 MCP 端点位于 `/mcp/`。对于更复杂的 Web 应用程序，请考虑[将您的 MCP 服务器挂载到 FastAPI 或 Starlette 应用中](/zh/deployment/self-hosted#integration-with-web-frameworks)。
+自定义路由由与 MCP 端点相同的 Web 服务器提供服务。它们在您域名的根目录下可用，而 MCP 端点位于 `/mcp/`。对于更复杂的 Web 应用程序，请考虑[将您的 MCP 服务器挂载到 FastAPI 或 Starlette 应用中](/zh/deployment/http#integration-with-web-frameworks)。
 
 ## 替代初始化模式
 
@@ -255,4 +255,4 @@ def create_app():
 app = create_app()  # Uvicorn 将使用这个
 ```
 
-有关更多 ASGI 部署模式，请参阅[自托管部署](/zh/deployment/self-hosted)指南。
+有关更多 ASGI 部署模式，请参阅[HTTP 部署](/zh/deployment/http)指南。

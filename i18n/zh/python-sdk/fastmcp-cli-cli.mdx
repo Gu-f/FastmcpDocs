@@ -10,7 +10,7 @@ sidebarTitle: cli
 
 ## 函数
 
-### `with_argv` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L69" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `with_argv` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L67" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 with_argv(args: list[str] | None)
@@ -27,7 +27,7 @@ with_argv(args: list[str] | None)
 并替换其余部分。
 
 
-### `version` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L91" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `version` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L90" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 version()
@@ -37,7 +37,7 @@ version()
 显示版本信息和平台详细信息。
 
 
-### `dev` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L129" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `dev` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L128" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 dev(server_spec: str | None = None) -> None
@@ -50,16 +50,16 @@ dev(server_spec: str | None = None) -> None
 - `server_spec`: 要运行的 Python 文件，可选带有 \:object 后缀，或 None 以自动检测 fastmcp.json
 
 
-### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L310" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `run` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L306" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 run(server_spec: str | None = None, *server_args: str) -> None
 ```
 
 
-服务器可以通过几种方式指定：
+运行 MCP 服务器或连接到远程服务器。
 
-服务器可以通过四种方式指定：
+服务器可以通过几种方式指定：
 1. 模块方式："server.py" - 直接运行模块，查找名为 'mcp'、'server' 或 'app' 的对象
 2. 导入方式："server.py:app" - 导入并运行指定的服务器对象
 3. URL 方式："http://server-url" - 连接到远程服务器并创建代理
@@ -74,7 +74,7 @@ fastmcp run server.py -- --config config.json --debug
 - `server_spec`: Python 文件、对象规范 (file\:obj)、配置文件、URL，或 None 以自动检测
 
 
-### `inspect` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L544" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `inspect` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L540" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 inspect(server_spec: str | None = None) -> None
@@ -86,7 +86,7 @@ inspect(server_spec: str | None = None) -> None
 此命令分析 MCP 服务器。不带标志时，它显示文本摘要。
 使用 --format 输出完整的 JSON 数据。
 
-**Examples:**
+**示例：**
 
 # 显示文本摘要
 fastmcp inspect server.py
@@ -105,7 +105,7 @@ fastmcp inspect  # 自动检测 fastmcp.json
 - `server_spec`: 要检查的 Python 文件，可选带有 \:object 后缀，或 fastmcp.json
 
 
-### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L785" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/cli.py#L786" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 prepare(config_path: Annotated[str | None, cyclopts.Parameter(help='Path to fastmcp.json configuration file')] = None, output_dir: Annotated[str | None, cyclopts.Parameter(help='Directory to create the persistent environment in')] = None, skip_source: Annotated[bool, cyclopts.Parameter(help='Skip source preparation (e.g., git clone)')] = False) -> None

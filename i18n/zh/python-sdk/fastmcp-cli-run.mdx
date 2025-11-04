@@ -23,7 +23,7 @@ is_url(path: str) -> bool
 ### `create_client_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L31" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-run_with_uv(server_spec: str, python_version: str | None = None, with_packages: list[str] | None = None, with_requirements: Path | None = None, project: Path | None = None, transport: TransportType | None = None, host: str | None = None, port: int | None = None, path: str | None = None, log_level: LogLevelType | None = None, show_banner: bool = True, editable: str | list[str] | None = None) -> None
+create_client_server(url: str) -> Any
 ```
 
 
@@ -84,8 +84,18 @@ run_command(server_spec: str, transport: TransportType | None = None, host: str 
 - `skip_source`: 是否跳过源代码准备步骤
 
 
-### `run_v1_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L200" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `run_v1_server_async` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/cli/run.py#L200" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-run_v1_server(server: FastMCP1x, host: str | None = None, port: int | None = None, transport: TransportType | None = None) -> None
+run_v1_server_async(server: FastMCP1x, host: str | None = None, port: int | None = None, transport: TransportType | None = None) -> None
 ```
+
+
+使用异步方法运行 FastMCP 1.x 服务器。
+
+**参数：**
+- `server`: FastMCP 1.x 服务器实例
+- `host`: 要绑定的主机
+- `port`: 要绑定的端口
+- `transport`: 要使用的传输协议
+

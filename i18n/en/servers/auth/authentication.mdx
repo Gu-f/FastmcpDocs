@@ -3,7 +3,6 @@ title: Authentication
 sidebarTitle: Overview
 description: Secure your FastMCP server with flexible authentication patterns, from simple API keys to full OAuth 2.1 integration with external identity providers.
 icon: user-shield
-tag: NEW
 ---
 
 import { VersionBadge } from "/snippets/version-badge.mdx"
@@ -93,7 +92,7 @@ This example configures token validation against a JWT issuer. The `JWTVerifier`
 
 `TokenVerifier` works well when you control both the token issuer and your MCP server, or when integrating with existing JWT-based infrastructure.
 
-→ **Complete guide**: [Token Verification](/en/servers/auth/token-verification)
+→ **Complete guide**: [Token Verification](/servers/auth/token-verification)
 
 ### RemoteAuthProvider
 
@@ -121,7 +120,7 @@ This example uses WorkOS AuthKit as the external identity provider. The `AuthKit
 
 `RemoteAuthProvider` is ideal for production applications when your identity provider supports Dynamic Client Registration (DCR). This enables fully automated authentication without manual client configuration.
 
-→ **Complete guide**: [Remote OAuth](/en/servers/auth/remote-oauth)
+→ **Complete guide**: [Remote OAuth](/servers/auth/remote-oauth)
 
 ### OAuthProxy
 
@@ -152,7 +151,7 @@ This example uses the GitHub provider, which extends `OAuthProxy` with GitHub-sp
 
 `OAuthProxy` is essential when integrating with OAuth providers that don't support DCR. This includes most established providers like GitHub, Google, and Azure, which require manual app registration through their developer consoles.
 
-→ **Complete guide**: [OAuth Proxy](/en/servers/auth/oauth-proxy)
+→ **Complete guide**: [OAuth Proxy](/servers/auth/oauth-proxy)
 
 ### OAuthProvider
 
@@ -177,7 +176,7 @@ This example shows the basic structure of a custom OAuth provider. The actual im
 
 `OAuthProvider` should be used only when you have specific requirements that external providers cannot meet and the expertise to implement OAuth securely.
 
-→ **Complete guide**: [Full OAuth Server](/en/servers/auth/full-oauth-server)
+→ **Complete guide**: [Full OAuth Server](/servers/auth/full-oauth-server)
 
 ## Configuration Approaches
 

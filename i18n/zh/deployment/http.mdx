@@ -1,0 +1,604 @@
+---
+title: HTTP 部署
+sidebarTitle: HTTP 部署
+description: 通过 HTTP 将 FastMCP 服务器部署为可远程访问的服务
+icon: server
+tag: NEW
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx";
+
+<Tip>
+STDIO 传输非常适合本地开发和桌面应用。但想要释放 MCP 的全部潜力——集中式服务、多客户端访问以及网络可达性——就需要远程 HTTP 部署。
+</Tip>
+
+本指南将带你完成如何把 FastMCP 服务器部署为可通过 URL 访问的远程 MCP 服务。完成部署后，你的 MCP 服务器将在网络上可用，允许多个客户端同时连接，并能够与云端 LLM 应用集成。本指南专注于远程 MCP 部署，而非本地 STDIO 服务器。
+
+## 选择部署方式
+
+FastMCP 提供两种方式将服务器部署为 HTTP 服务。了解它们的权衡可以帮助你选择最适合自己需求的方案。
+
+**直接 HTTP 服务器**方案更简单，非常适合快速上手。你只需将服务器的 `run()` 方法改为使用 HTTP 传输，FastMCP 会处理所有 Web 服务器配置。当你希望 MCP 服务器成为端口上唯一运行的服务时，此方案非常合适。
+
+**ASGI 应用**方案则提供更多控制和灵活性。你不再直接运行服务器，而是创建可由 Uvicorn 运行的 ASGI 应用。在需要高级服务器特性（如多进程、定制中间件）或要与现有 Web 应用集成时，这种方式更合适。
+
+### 直接 HTTP 服务器
+
+让 MCP 服务器上线的最简单方式是使用内置的 `run()` 方法并指定 HTTP 传输。该方案会替你处理全部服务器配置，适合希望简洁运行 MCP 服务器而不引入额外复杂度的场景。
+
+```python server.py
+from fastmcp import FastMCP
+
+mcp = FastMCP("My Server")
+
+@mcp.tool
+def process_data(input: str) -> str:
+    """在服务器上处理数据"""
+    return f"已处理：{input}"
+
+if __name__ == "__main__":
+    mcp.run(transport="http", host="0.0.0.0", port=8000)
+```
+
+使用简单的 Python 命令即可运行服务器：
+```bash
+python server.py
+```
+
+你的服务器现在可以通过 `http://localhost:8000/mcp/` 访问（若需要远程访问，可使用服务器的实际 IP 地址）。
+
+当你希望以最少配置快速上线时，此方案再合适不过。它非常适用于内部工具、开发环境或不需要高级服务器特性的简单部署。内置服务器会处理所有 HTTP 细节，让你能够专注于 MCP 实现本身。
+
+### ASGI 应用
+
+在生产部署中，你通常需要对服务器运行方式拥有更高的控制力。FastMCP 可以创建标准的 ASGI 应用，并与任意 ASGI 服务器（如 Uvicorn、Gunicorn 或 Hypercorn）协同工作。当你需要配置高级服务器选项、运行多个工作进程或集成现有基础设施时，此方案尤其实用。
+
+```python app.py
+from fastmcp import FastMCP
+
+mcp = FastMCP("My Server")
+
+@mcp.tool
+def process_data(input: str) -> str:
+    """在服务器上处理数据"""
+    return f"已处理：{input}"
+
+# 创建 ASGI 应用
+app = mcp.http_app()
+```
+
+可以使用任意 ASGI 服务器运行，下面示例使用 Uvicorn：
+```bash
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+你的服务器可通过同一地址访问：`http://localhost:8000/mcp/`（远程访问时使用服务器的实际 IP）。
+
+ASGI 方案在需要高可靠性和高性能的生产环境中表现突出。你可以运行多个工作进程来处理并发请求、添加自定义中间件用于日志或监控、与现有部署流水线集成，或将 MCP 服务器挂载为大型应用的一部分。
+
+## 配置服务器
+
+### 自定义路径
+
+默认情况下，你的 MCP 服务器可在域名下的 `/mcp/` 访问。你可以自定义此路径以适配 URL 结构或避免与现有端点冲突。当 MCP 与既有应用集成或需要遵循特定 API 约定时，这尤其有用。
+
+```python
+# 选项 1：使用 mcp.run()
+mcp.run(transport="http", host="0.0.0.0", port=8000, path="/api/mcp/")
+
+# 选项 2：使用 ASGI 应用
+app = mcp.http_app(path="/api/mcp/")
+```
+
+现在你的服务器可通过 `http://localhost:8000/api/mcp/` 访问。
+
+### 身份验证
+
+<Warning>
+远程 MCP 服务器 **强烈建议** 启用身份验证。一些 LLM 客户端要求远程服务器必须启用身份验证，否则会拒绝连接。
+</Warning>
+
+FastMCP 支持多种身份验证方式来保护远程服务器。完整的配置选项（包括 Bearer 令牌、JWT 及 OAuth）请参阅[身份验证概览](/zh/servers/auth/authentication)。
+
+如果你要在路径前缀下挂载已启用身份验证的服务器，请参阅下方的[挂载已认证服务器](#挂载已认证服务器)部分，了解重要的路由注意事项。
+
+### 健康检查
+
+健康检查端点对于监控已部署服务器并确保其正确响应至关重要。FastMCP 允许你在 MCP 端点旁添加自定义路由，可轻松为两种部署方式实现健康检查。
+
+```python
+from starlette.responses import JSONResponse
+
+@mcp.custom_route("/health", methods=["GET"])
+async def health_check(request):
+    return JSONResponse({"status": "healthy", "service": "mcp-server"})
+```
+
+该健康检查端点可通过 `http://localhost:8000/health` 访问，可供负载均衡器、监控系统或部署平台验证服务器状态。
+
+### 自定义中间件
+
+
+<VersionBadge version="2.3.2" />
+
+为 FastMCP ASGI 应用添加自定义 Starlette 中间件：
+
+```python
+from fastmcp import FastMCP
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
+
+# 创建 FastMCP 服务器
+mcp = FastMCP("MyServer")
+
+# 定义中间件
+middleware = [
+    Middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+]
+
+# 创建带中间件的 ASGI 应用
+http_app = mcp.http_app(middleware=middleware)
+```
+
+### 面向浏览器客户端的 CORS
+
+<Tip>
+大多数 MCP 客户端（包括通过浏览器访问的 ChatGPT 或 Claude）都不需要配置 CORS。仅当你使用直接从浏览器连接 MCP 服务器的客户端（如调试工具或检查器）时，才需要启用 CORS。
+</Tip>
+
+当运行在 Web 浏览器中的 JavaScript 直接连接 MCP 服务器时，需要配置 CORS。这与通过浏览器使用 LLM 的情况不同——此时浏览器连接的是 LLM 服务，而 LLM 服务再连接你的 MCP 服务器（无需 CORS）。
+
+需要 CORS 的浏览器端 MCP 客户端包括：
+
+- **MCP Inspector** —— 基于浏览器的调试工具，用于测试 MCP 服务器
+- **自定义浏览器端 MCP 客户端** —— 如果你正在构建直接连接 MCP 服务器的 Web 应用
+
+针对这些场景，请添加包含 MCP 协议所需特定请求头的 CORS 中间件：
+
+```python
+from fastmcp import FastMCP
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
+
+mcp = FastMCP("MyServer")
+
+# 为浏览器客户端配置 CORS
+middleware = [
+    Middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # 允许所有来源；生产环境请改为特定来源
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        allow_headers=[
+            "mcp-protocol-version",
+            "mcp-session-id",
+            "Authorization",
+            "Content-Type",
+        ],
+        expose_headers=["mcp-session-id"],
+    )
+]
+
+app = mcp.http_app(middleware=middleware)
+```
+
+**关键配置说明：**
+
+- **`allow_origins`**：生产环境应指定确切来源（例如 `["http://localhost:3000"]`），而非使用 `["*"]`
+- **`allow_headers`**：必须包含 `mcp-protocol-version`、`mcp-session-id` 和 `Authorization`（如果服务器启用了身份验证）
+- **`expose_headers`**：必须包含 `mcp-session-id`，以便 JavaScript 能从响应中读取会话 ID，并在后续请求中发送
+
+如果没有设置 `expose_headers=["mcp-session-id"]`，浏览器虽然能收到会话 ID，但 JavaScript 无法访问，导致会话管理失败。
+
+<Warning>
+**生产安全**：切勿在生产环境使用 `allow_origins=["*"]`。请明确列出浏览器客户端的来源地址。使用通配符会让任何网站都能访问你的服务器。
+</Warning>
+
+## 与 Web 框架集成
+
+如果你已经在运行一个 Web 应用，可以通过挂载 FastMCP 服务器的方式新增 MCP 能力。这样可以在现有 API 端点旁暴露 MCP 工具，共享同一域名与基础设施。MCP 服务器会成为应用中的另一条路由，便于管理和部署。
+
+### 在 Starlette 中挂载
+
+将 FastMCP 服务器挂载到 Starlette 应用中：
+
+```python
+from fastmcp import FastMCP
+from starlette.applications import Starlette
+from starlette.routing import Mount
+
+# 创建 FastMCP 服务器
+mcp = FastMCP("MyServer")
+
+@mcp.tool
+def analyze(data: str) -> dict:
+    return {"result": f"分析结果：{data}"}
+
+# 创建 ASGI 应用
+mcp_app = mcp.http_app(path='/mcp')
+
+# 创建 Starlette 应用并挂载 MCP 服务器
+app = Starlette(
+    routes=[
+        Mount("/mcp-server", app=mcp_app),
+        # 根据需要添加其他路由
+    ],
+    lifespan=mcp_app.lifespan,
+)
+```
+
+所得 Starlette 应用中的 MCP 端点位于 `/mcp-server/mcp/`。
+
+<Warning>
+对于可流式的 HTTP 传输，你 **必须** 将 FastMCP 应用的 lifespan 上下文传递给最终的 Starlette 应用，因为嵌套的 lifespan 不会被识别。否则 FastMCP 服务器的会话管理器将无法正确初始化。
+</Warning>
+
+#### 嵌套挂载
+
+你可以通过嵌套挂载构建复杂的路由结构：
+
+```python
+from fastmcp import FastMCP
+from starlette.applications import Starlette
+from starlette.routing import Mount
+
+# 创建 FastMCP 服务器
+mcp = FastMCP("MyServer")
+
+# 创建 ASGI 应用
+mcp_app = mcp.http_app(path='/mcp')
+
+# 构建嵌套的应用结构
+inner_app = Starlette(routes=[Mount("/inner", app=mcp_app)])
+app = Starlette(
+    routes=[Mount("/outer", app=inner_app)],
+    lifespan=mcp_app.lifespan,
+)
+```
+
+在此结构中，MCP 服务器可通过 `/outer/inner/mcp/` 访问。
+
+### FastAPI 集成
+
+有关在 FastAPI 应用中挂载 MCP 服务器或从 FastAPI 应用生成 MCP 服务器的详细模式，请参阅[FastAPI 集成指南](/zh/integrations/fastapi)。
+
+下面是一个为现有 FastAPI 应用添加 MCP 的快速示例：
+
+```python
+from fastapi import FastAPI
+from fastmcp import FastMCP
+
+# 现有 API
+api = FastAPI()
+
+@api.get("/api/status")
+def status():
+    return {"status": "ok"}
+
+# 创建 MCP 服务器
+mcp = FastMCP("API Tools")
+
+@mcp.tool
+def query_database(query: str) -> dict:
+    """执行数据库查询"""
+    return {"result": "数据"}
+
+# 将 MCP 挂载到 /mcp
+api.mount("/mcp", mcp.http_app())
+
+# 运行命令：uvicorn app:api --host 0.0.0.0 --port 8000
+```
+
+原有 API 仍可通过 `http://localhost:8000/api/` 访问，而 MCP 服务位于 `http://localhost:8000/mcp/`。
+
+## 挂载已认证服务器
+
+<VersionBadge version="2.13.0" />
+
+<Tip>
+仅当你在另一个应用中通过 `Mount()` 将启用 OAuth 保护的 FastMCP 服务器挂载到路径前缀（如 `/api`）下时，本节内容才适用。
+
+如果你的 FastMCP 服务器部署在根路径且没有任何 `Mount()` 前缀，`.well-known` 路由会自动包含在 `mcp.http_app()` 中，无需额外配置。
+</Tip>
+
+OAuth 规范（RFC 8414 和 RFC 9728）要求发现元数据必须能在域名根路径下的 `.well-known` 路径访问。当你在路径前缀（如 `/api`）下挂载启用 OAuth 的 FastMCP 服务器时，会出现路由挑战：业务 OAuth 端点会移到前缀下，但发现端点必须保留在根路径。
+
+<Warning>
+**常见错误请避免：**
+
+1. **忘记在根路径挂载 `.well-known` 路由** —— 当你的服务器挂载在路径前缀下时，FastMCP 无法自动完成此操作。你必须显式将 `.well-known` 路由挂载到根路径。
+
+2. **在 base_url 和 mcp_path 中同时包含挂载前缀** —— 挂载前缀（如 `/api`）只能出现在 `base_url` 中，而不能同时出现在 `mcp_path` 中，否则最终路径会重复。
+
+   ✅ **正确示例：**
+   ```python
+   base_url = "http://localhost:8000/api"
+   mcp_path = "/mcp"
+   # 结果：/api/mcp
+   ```
+
+   ❌ **错误示例：**
+   ```python
+   base_url = "http://localhost:8000/api"
+   mcp_path = "/api/mcp"
+   # 结果：/api/api/mcp（前缀重复！）
+   ```
+
+3. **挂载时未设置 issuer_url** —— 如果没有将 `issuer_url` 指向根路径，OAuth 发现会先尝试路径作用域的发现（将返回 404），从而产生不必要的错误日志。
+
+请按照以下配置说明正确完成挂载。
+</Warning>
+
+<Warning>
+**CORS 中间件冲突：**
+
+如果你将 FastMCP 集成到已有的并启用了自身 CORS 中间件的应用中，要注意叠加多个 CORS 中间件可能导致冲突（例如 `.well-known` 路由或 OPTIONS 请求返回 404）。
+
+FastMCP 及 MCP SDK 已经为 OAuth 路由处理了 CORS。如果你需要为自有应用路由启用 CORS，建议使用子应用模式：分别挂载 FastMCP 与其他路由，每个子应用使用各自的中间件，而不是在整个应用上叠加统一的 CORS 中间件。
+</Warning>
+
+### 路由类型
+
+受 OAuth 保护的 MCP 服务器会暴露两类路由：
+
+**业务路由** 负责 OAuth 流程与 MCP 协议：
+- `/authorize` —— OAuth 授权端点
+- `/token` —— 令牌交换端点
+- `/auth/callback` —— OAuth 回调处理器
+- `/mcp` —— MCP 协议端点
+
+**发现路由** 为 OAuth 客户端提供元数据：
+- `/.well-known/oauth-authorization-server` —— 授权服务器元数据
+- `/.well-known/oauth-protected-resource/*` —— 受保护资源元数据
+
+当你在前缀下挂载 MCP 应用时，业务路由会随之移动，但发现路由必须保留在根路径以符合 RFC 要求。
+
+### 配置参数
+
+以下三个参数控制路由的位置以及它们如何组合：
+
+**`base_url`** 告诉客户端业务端点的位置。它包含任何 Starlette `Mount()` 的路径前缀（例如 `/api`）：
+
+```python
+base_url="http://localhost:8000/api"  # 包含挂载前缀
+```
+
+**`mcp_path`** 是 FastMCP 内部的 MCP 端点路径，会追加在 `base_url` 之后：
+
+```python
+mcp_path="/mcp"  # 内部 MCP 路径，不包括挂载前缀
+```
+
+**`issuer_url`** 告诉客户端发现元数据的位置，应指向服务器根路径，即 `.well-known` 路由所在位置：
+
+```python
+issuer_url="http://localhost:8000"  # 根路径，不带前缀
+```
+
+**关键不变量：** `base_url + mcp_path = 实际可访问的 MCP URL`
+
+示例：
+- `base_url`: `http://localhost:8000/api`（挂载前缀 `/api`）
+- `mcp_path`: `/mcp`（内部路径）
+- 结果：`http://localhost:8000/api/mcp`（最终 MCP 端点）
+
+请注意，`Mount("/api", ...)` 中的挂载前缀 `/api` 应写入 `base_url`，而 `mcp_path` 仅表示内部 MCP 路径。不要在两处都包含挂载前缀，否则会出现 `/api/api/mcp`。
+
+### 挂载策略
+
+在将启用 OAuth 的服务器挂载到路径前缀下时，建议先声明所有 URL，明确它们之间的关系：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.github import GitHubProvider
+from starlette.applications import Starlette
+from starlette.routing import Mount
+
+# 定义路由结构
+ROOT_URL = "http://localhost:8000"
+MOUNT_PREFIX = "/api"
+MCP_PATH = "/mcp"
+```
+
+使用同时包含 `issuer_url` 和 `base_url` 的配置创建身份验证提供方：
+
+```python
+auth = GitHubProvider(
+    client_id="your-client-id",
+    client_secret="your-client-secret",
+    issuer_url=ROOT_URL,  # 根路径上的发现元数据
+    base_url=f"{ROOT_URL}{MOUNT_PREFIX}",  # 加前缀的业务端点
+)
+```
+
+创建 MCP 应用，在指定路径下生成业务路由：
+
+```python
+mcp = FastMCP("Protected Server", auth=auth)
+mcp_app = mcp.http_app(path=MCP_PATH)
+```
+
+从身份验证提供方中获取发现路由。`mcp_path` 参数应与创建 MCP 应用时使用的路径一致：
+
+```python
+well_known_routes = auth.get_well_known_routes(mcp_path=MCP_PATH)
+```
+
+最后，将所有内容挂载到 Starlette 应用中：发现路由位于根路径，MCP 应用挂载在前缀下：
+
+```python
+app = Starlette(
+    routes=[
+        *well_known_routes,  # 根路径上的发现路由
+        Mount(MOUNT_PREFIX, app=mcp_app),  # 前缀下的业务路由
+    ],
+    lifespan=mcp_app.lifespan,
+)
+```
+
+该配置会生成以下 URL 结构：
+
+- MCP 端点：`http://localhost:8000/api/mcp`
+- OAuth 授权：`http://localhost:8000/api/authorize`
+- OAuth 回调：`http://localhost:8000/api/auth/callback`
+- 授权服务器元数据：`http://localhost:8000/.well-known/oauth-authorization-server`
+- 受保护资源元数据：`http://localhost:8000/.well-known/oauth-protected-resource/api/mcp`
+
+### 完整示例
+
+以下示例展示了完整的配置方式：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.github import GitHubProvider
+from starlette.applications import Starlette
+from starlette.routing import Mount
+import uvicorn
+
+# 定义路由结构
+ROOT_URL = "http://localhost:8000"
+MOUNT_PREFIX = "/api"
+MCP_PATH = "/mcp"
+
+# 创建 OAuth 提供方
+auth = GitHubProvider(
+    client_id="your-client-id",
+    client_secret="your-client-secret",
+    issuer_url=ROOT_URL,
+    base_url=f"{ROOT_URL}{MOUNT_PREFIX}",
+)
+
+# 创建 MCP 服务器
+mcp = FastMCP("Protected Server", auth=auth)
+
+@mcp.tool
+def analyze(data: str) -> dict:
+    return {"result": f"分析结果：{data}"}
+
+# 创建 MCP 应用
+mcp_app = mcp.http_app(path=MCP_PATH)
+
+# 获取根路径上的发现路由
+well_known_routes = auth.get_well_known_routes(mcp_path=MCP_PATH)
+
+# 组装应用
+app = Starlette(
+    routes=[
+        *well_known_routes,
+        Mount(MOUNT_PREFIX, app=mcp_app),
+    ],
+    lifespan=mcp_app.lifespan,
+)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+关于 OAuth 身份验证的更多细节，请参阅[身份验证指南](/zh/servers/auth)。
+
+## 生产部署
+
+### 使用 Uvicorn 运行
+
+在部署到生产环境时，你需要优化服务器的性能与可靠性。Uvicorn 提供多种选项以提升服务器能力：
+
+```bash
+# 基础配置运行
+uvicorn app:app --host 0.0.0.0 --port 8000
+
+# 生产环境使用多进程
+uvicorn app:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+### 环境变量
+
+生产部署切勿在代码中硬编码敏感信息（如 API 密钥或身份验证令牌）。应改用环境变量在运行时配置服务器。这样既能保证代码安全，又便于在不同环境下部署同一份代码并使用不同配置。
+
+下面示例演示如何使用 Bearer Token 身份验证（生产环境推荐改用 OAuth）：
+
+```python
+import os
+from fastmcp import FastMCP
+from fastmcp.server.auth import BearerTokenAuth
+
+# 从环境变量读取配置
+auth_token = os.environ.get("MCP_AUTH_TOKEN")
+if auth_token:
+    auth = BearerTokenAuth(token=auth_token)
+    mcp = FastMCP("Production Server", auth=auth)
+else:
+    mcp = FastMCP("Production Server")
+
+app = mcp.http_app()
+```
+
+通过环境变量安全地传入密钥后再部署：
+```bash
+MCP_AUTH_TOKEN=secret uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+### OAuth 令牌安全性
+
+<VersionBadge version="2.13.0" />
+
+如果你使用 [OAuth 代理](/zh/servers/auth/oauth-proxy)，FastMCP 会向客户端签发自己的 JWT，而不是转发上游提供方的令牌，从而保持正确的 OAuth 2.0 令牌边界。
+
+**默认行为（仅供开发使用）：**
+
+默认情况下，FastMCP 会自动管理加密密钥：
+- **macOS/Windows**：密钥会生成并存储在系统钥匙串中，重启服务器依然有效。仅适用于开发与本地测试。
+- **Linux**：密钥为临时的（启动时随机生成），因此重启后令牌会失效。
+
+此自动机制方便开发，但不适用于生产部署。
+
+**用于生产环境：**
+
+生产环境需要显式的密钥管理，以确保令牌在重启后依然有效，并可在多个服务器实例之间共享。需要同时满足以下两个条件：
+
+1. **显式的 JWT 签名密钥**，用于签发发给客户端的令牌
+3. **持久化、可联网访问的存储**，用于保存上游令牌（并通过 `FernetEncryptionWrapper` 对静态数据进行加密）
+
+**配置方式：**
+
+在身份验证提供方中添加两个参数：
+
+```python {8-12}
+from key_value.aio.stores.redis import RedisStore
+from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
+from cryptography.fernet import Fernet
+
+auth = GitHubProvider(
+    client_id=os.environ["GITHUB_CLIENT_ID"],
+    client_secret=os.environ["GITHUB_CLIENT_SECRET"],
+    jwt_signing_key=os.environ["JWT_SIGNING_KEY"],
+    client_storage=FernetEncryptionWrapper(
+        key_value=RedisStore(host="redis.example.com", port=6379),
+        fernet=Fernet(os.environ["STORAGE_ENCRYPTION_KEY"])
+    ),
+    base_url="https://your-server.com"  # 请使用 HTTPS
+)
+```
+
+这两个参数在生产环境中缺一不可。如果没有显式签名密钥，令牌会使用基于 client_secret 派生的密钥签名，一旦轮换 client_secret 就会导致令牌失效。如果没有持久化存储，令牌将局限于本地服务器，无法在多主机之间互信。**请为存储后端添加 `FernetEncryptionWrapper`，以加密静态保存的敏感 OAuth 令牌**——否则这些令牌将以明文形式存储。
+
+关于令牌体系结构与密钥管理的更多信息，请参阅[OAuth 代理密钥与存储管理](/zh/servers/auth/oauth-proxy#key-and-storage-management)。
+
+## 测试部署
+
+服务器部署完成后，你需要验证其可访问性与功能是否正常。关于连通性测试、客户端测试以及身份验证测试的完整策略，请参阅[测试你的服务器](/zh/development/tests)指南。
+
+## 托管你的服务器
+
+本指南介绍了如何创建可通过 HTTP 访问的 MCP 服务器，但若要让它公开在互联网上，你仍需选择托管服务商。只要支持运行 Python Web 应用，你就可以部署 FastMCP 服务器：
+
+- **云主机**（AWS EC2、Google Compute Engine、Azure VM）
+- **容器平台**（Cloud Run、Container Instances、ECS）  
+- **平台即服务**（Railway、Render、Vercel）
+- **边缘平台**（Cloudflare Workers）
+- **Kubernetes 集群**（自建或托管）
+
+核心要求是支持 Python 3.10+，并能够开放一个 HTTP 端口。大多数提供方都会要求你根据其部署格式打包服务器（如 requirements.txt、Dockerfile 等）。如果需要零配置的托管方式，请参阅[FastMCP Cloud](/zh/deployment/fastmcp-cloud)。

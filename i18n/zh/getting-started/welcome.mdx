@@ -38,12 +38,13 @@ if __name__ == "__main__":
 
 ## 超越基础 MCP
 
-FastMCP 开创了 Python MCP 开发，FastMCP 1.0 在 2024 年被纳入[官方 MCP SDK](https://github.com/modelcontextprotocol/python-sdk)。
+FastMCP 开创了 Python MCP 开发，FastMCP 1.0 于 2024 年被并入[官方 MCP SDK](https://github.com/modelcontextprotocol/python-sdk)。
 
-**这是 FastMCP 2.0** — 积极维护的版本，远超基础协议实现。虽然 SDK 提供核心功能，但 FastMCP 2.0 提供生产所需的一切：高级 MCP 模式（服务器组合、代理、OpenAPI/FastAPI 生成、工具转换）、企业级认证（Google、GitHub、Azure、Auth0、WorkOS 等）、部署工具、测试框架和完整的客户端库。
+**这是 FastMCP 2.0，** 当前积极维护的版本，远超基础协议实现。虽然 SDK 提供核心功能，但 FastMCP 2.0 提供生产所需的一切：高级 MCP 模式（服务器组合、代理、OpenAPI/FastAPI 生成、工具转换）、企业级认证（Google、GitHub、Azure、Auth0、WorkOS 等）、部署工具、测试框架和完整的客户端库。
 
 准备开始构建？从我们的[安装指南](/zh/getting-started/installation)开始，或直接跳转到[快速开始](/zh/getting-started/quickstart)。
 
+FastMCP 由 [Prefect](https://www.prefect.io/) 用 💙 制作。
 
 ## 什么是 MCP？
 
@@ -70,9 +71,9 @@ FastMCP 处理所有复杂的协议细节，让您专注于构建。在大多数
 
 FastMCP 提供从想法到生产的最短路径。可以本地部署、使用 [FastMCP Cloud](https://fastmcp.cloud)（个人服务器免费）部署到云端，或部署到您自己的基础设施。
 
-FastMCP 由 [Prefect](https://www.prefect.io/) 用 💙 制作。
-
-
+<Tip>
+**本套文档基于 FastMCP `main` 分支**，因此始终反映最新开发版本的内容。文中通常会通过版本徽章（例如 `新增于 2.13.1`）标记功能的引入版本，可能包含尚未正式发布的功能。
+</Tip>
 
 ## LLM 友好的文档
 
@@ -99,7 +100,7 @@ async def main():
 asyncio.run(main())
 ```
 
-### 纯文本格式
+### 文本格式
 
 文档还提供 [llms.txt 格式](https://llmstxt.org/)：
 - [llms.txt](https://gofastmcp.com/llms.txt) - 列出所有文档页面的站点地图

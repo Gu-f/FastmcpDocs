@@ -447,7 +447,115 @@ mcp.add_middleware(TimingMiddleware())
 mcp.add_middleware(DetailedTimingMiddleware())
 ```
 
-内置版本包括自定义记录器支持、正确的格式，**DetailedTimingMiddleware**提供特定于操作的钩子，如“on_call_tool”和“on_read_resource”，用于细粒度计时。
+内置版本包括自定义记录器支持、正确的格式，**DetailedTimingMiddleware**提供特定于操作的钩子，如"on_call_tool"和"on_read_resource"，用于细粒度计时。
+
+### 工具注入中间件
+
+工具注入中间件是在请求生命周期中向服务器注入工具的中间件：
+
+```python
+from fastmcp.server.middleware.tool_injection import ToolInjectionMiddleware
+
+def my_tool_fn(a: int, b: int) -> int:
+    return a + b
+
+my_tool = Tool.from_function(fn=my_tool_fn, name="my_tool")
+
+mcp.add_middleware(ToolInjectionMiddleware(tools=[my_tool]))
+```
+
+### 提示工具中间件
+
+提示工具中间件是针对无法列出或获取提示的客户端的兼容性中间件。它提供两个工具：`list_prompts` 和 `get_prompt`，允许客户端仅使用工具调用来分别列出和获取提示。
+
+```python
+from fastmcp.server.middleware.tool_injection import PromptToolMiddleware
+
+mcp.add_middleware(PromptToolMiddleware())
+```
+
+### 资源工具中间件
+
+资源工具中间件是针对无法列出或读取资源的客户端的兼容性中间件。它提供两个工具：`list_resources` 和 `read_resource`，允许客户端仅使用工具调用来分别列出和读取资源。
+
+```python
+from fastmcp.server.middleware.tool_injection import ResourceToolMiddleware
+
+mcp.add_middleware(ResourceToolMiddleware())
+```
+
+### 缓存中间件
+
+缓存中间件对于提高性能和减少服务器负载至关重要。FastMCP 在 `fastmcp.server.middleware.caching` 中提供缓存中间件。
+
+以下是使用完整版本的方法：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+
+mcp.add_middleware(ResponseCachingMiddleware())
+```
+
+开箱即用，它将调用/列出工具、资源和提示缓存到具有基于 TTL 过期的内存缓存中。缓存条目根据其 TTL 过期；没有基于事件的缓存失效。列表调用存储在全局键下——在多个服务器之间共享存储后端时，请考虑命名空间集合以防止冲突。有关高级配置选项，请参阅[存储后端](/zh/servers/storage-backends)。
+
+每个方法可以单独配置，例如，缓存列出工具 30 秒，将缓存限制在特定工具，并禁用资源读取的缓存：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware, CallToolSettings, ListToolsSettings, ReadResourceSettings
+
+mcp.add_middleware(ResponseCachingMiddleware(
+    list_tools_settings=ListToolsSettings(
+        ttl=30,
+    ),
+    call_tool_settings=CallToolSettings(
+        included_tools=["tool1"],
+    ),
+    read_resource_settings=ReadResourceSettings(
+        enabled=False
+    )
+))
+```
+
+#### 存储后端
+
+默认情况下，缓存使用内存存储，这速度很快但不能在重启后持久化。对于生产环境或在服务器重启后持久化缓存，请配置不同的存储后端。有关完整选项，包括磁盘、Redis、DynamoDB 和自定义实现，请参阅[存储后端](/zh/servers/storage-backends)。
+
+基于磁盘的缓存示例：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+from key_value.aio.stores.disk import DiskStore
+
+mcp.add_middleware(ResponseCachingMiddleware(
+    cache_storage=DiskStore(directory="cache"),
+))
+```
+
+用于分布式部署的 Redis：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+from key_value.aio.stores.redis import RedisStore
+
+mcp.add_middleware(ResponseCachingMiddleware(
+    cache_storage=RedisStore(host="redis.example.com", port=6379),
+))
+```
+
+#### 缓存统计
+
+缓存中间件通过底层存储层收集操作统计信息（命中、未命中等）。从中间件实例访问统计信息：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+
+middleware = ResponseCachingMiddleware()
+mcp.add_middleware(middleware)
+
+# 稍后检索统计信息
+stats = middleware.statistics()
+print(f"总缓存操作数：{stats}")
+```
 
 ### 日志记录中间件
 
@@ -460,22 +568,22 @@ from fastmcp.server.middleware import Middleware, MiddlewareContext
 
 class SimpleLoggingMiddleware(Middleware):
     async def on_message(self, context: MiddlewareContext, call_next):
-        print(f"Processing {context.method} from {context.source}")
-        
+        print(f"正在处理来自 {context.source} 的 {context.method}")
+
         try:
             result = await call_next(context)
-            print(f"Completed {context.method}")
+            print(f"已完成 {context.method}")
             return result
         except Exception as e:
-            print(f"Failed {context.method}: {e}")
+            print(f"失败 {context.method}：{e}")
             raise
 ```
 
-使用具有高级功能的完整版本：
+要使用具有高级功能的完整版本：
 
 ```python
 from fastmcp.server.middleware.logging import (
-    LoggingMiddleware, 
+    LoggingMiddleware,
     StructuredLoggingMiddleware
 )
 
@@ -508,21 +616,21 @@ class SimpleRateLimitMiddleware(Middleware):
     def __init__(self, requests_per_minute: int = 60):
         self.requests_per_minute = requests_per_minute
         self.client_requests = defaultdict(list)
-    
+
     async def on_request(self, context: MiddlewareContext, call_next):
         current_time = time.time()
         client_id = "default"  # 实际使用中，从标头或上下文提取
-        
+
         # 清理旧请求并检查限制
         cutoff_time = current_time - 60
         self.client_requests[client_id] = [
             req_time for req_time in self.client_requests[client_id]
             if req_time > cutoff_time
         ]
-        
+
         if len(self.client_requests[client_id]) >= self.requests_per_minute:
             raise McpError(ErrorData(code=-32000, message="速率限制超出"))
-        
+
         self.client_requests[client_id].append(current_time)
         return await call_next(context)
 ```
@@ -531,7 +639,7 @@ class SimpleRateLimitMiddleware(Middleware):
 
 ```python
 from fastmcp.server.middleware.rate_limiting import (
-    RateLimitingMiddleware, 
+    RateLimitingMiddleware,
     SlidingWindowRateLimitingMiddleware
 )
 
@@ -564,7 +672,7 @@ class SimpleErrorHandlingMiddleware(Middleware):
     def __init__(self):
         self.logger = logging.getLogger("errors")
         self.error_counts = {}
-    
+
     async def on_message(self, context: MiddlewareContext, call_next):
         try:
             return await call_next(context)
@@ -572,7 +680,7 @@ class SimpleErrorHandlingMiddleware(Middleware):
             # 记录错误并跟踪统计信息
             error_key = f"{type(error).__name__}:{context.method}"
             self.error_counts[error_key] = self.error_counts.get(error_key, 0) + 1
-            
+
             self.logger.error(f"错误在 {context.method} 中：{type(error).__name__}：{error}")
             raise
 ```
@@ -581,7 +689,7 @@ class SimpleErrorHandlingMiddleware(Middleware):
 
 ```python
 from fastmcp.server.middleware.error_handling import (
-    ErrorHandlingMiddleware, 
+    ErrorHandlingMiddleware,
     RetryMiddleware
 )
 
@@ -638,9 +746,9 @@ class CustomHeaderMiddleware(Middleware):
     async def on_request(self, context: MiddlewareContext, call_next):
         # 在此添加自定义逻辑
         print(f"正在处理 {context.method}")
-        
+
         result = await call_next(context)
-        
+
         print(f"已完成 {context.method}")
         return result
 
