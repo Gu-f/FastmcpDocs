@@ -5,7 +5,7 @@ description: 将函数作为可执行功能暴露给您的 MCP 客户端。
 icon: wrench
 ---
 
-import { VersionBadge } from '/snippets/version-badge.mdx'
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
 
 工具是核心构建块，允许您的 LLM 与外部系统交互、执行代码并访问不在其训练数据中的数据。在 FastMCP 中，工具是通过 MCP 协议暴露给 LLM 的 Python 函数。
 
@@ -78,7 +78,7 @@ def search_products_implementation(query: str, category: str | None = None) -> l
 </ParamField>
 
 <ParamField body="enabled" type="bool" default="True">
-  启用或禁用工具的布尔值。更多信息请参阅[禁用工具](#disabling-tools)
+  启用或禁用工具的布尔值。更多信息请参阅[禁用工具](#禁用工具)
 </ParamField>
 
 <ParamField body="icons" type="list[Icon] | None">
@@ -88,7 +88,7 @@ def search_products_implementation(query: str, category: str | None = None) -> l
 </ParamField>
 
 <ParamField body="exclude_args" type="list[str] | None">
-  要从显示给 LLM 的工具架构中排除的参数名称列表。更多信息请参阅[排除参数](#excluding-arguments)
+  要从显示给 LLM 的工具架构中排除的参数名称列表。更多信息请参阅[排除参数](#排除参数)
 </ParamField>
 
 <ParamField body="annotations" type="ToolAnnotations | dict | None">

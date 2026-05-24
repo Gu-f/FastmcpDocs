@@ -5,17 +5,15 @@ description: Generate MCP servers from any OpenAPI specification
 icon: list-tree
 ---
 
-import { VersionBadge } from '/snippets/version-badge.mdx'
+import { VersionBadge } from '/en/snippets/version-badge.mdx'
 
 <VersionBadge version="2.0.0" />
 
-<Tip>
-**New in 2.11**: FastMCP is introducing a next-generation OpenAPI parser. The new parser has greatly improved performance and compatibility, and is also easier to maintain. To enable it, set the environment variable `FASTMCP_EXPERIMENTAL_ENABLE_NEW_OPENAPI_PARSER=true`. 
-
-The new parser is largely API-compatible with the existing implementation and will become the default in a future version. We encourage all users to test it and report any issues before it becomes the default.
-</Tip>
-
 FastMCP can automatically generate an MCP server from any OpenAPI specification, allowing AI models to interact with existing APIs through the MCP protocol. Instead of manually creating tools and resources, you provide an OpenAPI spec and FastMCP intelligently converts API endpoints into the appropriate MCP components.
+
+<Note>
+Under the hood, OpenAPI integration uses OpenAPIProvider (v3.0.0+) to source tools from the specification. See [Providers](/en/servers/providers/overview) to understand how FastMCP sources components.
+</Note>
 
 <Tip>
 Generating MCP servers from OpenAPI is a great way to get started with FastMCP, but in practice LLMs achieve **significantly better performance** with well-designed and curated MCP servers than with auto-converted OpenAPI servers. This is especially true for complex APIs with many endpoints and parameters.
@@ -87,21 +85,13 @@ Each `RouteMap` specifies a combination of methods, patterns, and tags, as well 
 Here is FastMCP's default rule:
 
 ```python
-from fastmcp.server.openapi import RouteMap, MCPType
+from fastmcp.server.providers.openapi import RouteMap, MCPType
 
 DEFAULT_ROUTE_MAPPINGS = [
     # All routes become tools
     RouteMap(mcp_type=MCPType.TOOL),
 ]
 ```
-
-<Tip>
-**Experimental Parser**: If you're using the new parser (enabled via `FASTMCP_EXPERIMENTAL_ENABLE_NEW_OPENAPI_PARSER=true`), import from the experimental module instead:
-```python
-from fastmcp.experimental.server.openapi import RouteMap, MCPType
-```
-The API is identical, but the implementation provides better performance and serverless compatibility.
-</Tip>
 
 ### Custom Route Maps
 
@@ -111,7 +101,7 @@ For example, prior to FastMCP 2.8.0, GET requests were automatically mapped to `
 
 ```python
 from fastmcp import FastMCP
-from fastmcp.server.openapi import RouteMap, MCPType
+from fastmcp.server.providers.openapi import RouteMap, MCPType
 
 # Restore pre-2.8.0 semantic mapping
 semantic_maps = [
@@ -134,7 +124,7 @@ Here is a more complete example that uses custom route maps to convert all `GET`
 
 ```python
 from fastmcp import FastMCP
-from fastmcp.server.openapi import RouteMap, MCPType
+from fastmcp.server.providers.openapi import RouteMap, MCPType
 
 mcp = FastMCP.from_openapi(
     openapi_spec=spec,
@@ -174,7 +164,7 @@ You can use this to remove sensitive or internal routes by targeting them specif
 
 ```python
 from fastmcp import FastMCP
-from fastmcp.server.openapi import RouteMap, MCPType
+from fastmcp.server.providers.openapi import RouteMap, MCPType
 
 mcp = FastMCP.from_openapi(
     openapi_spec=spec,
@@ -190,7 +180,7 @@ Or you can use a catch-all rule to exclude everything that your maps don't handl
 
 ```python
 from fastmcp import FastMCP
-from fastmcp.server.openapi import RouteMap, MCPType
+from fastmcp.server.providers.openapi import RouteMap, MCPType
 
 mcp = FastMCP.from_openapi(
     openapi_spec=spec,
@@ -222,7 +212,8 @@ The `route_map_fn` is called on all routes, even those that matched `MCPType.EXC
 
 ```python
 from fastmcp import FastMCP
-from fastmcp.server.openapi import RouteMap, MCPType, HTTPRoute
+from fastmcp.server.providers.openapi import RouteMap, MCPType
+from fastmcp.utilities.openapi import HTTPRoute
 
 def custom_route_mapper(route: HTTPRoute, mcp_type: MCPType) -> MCPType | None:
     """Advanced route type mapping."""
@@ -287,7 +278,7 @@ FastMCP provides several ways to add tags to your MCP components, allowing you t
 You can add custom tags to components created from specific routes using the `mcp_tags` parameter in `RouteMap`. These tags will be applied to all components created from routes that match that particular route map.
 
 ```python
-from fastmcp.server.openapi import RouteMap, MCPType
+from fastmcp.server.providers.openapi import RouteMap, MCPType
 
 mcp = FastMCP.from_openapi(
     openapi_spec=spec,
@@ -334,7 +325,7 @@ mcp = FastMCP.from_openapi(
 
 #### OpenAPI Tags in Client Meta
 
-FastMCP automatically includes OpenAPI tags from your specification in the component's metadata. These tags are available to MCP clients through the `_meta._fastmcp.tags` field, allowing clients to filter and organize components based on the original OpenAPI tagging:
+FastMCP automatically includes OpenAPI tags from your specification in the component's metadata. These tags are available to MCP clients through the `meta.fastmcp.tags` field, allowing clients to filter and organize components based on the original OpenAPI tagging:
 
 <CodeGroup>
 ```json {5} OpenAPI spec with tags
@@ -354,9 +345,9 @@ FastMCP automatically includes OpenAPI tags from your specification in the compo
 async with client:
     tools = await client.list_tools()
     for tool in tools:
-        if hasattr(tool, '_meta') and tool._meta:
-            # OpenAPI tags are now available in _fastmcp namespace!
-            fastmcp_meta = tool._meta.get('_fastmcp', {})
+        if tool.meta:
+            # OpenAPI tags are now available in fastmcp namespace!
+            fastmcp_meta = tool.meta.get('fastmcp', {})
             openapi_tags = fastmcp_meta.get('tags', [])
             if 'users' in openapi_tags:
                 print(f"Found user-related tool: {tool.name}")
@@ -378,20 +369,12 @@ Your `mcp_component_fn` is expected to modify the component in-place, not to ret
 </Tip>
 
 ```python
-from fastmcp.server.openapi import (
-    HTTPRoute, 
-    OpenAPITool, 
-    OpenAPIResource, 
+from fastmcp.server.providers.openapi import (
+    OpenAPITool,
+    OpenAPIResource,
     OpenAPIResourceTemplate,
 )
-
-# If using experimental parser, import from experimental module:
-# from fastmcp.experimental.server.openapi import (
-#     HTTPRoute,
-#     OpenAPITool,
-#     OpenAPIResource,
-#     OpenAPIResourceTemplate,
-# )
+from fastmcp.utilities.openapi import HTTPRoute
 
 def customize_components(
     route: HTTPRoute, 

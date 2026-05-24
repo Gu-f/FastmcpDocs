@@ -1,0 +1,25 @@
+---
+title: 常见问题
+description: 关于安装和使用 FastMCP 的常见问题解答
+icon: circle-question
+---
+
+## 使用 pip 升级后，`import fastmcp` 无法工作
+
+当你使用 `pip` 从 FastMCP 3.2 或更早版本升级到 FastMCP 3.3 或更高版本时，可能会发生这种情况。快速修复方法是运行 `pip install --force-reinstall fastmcp`。请参阅[故障排除](/zh/getting-started/installation#故障排除)，了解干净重装的备用方案以及问题原因说明。
+
+## `fastmcp` 和 `fastmcp-slim` 有什么区别？
+
+`fastmcp` 是完整发行版。安装它会获得完整框架，包括服务端、客户端、CLI 和常用集成，适合大多数用户：
+
+```bash
+pip install fastmcp
+```
+
+`fastmcp-slim` 提供同样可导入的 `fastmcp` 包，但只包含最小必需依赖。你可以通过 extras 按需选择需要的部分，这样在只使用框架一部分功能时可以保持环境精简：
+
+```bash
+pip install "fastmcp-slim[client]"
+```
+
+两个发行版都暴露相同的 `import fastmcp`，因此无论安装哪一个，应用代码都是一致的。

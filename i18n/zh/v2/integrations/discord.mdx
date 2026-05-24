@@ -1,0 +1,183 @@
+---
+title: Discord OAuth 🤝 FastMCP
+sidebarTitle: Discord
+description: 使用 Discord OAuth 保护你的 FastMCP 服务端
+icon: discord
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.13.2" />
+
+本指南展示如何使用 **Discord OAuth** 保护你的 FastMCP 服务端。由于 Discord 不支持 Dynamic Client Registration，此集成使用 [**OAuth Proxy**](/zh/v2/servers/auth/oauth-proxy) 模式，将 Discord 的传统 OAuth 与 MCP 的身份认证要求连接起来。
+
+## 配置
+
+### 前置条件
+
+开始之前，你需要：
+1. 一个可创建应用的 **[Discord 账号](https://discord.com/)**
+2. 你的 FastMCP 服务端 URL（开发时可以是 localhost，例如 `http://localhost:8000`）
+
+### 第 1 步：创建 Discord 应用
+
+在 Discord Developer Portal 中创建应用，以获取身份认证所需的凭据：
+
+<Steps>
+<Step title="前往 Discord Developer Portal">
+    前往 [Discord Developer Portal](https://discord.com/developers/applications)。
+
+    点击 **"New Application"**，并为其填写一个用户能识别的名称（例如 "My FastMCP Server"）。
+</Step>
+
+<Step title="配置 OAuth2 设置">
+    在左侧边栏中点击 **"OAuth2"**。
+
+    在 **Redirects** 部分点击 **"Add Redirect"**，并输入你的回调 URL：
+    - 开发环境：`http://localhost:8000/auth/callback`
+    - 生产环境：`https://your-domain.com/auth/callback`
+
+    <Warning>
+    重定向 URL 必须完全匹配。默认路径是 `/auth/callback`，但你可以使用 `redirect_path` 参数自定义它。Discord 允许在开发环境使用 `http://localhost` URL。生产环境请使用 HTTPS。
+    </Warning>
+</Step>
+
+<Step title="保存你的凭据">
+    在同一个 OAuth2 页面中，你会看到：
+
+    - **Client ID**：类似 `12345` 的数字字符串
+    - **Client Secret**：点击 "Reset Secret" 生成
+
+    <Tip>
+    请安全保存这些凭据。切勿将它们提交到版本控制中。生产环境请使用环境变量或密钥管理器。
+    </Tip>
+</Step>
+</Steps>
+
+### 第 2 步：FastMCP 配置
+
+使用 `DiscordProvider` 创建 FastMCP 服务端，它会自动处理 Discord 的 OAuth 流程：
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.discord import DiscordProvider
+
+auth_provider = DiscordProvider(
+    client_id="12345",      # 你的 Discord Application Client ID
+    client_secret="your-client-secret",    # 你的 Discord OAuth Client Secret
+    base_url="http://localhost:8000",      # 必须与你的 OAuth 配置匹配
+)
+
+mcp = FastMCP(name="Discord Secured App", auth=auth_provider)
+
+@mcp.tool
+async def get_user_info() -> dict:
+    """返回已认证 Discord 用户的信息。"""
+    from fastmcp.server.dependencies import get_access_token
+
+    token = get_access_token()
+    return {
+        "discord_id": token.claims.get("sub"),
+        "username": token.claims.get("username"),
+        "avatar": token.claims.get("avatar"),
+    }
+```
+
+## 测试
+
+### 运行服务端
+
+使用 HTTP 传输启动 FastMCP 服务端，以启用 OAuth 流程：
+
+```bash
+fastmcp run server.py --transport http --port 8000
+```
+
+你的服务端现在已经运行，并受到 Discord OAuth 身份认证保护。
+
+### 使用客户端测试
+
+创建一个测试客户端，对受 Discord 保护的服务端进行身份认证：
+
+```python test_client.py
+from fastmcp import Client
+import asyncio
+
+async def main():
+    async with Client("http://localhost:8000/mcp", auth="oauth") as client:
+        print("✓ Authenticated with Discord!")
+
+        result = await client.call_tool("get_user_info")
+        print(f"Discord user: {result['username']}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+首次运行客户端时：
+1. 浏览器会打开 Discord 的授权页面
+2. 使用 Discord 账号登录并授权该应用
+3. 授权后，你会被重定向回来
+4. 客户端会收到令牌，并可以发起已认证的请求
+
+<Info>
+客户端会在本地缓存令牌，因此后续运行时无需重新认证，除非令牌过期或你显式清空缓存。
+</Info>
+
+## Discord Scopes
+
+Discord OAuth 支持多个 scope，用于访问不同类型的用户数据：
+
+| Scope | 描述 |
+|-------|-------------|
+| `identify` | 访问用户名、头像和 discriminator（默认） |
+| `email` | 访问用户的电子邮件地址 |
+| `guilds` | 访问用户的服务器列表 |
+| `guilds.join` | 将用户添加到服务器的能力 |
+
+要请求额外 scope：
+
+```python
+auth_provider = DiscordProvider(
+    client_id="...",
+    client_secret="...",
+    base_url="http://localhost:8000",
+    required_scopes=["identify", "email"],
+)
+```
+
+## 生产配置
+
+对于需要在服务端重启后保留令牌管理状态的生产部署，请配置 `jwt_signing_key` 和 `client_storage`：
+
+```python server.py
+import os
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.discord import DiscordProvider
+from key_value.aio.stores.redis import RedisStore
+from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
+from cryptography.fernet import Fernet
+
+auth_provider = DiscordProvider(
+    client_id="12345",
+    client_secret=os.environ["DISCORD_CLIENT_SECRET"],
+    base_url="https://your-production-domain.com",
+
+    jwt_signing_key=os.environ["JWT_SIGNING_KEY"],
+    client_storage=FernetEncryptionWrapper(
+        key_value=RedisStore(
+            host=os.environ["REDIS_HOST"],
+            port=int(os.environ["REDIS_PORT"])
+        ),
+        fernet=Fernet(os.environ["STORAGE_ENCRYPTION_KEY"])
+    )
+)
+
+mcp = FastMCP(name="Production Discord App", auth=auth_provider)
+```
+
+<Note>
+参数（`jwt_signing_key` 和 `client_storage`）会协同工作，确保令牌和客户端注册在服务端重启后仍然保留。**请使用 `FernetEncryptionWrapper` 包装存储，以加密静态敏感 OAuth 令牌**，否则令牌会以明文存储。请将密钥存入环境变量，并在分布式部署中使用 Redis 等持久化存储后端。
+
+有关这些参数的完整详情，请参阅 [OAuth Proxy 文档](/zh/v2/servers/auth/oauth-proxy#配置参数)。
+</Note>

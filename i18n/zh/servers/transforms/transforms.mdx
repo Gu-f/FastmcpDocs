@@ -1,0 +1,173 @@
+---
+title: 转换概览
+sidebarTitle: 概览
+description: 在组件流经服务端时修改它们
+icon: wand-magic-sparkles
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+转换会在组件从提供方流向客户端时修改组件。当客户端询问“你有哪些工具？”时，请求会经过链中的每个转换。每个转换都可以在把组件继续传递之前修改它们。
+
+## 心智模型
+
+可以把转换看作管线中的过滤器。组件从提供方出发，经过转换后到达客户端：
+
+```
+Provider → [Transform A] → [Transform B] → Client
+```
+
+列出组件时，转换接收序列并返回转换后的序列，这是一种纯函数模式。按名称获取特定组件时，转换使用带有 `call_next` 的中间件模式，并以反向方式工作：先把客户端请求的名称映射回原始名称，再转换结果。
+
+## 内置转换
+
+FastMCP 为常见用例提供了多种转换：
+
+- **[命名空间](/zh/servers/transforms/namespace)** - 为组件名称添加前缀，避免组合服务端时发生冲突
+- **[工具转换](/zh/servers/transforms/tool-transformation)** - 重命名工具、修改描述、重塑参数
+- **[启用状态](/zh/servers/visibility)** - 在运行时控制哪些组件可见
+- **[工具搜索](/zh/servers/transforms/tool-search)** - 用按需搜索替代大型工具目录
+- **[资源作为工具](/zh/servers/transforms/resources-as-tools)** - 向仅支持工具的客户端暴露资源
+- **[提示词作为工具](/zh/servers/transforms/prompts-as-tools)** - 向仅支持工具的客户端暴露提示词
+- **[代码模式（实验性）](/zh/servers/transforms/code-mode)** - 用可编程的 `search` + `execute` 替代大量工具
+
+## 服务端转换与提供方转换
+
+转换可以添加在两个层级，每个层级服务于不同目的。
+
+### 提供方级转换
+
+提供方转换应用于来自特定提供方的组件。它们最先运行，在组件到达服务端层级之前修改组件。
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.providers import FastMCPProvider
+from fastmcp.server.transforms import Namespace, ToolTransform
+from fastmcp.tools.tool_transform import ToolTransformConfig
+
+sub_server = FastMCP("Sub")
+
+@sub_server.tool
+def process(data: str) -> str:
+    return f"Processed: {data}"
+
+# 创建提供方并添加转换
+provider = FastMCPProvider(sub_server)
+provider.add_transform(Namespace("api"))
+provider.add_transform(ToolTransform({
+    "api_process": ToolTransformConfig(description="Process data through the API"),
+}))
+
+main = FastMCP("Main", providers=[provider])
+# 工具现在变为：api_process，并带有更新后的描述
+```
+
+使用 `mount()` 时，返回的提供方引用允许你直接添加转换。
+
+```python
+main = FastMCP("Main")
+mount = main.mount(sub_server, namespace="api")
+mount.add_transform(ToolTransform({...}))
+```
+
+### 服务端级转换
+
+服务端转换会应用于来自所有提供方的所有组件。它们在提供方转换之后运行，因此看到的是已经转换过的名称。
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.transforms import Namespace
+
+mcp = FastMCP("Server", transforms=[Namespace("v1")])
+
+@mcp.tool
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+
+# 所有工具都会变成 v1_toolname
+```
+
+服务端级转换适合 API 版本管理，或在整个服务端中应用一致的命名规则。
+
+### 转换顺序
+
+转换会按添加顺序堆叠。第一个添加的转换位于最内层（离提供方最近），后续转换会包裹它。
+
+```python
+from fastmcp.server.providers import FastMCPProvider
+from fastmcp.server.transforms import Namespace, ToolTransform
+from fastmcp.tools.tool_transform import ToolTransformConfig
+
+provider = FastMCPProvider(server)
+provider.add_transform(Namespace("api"))           # 先应用
+provider.add_transform(ToolTransform({             # 看到的是带命名空间的名称
+    "api_verbose_name": ToolTransformConfig(name="short"),
+}))
+
+# 流程："verbose_name" -> "api_verbose_name" -> "short"
+```
+
+当客户端请求 `"short"` 时，转换会反向映射：ToolTransform 把 `"short"` 映射到 `"api_verbose_name"`，然后 Namespace 去掉前缀，在提供方中查找 `"verbose_name"`。
+
+## 自定义转换
+
+通过继承 `Transform` 并覆盖需要的方法，可以创建自定义转换。
+
+```python
+from collections.abc import Sequence
+from fastmcp.server.transforms import Transform, GetToolNext
+from fastmcp.tools.tool import Tool
+
+class TagFilter(Transform):
+    """只保留带有特定标签的工具。"""
+
+    def __init__(self, required_tags: set[str]):
+        self.required_tags = required_tags
+
+    async def list_tools(self, tools: Sequence[Tool]) -> Sequence[Tool]:
+        return [t for t in tools if t.tags & self.required_tags]
+
+    async def get_tool(self, name: str, call_next: GetToolNext) -> Tool | None:
+        tool = await call_next(name)
+        if tool and tool.tags & self.required_tags:
+            return tool
+        return None
+```
+
+`Transform` 基类提供了原样透传的默认实现。只覆盖与你的转换相关的方法即可。
+
+每种组件类型都有两个使用不同模式的方法：
+
+| 方法 | 模式 | 目的 |
+|--------|---------|---------|
+| `list_tools(tools)` | 纯函数 | 转换工具序列 |
+| `get_tool(name, call_next)` | 中间件 | 按名称转换工具查找 |
+| `list_resources(resources)` | 纯函数 | 转换资源序列 |
+| `get_resource(uri, call_next)` | 中间件 | 按 URI 转换资源查找 |
+| `list_resource_templates(templates)` | 纯函数 | 转换资源模板序列 |
+| `get_resource_template(uri, call_next)` | 中间件 | 转换模板查找 |
+| `list_prompts(prompts)` | 纯函数 | 转换提示词序列 |
+| `get_prompt(name, call_next)` | 中间件 | 按名称转换提示词查找 |
+
+List 方法直接接收序列并返回转换后的序列。Get 方法使用 `call_next` 提供路由灵活性；当客户端请求 `"new_name"` 时，你的转换会在调用 `call_next()` 前把它映射回 `"original_name"`。
+
+```python
+class PrefixTransform(Transform):
+    def __init__(self, prefix: str):
+        self.prefix = prefix
+
+    async def list_tools(self, tools: Sequence[Tool]) -> Sequence[Tool]:
+        return [t.model_copy(update={"name": f"{self.prefix}_{t.name}"}) for t in tools]
+
+    async def get_tool(self, name: str, call_next: GetToolNext) -> Tool | None:
+        # 反向去掉前缀以找到原始工具
+        if not name.startswith(f"{self.prefix}_"):
+            return None
+        original = name[len(self.prefix) + 1:]
+        tool = await call_next(original)
+        if tool:
+            return tool.model_copy(update={"name": name})
+        return None
+```

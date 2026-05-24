@@ -7,19 +7,60 @@ sidebarTitle: json_schema
 
 ## 函数
 
-### `compress_schema` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/json_schema.py#L200" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `dereference_refs` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/json_schema.py#L104" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-compress_schema(schema: dict, prune_params: list[str] | None = None, prune_defs: bool = True, prune_additional_properties: bool = True, prune_titles: bool = False) -> dict
+dereference_refs(schema: dict[str, Any]) -> dict[str, Any]
 ```
 
 
-从模式中删除指定的参数。
+通过内联定义解析 JSON schema 中的所有 $ref 引用。
+
+此函数会解析指向 $defs 的 $ref 引用，将其替换为实际定义内容，同时保留 Pydantic 放在 $ref 旁边的同级关键字（例如 description、default、examples）。
+
+这是必要的，因为某些 MCP 客户端（例如 VS Code Copilot）不能正确处理工具输入 schema 中的 $ref。
+
+对于无法完全解引用的自引用/循环 schema，此函数会回退为仅解析根级 $ref，同时为嵌套引用保留 $defs。
+
+只会解析本地 ``$ref`` 值（以 ``#`` 开头的值）。远程 URI（``http://``、``file://`` 等）会在解析前被移除，以防在代理来自不可信服务端的 schema 时发生 SSRF / 本地文件包含攻击。
 
 **参数：**
-- `schema`: 要压缩的模式
-- `prune_params`: 要从属性中删除的参数名称列表
-- `prune_defs`: 是否删除未使用的定义
-- `prune_additional_properties`: 是否删除 additionalProperties\: false
-- `prune_titles`: 是否从模式中删除标题字段
+- `schema`: 可能包含 $ref 引用的 JSON schema 字典
 
+**返回：**
+- 一个新的 schema 字典，其中 $ref 会在可能时被解析，且不再需要时会移除 $defs
+
+
+### `resolve_root_ref` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/json_schema.py#L251" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+resolve_root_ref(schema: dict[str, Any]) -> dict[str, Any]
+```
+
+
+解析根级 $ref，以满足 MCP 规范要求。
+
+MCP 规范要求 outputSchema 在根级具有 "type": "object"。当 Pydantic 为自引用模型生成 schema 时，它会在根级使用指向 $defs 的 $ref。此函数会通过内联被引用定义来解析这类引用，同时为嵌套引用保留 $defs。
+
+**参数：**
+- `schema`: 根级可能包含 $ref 的 JSON schema 字典
+
+**返回：**
+- 解析了根级 $ref 的新 schema 字典；如果无需解析，则返回原始 schema
+
+
+### `compress_schema` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/json_schema.py#L645" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+compress_schema(schema: dict[str, Any], prune_params: list[str] | None = None, prune_additional_properties: bool = False, prune_titles: bool = False, dereference: bool = False) -> dict[str, Any]
+```
+
+
+压缩并优化 JSON schema 以兼容 MCP。
+
+**参数：**
+- `schema`: 要压缩的 schema
+- `prune_params`: 要从 properties 中移除的参数名称列表
+- `prune_additional_properties`: 是否移除 additionalProperties\: false。默认为 False，以维持 MCP 客户端兼容性，因为某些客户端（例如 Claude）需要 additionalProperties\: false 来进行严格验证。
+- `prune_titles`: 是否从 schema 中移除 title 字段
+- `dereference`: 是否通过内联定义来解引用 $ref。默认为 False；解引用通常改由 middleware 在服务时处理。

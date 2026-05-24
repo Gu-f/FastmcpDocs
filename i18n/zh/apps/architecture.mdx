@@ -1,0 +1,118 @@
+---
+title: 架构
+sidebarTitle: 架构
+description: 了解 FastMCP 应用在底层如何工作：从 Python 到像素。
+icon: sitemap
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.2.0" />
+
+构建应用并不需要先读完这一页。它适合在 UI 没有按预期渲染、UI 工具调用没有抵达服务端，或者你正在编写[自定义 HTML 应用](/zh/apps/low-level)并需要直接理解协议时参考。
+
+## 流水线
+
+一个 MCP 应用从 Python 到像素会经过五个阶段：
+
+```
+Python components  →  JSON tree  →  structuredContent  →  Renderer iframe  →  Host UI
+```
+
+你编写 Prefab 组件。FastMCP 会将它们序列化为 JSON 组件树，并通过工具结果里的 `structuredContent` 交付给宿主。宿主在沙盒 iframe 中加载 Prefab 渲染器，把 JSON 推送进去，然后渲染器绘制 UI。如果 UI 调用服务端工具，它会通过同一个 `postMessage` 通道回传通信。
+
+下面各节会逐步说明每个阶段。
+
+## 工具注册
+
+当你用 `app=True` 或 `@app.ui()` 标记工具时，FastMCP 会接好协议所需的元数据和渲染器资源。
+
+### `app=True` 标志
+
+`@mcp.tool` 上的 `app` 接受 `True`、`AppConfig` 或 dict。当你传入 `True` 时，FastMCP 会检查工具的返回类型是否为 Prefab 类型（`PrefabApp`、`Component`，或包含它们的联合类型）。如果符合条件，FastMCP 会把 `True` 展开为完整的 `AppConfig`，设置渲染器 URI、CSP 头和可见性，并将其存入工具的 `meta["ui"]` 字典。
+
+这个展开过程还会注册共享的 Prefab 渲染器资源（见下文）。工具和渲染器通过元数据中的 `resourceUri` 字段关联起来：工具声明“用 `ui://prefab/renderer.html` 渲染我”，宿主在显示结果时获取该资源。
+
+类型推断也以相同方式工作。如果返回类型是 Prefab 类型，而你没有显式设置 `app`，FastMCP 会像你写了 `app=True` 一样自动接好元数据。
+
+### FastMCPApp 注册
+
+`FastMCPApp` 使用同样的机制，但会额外做两件事。首先，它会给每个工具打上标签，包括 `@app.ui()` 入口点和 `@app.tool()` 后端工具，将 `meta["fastmcp"]["app"]` 设为应用名称。这个标签让服务端在路由 UI 调用时识别工具属于哪个应用。
+
+其次，它会设置 `meta["ui"]["visibility"]`，控制谁能看到每个工具。入口点默认是 `["model"]`（LLM 可见）。后端工具默认是 `["app"]`（仅 UI 可见）。宿主会用这个信息过滤工具列表。
+
+## 序列化
+
+当 Prefab 工具运行时，它的返回值（`PrefabApp` 或裸 `Component`）会变成渲染器可以解释的 JSON 数据块。
+
+### `PrefabApp.to_json()`
+
+入口点是 `PrefabApp.to_json()`。它会遍历组件树，并生成一个带有三个顶层键的 JSON 对象：`view`（组件树）、`state`（初始状态值）和 `_meta`（路由元数据）。
+
+FastMCP 会把 `tool_resolver` 回调传给 `to_json()`。每当树中包含引用函数（不是字符串）的 `CallTool` 动作时，解析器会将其转换为带有函数注册名称的 `ResolvedTool`。这就是 `CallTool(save_contact)` 在线路上传输时变成 `CallTool("save_contact")` 的方式。解析器也会处理 `unwrap_result`，这是一个标志，用来告诉渲染器从 FastMCP 为满足 schema 合规性而使用的 `{"result": value}` 包装中解开单值结果。
+
+### `_meta.fastmcp.app` 标签
+
+`to_json()` 生成树之后，如果工具属于某个 `FastMCPApp`，FastMCP 会注入带有应用名称的 `_meta.fastmcp.app`。这个标签会随 `structuredContent` 一路传到渲染器。
+
+当渲染器调用后端工具时，它会在 `CallTool` 请求中包含 `_meta.fastmcp.app`。服务端看到这个标签后，会通过一条特殊路径路由调用，绕过转换（见下文）。
+
+### ToolResult 组装
+
+最终的工具结果包含两部分：`content`（供 LLM 使用的 `TextContent` 块列表）和 `structuredContent`（供渲染器使用的 JSON 树）。默认情况下，Prefab 工具会把 `"[Rendered Prefab UI]"` 作为文本内容发送，这足以让 LLM 知道某些内容已经渲染。如果你显式返回 `ToolResult`，就可以同时控制这两部分。
+
+## 工具调用路由
+
+普通工具调用会经过 provider 链，在按名称解析之前应用转换（命名空间前缀、可见性过滤器）。应用 UI 调用需要走不同路径。
+
+### `get_app_tool` 绕行路径
+
+后端工具通常对模型隐藏（`visibility=["app"]`）。可见性转换会在普通解析中把它们过滤掉。命名空间转换还可能重命名它们，例如 `save_contact` 变成 `contacts_save_contact`，而渲染器仍然使用原始名称。
+
+`get_app_tool` 同时解决这两个问题。当服务端在传入的 `CallTool` 请求上看到 `_meta.fastmcp.app` 时，它会调用 `get_app_tool(app_name, tool_name)`，而不是普通的 `get_tool(name)`。这会直接遍历 provider 树并跳过转换。它会按原始注册名称找到工具，并验证其 `meta["fastmcp"]["app"]` 是否匹配预期应用。
+
+这就是服务端挂载在命名空间下时，`CallTool("save_contact")` 仍然能工作的原因。渲染器发送原始名称和应用身份；服务端使用 `get_app_tool` 查找它，转换不会挡在中间。
+
+授权仍然生效。`get_app_tool` 会绕过转换，但在执行前仍会根据工具的 `auth` 配置运行鉴权检查。
+
+### Provider 委托
+
+`get_app_tool` 定义在 `Provider` 基类上，并由聚合 provider 和包装 provider 覆写。聚合 provider 会并行向子 provider 分发查找。包装 provider（例如包装嵌套 `FastMCP` 服务端的 `FastMCPProvider`）会委托给内部服务端的 `get_app_tool`。无论组合层级有多深，都可以抵达后端工具。
+
+## 渲染器
+
+Prefab 渲染器是一个自包含的 JavaScript 应用，它解释 JSON 组件树并将其渲染为 React UI。
+
+### 共享资源
+
+FastMCP 会将渲染器注册为 `ui://prefab/renderer.html` 资源，MIME 类型为 `text/html;profile=mcp-app`。HTML 被打包在 `prefab-ui` Python 包中；`get_renderer_html()` 会将其作为字符串返回。同一个服务端上的所有 Prefab 工具共享这一个资源。
+
+该资源还携带 CSP 元数据（通过 `get_renderer_csp()`），声明渲染器需要的 CDN 域名。宿主使用它配置 iframe 的 Content Security Policy。
+
+### `postMessage` communication
+
+渲染器运行在沙盒 iframe 中，并使用 `postMessage` 与宿主通信。该协议遵循 [MCP Apps extension](https://modelcontextprotocol.io/docs/extensions/apps) 规范：
+
+宿主会把工具结果（带有 `structuredContent`）推送到 iframe 中。渲染器解析组件树、初始化状态并渲染 UI。当用户交互（提交表单、点击按钮）并触发 `CallTool` 动作时，渲染器会通过 `postMessage` 向宿主发送 `callServerTool` 消息。宿主再把它作为普通 MCP `tools/call` 请求转发给服务端，并包含用于路由的 `_meta.fastmcp.app`。
+
+响应会沿同一路径返回：服务端 → 宿主 → iframe（通过 `postMessage`），然后渲染器用结果更新状态。
+
+### AppBridge
+
+`@modelcontextprotocol/ext-apps` JavaScript SDK 提供了 `App` 类（有时称为 AppBridge）来管理 `postMessage` 握手。它处理连接协商、工具结果交付、服务端工具调用以及宿主上下文（安全区域边距、主题偏好）。Prefab 渲染器在内部使用它；只有在构建[自定义 HTML 应用](/zh/apps/low-level)时，你才需要直接接触它。
+
+## 开发服务端
+
+`fastmcp dev apps` 可以在本地模拟宿主侧行为，无需真正的 MCP 客户端。
+
+### 代理架构
+
+这里有两个 HTTP 服务端。你的 MCP 服务端通过 Streamable HTTP 传输运行在 8000 端口。开发 UI 运行在 8080 端口，并提供一个列出应用工具的选择页面。
+
+开发服务端上的 `/mcp` 反向代理会把请求转发到你的 MCP 服务端。这一点很重要，因为渲染器 iframe 运行在 `localhost:8080`，而你的 MCP 服务端运行在 `localhost:8000`。如果没有代理，渲染器的 `callServerTool` 请求会跨源，浏览器会阻止它们。代理让 iframe 视角下的一切都保持同源。
+
+### 启动流程
+
+当你选择工具并点击启动时，开发 UI 会通过代理调用该工具，接收 `structuredContent` 响应，并打开一个新标签页。该标签页会加载工具的渲染器资源（通过代理）、创建 AppBridge，并把工具结果推送给渲染器。从这里开始，它就与真实宿主提供的行为一致：渲染器显示 UI，任何 `CallTool` 动作都会通过代理路由回你的服务端。
+
+默认启用自动重载，因此服务端代码变更会自动重启 MCP 服务端。开发 UI 会持续运行；重新启动工具即可看到变更。

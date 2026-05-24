@@ -1,0 +1,138 @@
+---
+title: CIMD 认证
+sidebarTitle: CIMD
+description: 使用 Client ID Metadata Documents 提供可验证、基于域名的客户端身份。
+icon: id-badge
+tag: NEW
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="3.0.0" />
+
+<Tip>
+CIMD 认证只适用于基于 HTTP 的传输，并且要求服务端声明支持 CIMD。
+</Tip>
+
+使用标准 OAuth 时，客户端会在连接到每个服务端时动态注册，每次都会收到一个新的 `client_id`。这种方式可以工作，但服务端无法验证你的客户端实际*是谁*，因为任何客户端都可以在注册时声明任意名称。
+
+CIMD (Client ID Metadata Documents) 反转了这个流程。你在自己控制的 HTTPS URL 上托管一个小型 JSON 文档，该 URL 就会成为你的 `client_id`。当客户端连接到服务端时，服务端会获取你的元数据文档，并可通过你的域名所有权验证你的身份。用户在同意授权页面看到的是已验证的域名标识，而不是未经验证的客户端名称。
+
+## 客户端用法
+
+将你的 CIMD 文档 URL 传给 `OAuth` 的 `client_metadata_url` 参数：
+
+```python
+from fastmcp import Client
+from fastmcp.client.auth import OAuth
+
+async with Client(
+    "https://mcp-server.example.com/mcp",
+    auth=OAuth(
+        client_metadata_url="https://myapp.example.com/oauth/client.json",
+    ),
+) as client:
+    await client.ping()
+```
+
+当服务端支持 CIMD 时，客户端会使用你的元数据 URL 作为 `client_id`，而不是执行 Dynamic Client Registration。服务端会获取并验证该文档，然后继续标准 OAuth 授权流程。
+
+<Note>
+通过 `Client(auth=...)` 使用 `OAuth` 时不需要传入 `mcp_url`，传输会自动提供服务端 URL。
+</Note>
+
+## 创建 CIMD 文档
+
+CIMD 文档是描述客户端的 JSON 文件。最重要的字段是 `client_id`，它必须与托管该文档的 URL 完全一致。
+
+使用 FastMCP CLI 生成文档：
+
+```bash
+fastmcp auth cimd create \
+    --name "My Application" \
+    --redirect-uri "http://localhost:*/callback" \
+    --client-id "https://myapp.example.com/oauth/client.json"
+```
+
+这会生成：
+
+```json
+{
+  "client_id": "https://myapp.example.com/oauth/client.json",
+  "client_name": "My Application",
+  "redirect_uris": ["http://localhost:*/callback"],
+  "token_endpoint_auth_method": "none",
+  "grant_types": ["authorization_code"],
+  "response_types": ["code"]
+}
+```
+
+如果省略 `--client-id`，CLI 会生成一个占位值，并提醒你在托管前更新它。
+
+### CLI 选项
+
+`create` 命令接受以下标志：
+
+| 标志 | 描述 |
+|------|-------------|
+| `--name` | 人类可读的客户端名称（必需） |
+| `--redirect-uri`, `-r` | 允许的重定向 URI，可以多次指定（必需） |
+| `--client-id` | 你将托管此文档的 URL（直接设置 `client_id`） |
+| `--output`, `-o` | 写入文件，而不是输出到 stdout |
+| `--scope` | 客户端可请求的 scope 列表，以空格分隔 |
+| `--client-uri` | 客户端主页的 URL |
+| `--logo-uri` | 客户端 logo 图片的 URL |
+| `--no-pretty` | 输出紧凑 JSON |
+
+### 重定向 URI
+
+`redirect_uris` 字段支持 localhost 的通配端口匹配。模式 `http://localhost:*/callback` 会匹配任意端口，这对绑定到随机可用端口的开发客户端很有用（FastMCP 的 `OAuth` 辅助类默认就是这样做的）。
+
+## 托管要求
+
+CIMD 文档必须托管在公开可访问、带有非根路径的 HTTPS URL 上：
+
+- **必须使用 HTTPS**：出于安全原因，HTTP URL 会被拒绝
+- **非根路径**：URL 必须包含路径组件（例如 `/oauth/client.json`，而不是只有 `/`）
+- **公开可访问**：服务端必须能够通过互联网获取该文档
+- **匹配的 `client_id`**：文档中的 `client_id` 字段必须与托管 URL 完全一致
+
+常见托管选项包括 GitHub Pages、Cloudflare Pages、Vercel 或 S3 等静态文件托管服务，只要能通过 HTTPS 提供 JSON 文件即可。
+
+## 验证文档
+
+部署前，验证你托管的文档能通过校验：
+
+```bash
+fastmcp auth cimd validate https://myapp.example.com/oauth/client.json
+```
+
+验证器会获取该文档并检查：
+- URL 有效（HTTPS、非根路径）
+- 文档是格式正确且符合 CIMD schema 的 JSON
+- 文档中的 `client_id` 与获取该文档的 URL 匹配
+
+## 工作原理
+
+当客户端连接到启用了 CIMD 的服务端时，流程如下：
+
+<Steps>
+<Step title="客户端提交元数据 URL">
+客户端在 OAuth 授权请求中将其 `client_metadata_url` 作为 `client_id` 发送。
+</Step>
+<Step title="服务端识别 CIMD URL">
+服务端发现 `client_id` 是带路径的 HTTPS URL，这是 CIMD 客户端的特征，于是跳过 Dynamic Client Registration。
+</Step>
+<Step title="服务端获取并验证">
+服务端从该 URL 获取 JSON 文档，验证 `client_id` 与 URL 匹配，并提取客户端元数据（名称、重定向 URI、scope）。
+</Step>
+<Step title="继续授权流程">
+标准 OAuth 流程继续：打开浏览器请求用户同意、交换授权码、签发令牌。同意授权页面会显示你已验证的域名。
+</Step>
+</Steps>
+
+服务端会根据 HTTP 缓存头缓存你的 CIMD 文档，因此后续请求不需要重新获取。
+
+## 服务端配置
+
+CIMD 是 MCP 服务端必须支持的服务端功能。FastMCP 的 OAuth 代理提供方（GitHub、Google、Auth0 等）默认支持 CIMD。服务端配置请参见 [OAuth 代理 CIMD 文档](/zh/servers/auth/oauth-proxy#安全)，其中包括 private key JWT 认证和安全细节。

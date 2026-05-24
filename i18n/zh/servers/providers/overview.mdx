@@ -1,0 +1,81 @@
+---
+title: Providers
+sidebarTitle: 概览
+description: FastMCP 如何获取工具、资源和提示词
+icon: layer-group
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+每个 FastMCP 服务端都有一个或多个组件 provider。provider 是工具、资源和提示词的来源，它让组件可以提供给客户端使用。
+
+## 什么是 Provider？
+
+当客户端连接到你的服务端并询问“你有哪些工具？”时，FastMCP 会向每个 provider 询问这个问题，并合并结果。当客户端调用某个具体工具时，FastMCP 会找到拥有该工具的 provider，并把调用委托给它。
+
+你其实已经在使用 providers 了。当你编写 `@mcp.tool` 时，就是在向服务端的 `LocalProvider` 添加工具；这是默认 provider，用于存储你直接在代码中定义的组件。对于简单服务端，你只是无需考虑它。
+
+当组件来自多个来源时，providers 就会变得重要：比如要包含的另一个 FastMCP 服务端、要代理的远程 MCP 服务端，或动态定义工具的数据库。每个来源都有自己的 provider，FastMCP 会无缝查询它们。
+
+## 为什么需要 Providers？
+
+provider 抽象解决了一个常见问题：随着服务端增长，你需要跨多个来源组织组件，同时避免把所有东西缠在一起。
+
+**组合**：把大型服务端拆成聚焦的模块。“weather” 服务端和 “calendar” 服务端可以各自独立开发，然后挂载到主服务端中。每个被挂载的服务端都会成为一个 `FastMCPProvider`。
+
+**代理**：通过本地服务端暴露远程 MCP 服务端。你可能是在桥接传输（远程 HTTP 到本地 stdio），也可能是在聚合多个后端。远程连接会成为 `ProxyProvider` 实例。
+
+**动态来源**：从数据库加载工具、从 OpenAPI 规范生成工具，或基于用户权限创建工具。自定义 providers 可以让组件来自任何地方。
+
+## 内置 Providers
+
+FastMCP 为常见模式提供了 providers：
+
+| Provider | 作用 | 使用方式 |
+|----------|--------------|----------------|
+| `LocalProvider` | 存储你在代码中定义的组件 | `@mcp.tool`, `mcp.add_tool()` |
+| `FastMCPProvider` | 包装另一个 FastMCP 服务端 | `mcp.mount(server)` |
+| `ProxyProvider` | 连接到远程 MCP 服务端 | `create_proxy(client)` |
+
+大多数用户只会（通过装饰器）与 `LocalProvider` 交互，并偶尔挂载或代理其他服务端。provider 抽象会一直保持不可见，直到你需要它。
+
+## Transforms
+
+[Transforms](/zh/servers/transforms/transforms) 会在组件从 providers 流向客户端时修改组件。每个 transform 都位于一条链中，拦截查询并在继续传递前修改结果。
+
+| Transform | 目的 |
+|-----------|---------|
+| `Namespace` | 为名称添加前缀以避免冲突 |
+| `ToolTransform` | 修改工具 schema（重命名、描述、参数） |
+
+最常见的用法是为挂载的服务端添加命名空间，以避免名称冲突。当你调用 `mount(server, namespace="api")` 时，FastMCP 会自动创建一个 `Namespace` transform。
+
+transforms 可以添加到单个 provider（只影响该来源），也可以添加到服务端本身（影响所有组件）。完整说明请参阅 [Transforms](/zh/servers/transforms/transforms)。
+
+## Provider 顺序
+
+当客户端请求工具时，FastMCP 会按注册顺序查询 providers。第一个拥有该工具的 provider 会处理请求。
+
+`LocalProvider` 始终排在第一位，因此你通过装饰器定义的工具具有优先级。其他 providers 会按你添加它们的顺序查询。这意味着如果两个 providers 拥有同名工具，第一个会胜出。
+
+## 什么时候需要关注 Providers
+
+如果你只是用装饰器构建简单服务端，**可以完全忽略 providers**。只需使用 `@mcp.tool`、`@mcp.resource` 和 `@mcp.prompt`，其余部分由 FastMCP 处理。
+
+当你想要做以下事情时，**就该了解 providers**：
+- 将[另一个服务端挂载](/zh/servers/composition)到你的服务端中
+- 通过你的服务端[代理远程服务端](/zh/servers/providers/proxy)
+- [控制组件可见性状态](/zh/servers/visibility)
+- [构建动态来源](/zh/servers/providers/custom)，例如数据库驱动的工具
+
+## 下一步
+
+- [Local](/zh/servers/providers/local) - 装饰器如何工作
+- [挂载](/zh/servers/composition) - 将服务端组合在一起
+- [代理](/zh/servers/providers/proxy) - 连接到远程服务端
+- [Transforms](/zh/servers/transforms/transforms) - 为组件添加命名空间、重命名和修改组件
+- [可见性](/zh/servers/visibility) - 控制客户端可以访问哪些组件
+- [自定义](/zh/servers/providers/custom) - 构建你自己的 providers

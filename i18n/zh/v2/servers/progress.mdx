@@ -1,0 +1,51 @@
+---
+title: 进度报告
+sidebarTitle: 进度
+description: 通过 MCP 上下文向客户端更新长时间运行操作的进度。
+icon: chart-line
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+进度报告允许 MCP 工具向客户端通知长时间运行操作的进度。客户端可以显示进度指示器，并在耗时任务期间提供更好的用户体验。
+
+## 基本用法
+
+使用 `ctx.report_progress()` 向客户端发送进度更新。此方法接受一个 `progress` 值，表示已完成的工作量；还可以接受一个可选的 `total`，表示完整工作范围。
+
+```python
+from fastmcp import FastMCP, Context
+import asyncio
+
+mcp = FastMCP("ProgressDemo")
+
+@mcp.tool
+async def process_items(items: list[str], ctx: Context) -> dict:
+    """处理一组条目并报告进度。"""
+    total = len(items)
+    results = []
+
+    for i, item in enumerate(items):
+        await ctx.report_progress(progress=i, total=total)
+        await asyncio.sleep(0.1)
+        results.append(item.upper())
+
+    await ctx.report_progress(progress=total, total=total)
+    return {"processed": len(results), "results": results}
+```
+
+## 进度模式
+
+| 模式 | 描述 | 示例 |
+|---------|-------------|---------|
+| 百分比 | 以 0-100 的百分比表示进度 | `progress=75, total=100` |
+| 绝对值 | 已知总数中的已完成条目数 | `progress=3, total=10` |
+| 不确定 | 没有已知终点的进度 | `progress=files_found`（无 total） |
+
+对于多阶段操作，可以将每个阶段映射到总进度范围的一部分。一个四阶段操作可以将 0-25% 分配给验证，25-60% 分配给导出，60-80% 分配给转换，80-100% 分配给导入。
+
+## 客户端要求
+
+进度报告要求客户端支持进度处理。客户端必须在初始请求中发送 `progressToken`，才能接收进度更新。如果未提供进度 token，进度调用不会产生效果（也不会报错）。
+
+关于实现客户端侧进度处理的详情，请参阅[客户端进度](/zh/v2/clients/progress)。

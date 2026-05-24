@@ -1,0 +1,144 @@
+---
+title: 客户端命令
+sidebarTitle: 客户端
+description: 列出工具、调用工具并发现已配置的服务端
+icon: satellite-dish
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+CLI 可以充当 MCP 客户端：连接到任意服务端（本地或远程），列出其暴露内容，并直接调用其工具。这对开发、调试、脚本编写，以及让具备 shell 能力的 LLM agent 访问 MCP 服务端都很有用。
+
+## 列出工具
+
+`fastmcp list` 会连接到服务端，并将其工具打印为函数签名，让你一眼看到参数名称、类型和描述：
+
+```bash
+fastmcp list http://localhost:8000/mcp
+fastmcp list server.py
+fastmcp list weather  # 基于名称的解析
+```
+
+当你需要工具输入或输出的完整 JSON Schema 来理解嵌套对象、枚举约束或复杂类型时，请使用 `--input-schema` 或 `--output-schema`：
+
+```bash
+fastmcp list server.py --input-schema
+```
+
+### 资源和提示词
+
+默认只显示工具。添加 `--resources` 或 `--prompts` 可包含资源或提示词：
+
+```bash
+fastmcp list server.py --resources --prompts
+```
+
+### 机器可读输出
+
+`--json` 标志会切换为结构化 JSON，并包含完整 schema。当你要把工具定义提供给 LLM 或构建自动化时，应使用这种格式：
+
+```bash
+fastmcp list server.py --json
+```
+
+### 选项
+
+| 选项 | 标志 | 描述 |
+| ------ | ---- | ----------- |
+| 命令 | `--command` | 通过 stdio 连接（例如 `'npx -y @mcp/server'`） |
+| 传输 | `--transport`, `-t` | 为 URL 目标强制使用 `http` 或 `sse` |
+| 资源 | `--resources` | 在输出中包含资源 |
+| 提示词 | `--prompts` | 在输出中包含提示词 |
+| 输入 Schema | `--input-schema` | 显示完整输入 schema |
+| 输出 Schema | `--output-schema` | 显示完整输出 schema |
+| JSON | `--json` | 结构化 JSON 输出 |
+| 超时 | `--timeout` | 连接超时时间，单位为秒 |
+| 认证 | `--auth` | `oauth`（HTTP 默认值）、bearer token 或 `none` |
+
+## 调用工具
+
+`fastmcp call` 会调用服务端上的单个工具。以 `key=value` 对传入参数；CLI 会获取工具 schema，并自动将字符串值转换为正确类型：
+
+```bash
+fastmcp call server.py greet name=World
+fastmcp call http://localhost:8000/mcp search query=hello limit=5
+```
+
+类型转换由 schema 驱动：当 schema 期望整数时，`"5"` 会变成整数 `5`。布尔值接受 `true`/`false`、`yes`/`no` 和 `1`/`0`。数组和对象会按 JSON 解析。
+
+### 复杂参数
+
+对于带有嵌套或结构化参数的工具，`key=value` 语法会显得笨拙。此时可以改为传入单个 JSON 对象：
+
+```bash
+fastmcp call server.py create_item '{"name": "Widget", "tags": ["sale"], "metadata": {"color": "blue"}}'
+```
+
+也可以使用 `--input-json` 提供基础字典，然后用 `key=value` 对覆盖个别键：
+
+```bash
+fastmcp call server.py search --input-json '{"query": "hello", "limit": 5}' limit=10
+```
+
+### 错误处理
+
+如果你拼错工具名称，CLI 会通过模糊匹配建议修正。缺少必填参数时，会输出清晰消息，并附上工具签名作为提醒。工具执行错误会以非零退出码打印，使 CLI 在脚本中使用起来很直接。
+
+### 结构化输出
+
+`--json` 会输出原始结果，包括内容块、错误状态和结构化内容：
+
+```bash
+fastmcp call server.py get_weather city=London --json
+```
+
+### 交互式用户征询
+
+有些工具会在执行期间通过 MCP 的用户征询机制请求额外输入。发生这种情况时，CLI 会在终端中提示你，显示每个字段的名称、类型以及是否必填。你可以输入 `decline` 跳过某个问题，或输入 `cancel` 完全中止调用。
+
+### 选项
+
+| 选项 | 标志 | 描述 |
+| ------ | ---- | ----------- |
+| 命令 | `--command` | 通过 stdio 连接 |
+| 传输 | `--transport`, `-t` | 强制使用 `http` 或 `sse` |
+| 输入 JSON | `--input-json` | 以 JSON 提供基础参数（与 `key=value` 合并） |
+| JSON | `--json` | 原始 JSON 输出 |
+| 超时 | `--timeout` | 连接超时时间，单位为秒 |
+| 认证 | `--auth` | `oauth`、bearer token 或 `none` |
+
+## 发现已配置的服务端
+
+`fastmcp discover` 会扫描你的机器，查找编辑器和工具中配置的 MCP 服务端。它会检查：
+
+- **Claude Desktop** — `claude_desktop_config.json`
+- **Claude Code** — `~/.claude.json`
+- **Cursor**：`.cursor/mcp.json`（从当前目录向上查找）
+- **Gemini CLI** — `~/.gemini/settings.json`
+- **Goose** — `~/.config/goose/config.yaml`
+- **Project**：当前目录中的 `./mcp.json`
+
+```bash
+fastmcp discover
+```
+
+输出会按来源对服务端分组，显示每个服务端的名称和传输方式。你可以按来源过滤，也可以获取机器可读输出：
+
+```bash
+fastmcp discover --source claude-code
+fastmcp discover --source cursor --source gemini --json
+```
+
+这里出现的任何服务端都可以在 `list`、`call` 和其他命令中按名称使用。因此，你可以从“我在 Claude Code 中有一个服务端”直接过渡到查询它，而无需复制 URL 或路径。
+
+## LLM Agent Integration
+
+对于能够执行 shell 命令但没有原生 MCP 支持的 LLM agent，CLI 提供了一座清晰的桥梁。Agent 可以调用 `fastmcp list --json` 发现带完整 schema 的可用工具，然后调用 `fastmcp call --json` 并获得结构化结果。
+
+由于 CLI 会在内部处理连接管理、传输选择和类型转换，agent 不需要理解 MCP 协议细节，只需读取 JSON 并构造 shell 命令。
+
+## 远程 Stdio 桥接
+
+对于期望本地 stdio 命令但需要连接远程 HTTP 服务端的 MCP 宿主，请使用 [`fastmcp-remote`](/zh/clients/fastmcp-remote)。它为宿主配置提供一个小型独立桥接器，而 `fastmcp list` 和 `fastmcp call` 则继续专注于从终端直接检查和调用。

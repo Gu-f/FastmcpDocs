@@ -1,0 +1,107 @@
+---
+title: Gemini SDK 🤝 FastMCP
+sidebarTitle: Gemini SDK
+description: 将 FastMCP 服务端连接到 Google Gemini SDK
+icon: message-code
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+Google 的 Gemini API 在其 Python 和 JavaScript SDK 中内置了对 MCP 服务端的支持，让你可以直接连接到 MCP 服务端，并与 Gemini 模型无缝使用其工具。
+
+## Gemini Python SDK
+
+Google 的 [Gemini Python SDK](https://ai.google.dev/gemini-api/docs) 可以直接使用 FastMCP 客户端。
+
+<Note>
+Google 的 MCP 集成目前处于实验阶段，可在 Python 和 JavaScript SDK 中使用。该 API 会在需要时自动调用 MCP 工具，并且可以连接本地和远程 MCP 服务端。
+</Note>
+
+<Tip>
+目前，Gemini 的 MCP 支持只能访问 MCP 服务端中的**工具**：它会查询 `list_tools` 端点，并将这些函数暴露给 AI。资源和提示词等其他 MCP 功能目前尚不支持。
+</Tip>
+
+### 创建服务端
+
+首先，创建一个包含你想暴露工具的 FastMCP 服务端。在本示例中，我们会创建一个只有单个掷骰子工具的服务端。
+
+```python server.py
+import random
+from fastmcp import FastMCP
+
+mcp = FastMCP(name="Dice Roller")
+
+@mcp.tool
+def roll_dice(n_dice: int) -> list[int]:
+    """掷 `n_dice` 个 6 面骰子并返回结果。"""
+    return [random.randint(1, 6) for _ in range(n_dice)]
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+### 调用服务端
+
+
+要将 Gemini API 与 MCP 一起使用，你需要安装 Google Generative AI SDK：
+
+```bash
+pip install google-genai
+```
+
+你还需要向 Google 进行身份认证。可以通过设置 `GEMINI_API_KEY` 环境变量来完成。更多信息请参阅 Gemini SDK 文档。
+
+```bash
+export GEMINI_API_KEY="your-api-key"
+```
+
+Gemini SDK 会直接与 MCP 客户端会话交互。要调用服务端，你需要实例化 FastMCP 客户端，进入其连接上下文，并将客户端会话传给 Gemini SDK。
+
+```python {5, 9, 15}
+from fastmcp import Client
+from google import genai
+import asyncio
+
+mcp_client = Client("server.py")
+gemini_client = genai.Client()
+
+async def main():    
+    async with mcp_client:
+        response = await gemini_client.aio.models.generate_content(
+            model="gemini-2.0-flash",
+            contents="Roll 3 dice!",
+            config=genai.types.GenerateContentConfig(
+                temperature=0,
+                tools=[mcp_client.session],  # 传入 FastMCP 客户端会话
+            ),
+        )
+        print(response.text)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+运行这段代码后，你会看到类似输出：
+
+```text
+好的，我掷了 3 个骰子，得到了 5、4 和 1。
+```
+
+### 远程和已认证服务端
+
+在上面的示例中，我们使用 `stdio` 传输连接到了本地服务端。因为使用的是 FastMCP 客户端，所以只需更改客户端配置，你也可以使用 FastMCP 支持的任何[传输](/zh/v2/clients/transports)或[认证](/zh/v2/clients/auth)方法，连接到任意本地或远程 MCP 服务端。
+
+例如，要连接到远程且需要认证的服务端，可以使用以下客户端：
+
+```python
+from fastmcp import Client
+from fastmcp.client.auth import BearerAuth
+
+mcp_client = Client(
+    "https://my-server.com/mcp/",
+    auth=BearerAuth("<your-token>"),
+)
+```
+
+其余代码保持不变。
+

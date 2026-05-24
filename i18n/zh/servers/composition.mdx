@@ -4,7 +4,7 @@ sidebarTitle: 组合
 description: 使用挂载和导入将多个 FastMCP 服务器组合成一个更大的应用程序。
 icon: puzzle-piece
 ---
-import { VersionBadge } from '/snippets/version-badge.mdx'
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
 
 <VersionBadge version="2.2.0" />
 
@@ -209,13 +209,13 @@ if __name__ == "__main__":
 
 #### 性能考虑
 
-由于"实时链接"的特性，父服务器上的操作（如 `list_tools()`）会受到最慢挂载服务器的速度影响。特别是，基于 HTTP 的挂载服务器可能会引入显著的延迟（300-400ms 对比本地工具的 1-2ms），这种延迟会影响整个服务器，而不仅仅是与 HTTP 代理工具的交互。如果性能很重要，通过 [`import_server()`](#importing-static-composition) 导入工具可能是更合适的解决方案，因为它在启动时复制组件一次，而不是在运行时委托请求。
+由于"实时链接"的特性，父服务器上的操作（如 `list_tools()`）会受到最慢挂载服务器的速度影响。特别是，基于 HTTP 的挂载服务器可能会引入显著的延迟（300-400ms 对比本地工具的 1-2ms），这种延迟会影响整个服务器，而不仅仅是与 HTTP 代理工具的交互。如果性能很重要，通过 [`import_server()`](#导入静态组合) 导入工具可能是更合适的解决方案，因为它在启动时复制组件一次，而不是在运行时委托请求。
 
 #### 无前缀挂载
 
 <VersionBadge version="2.9.0" />
 
-您还可以在不指定前缀的情况下挂载服务器，这使得组件可以在不使用前缀的情况下访问。这与[无前缀导入](#importing-without-prefixes)完全相同，包括[冲突解决](#conflict-resolution)。
+您还可以在不指定前缀的情况下挂载服务器，这使得组件可以在不使用前缀的情况下访问。这与[无前缀导入](#无前缀导入)完全相同，包括[冲突解决](#冲突解决)。
 
 
 

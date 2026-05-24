@@ -1,0 +1,161 @@
+---
+title: Local Provider
+sidebarTitle: Local
+description: 通过装饰器注册组件时使用的默认 provider
+icon: house
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+`LocalProvider` 存储你直接在服务端上定义的组件。使用 `@mcp.tool`、`@mcp.resource` 或 `@mcp.prompt` 时，你就是在向服务端的 `LocalProvider` 添加组件。
+
+## 工作原理
+
+每个 FastMCP 服务端都以 `LocalProvider` 作为第一个 provider。通过装饰器或直接方法注册的组件会存储在这里：
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP("MyServer")
+
+# 这些会存储在服务端的 `LocalProvider` 中
+@mcp.tool
+def greet(name: str) -> str:
+    """按名称问候某人。"""
+    return f"Hello, {name}!"
+
+@mcp.resource("data://config")
+def get_config() -> str:
+    """返回配置数据。"""
+    return '{"version": "1.0"}'
+
+@mcp.prompt
+def analyze(topic: str) -> str:
+    """创建分析提示词。"""
+    return f"Please analyze: {topic}"
+```
+
+客户端请求组件时，总是先查询 `LocalProvider`，这可以确保你直接定义的组件优先于来自已挂载或已代理服务端的组件。
+
+## 组件注册
+
+### 使用装饰器
+
+注册组件最常见的方式：
+
+```python
+@mcp.tool
+def my_tool(x: int) -> str:
+    return str(x)
+
+@mcp.resource("data://info")
+def my_resource() -> str:
+    return "info"
+
+@mcp.prompt
+def my_prompt(topic: str) -> str:
+    return f"Discuss: {topic}"
+```
+
+### 使用直接方法
+
+你也可以添加预先构建好的组件对象：
+
+```python
+from fastmcp.tools import Tool
+
+# 创建工具对象
+my_tool = Tool.from_function(some_function, name="custom_tool")
+
+# 将其添加到服务端
+mcp.add_tool(my_tool)
+mcp.add_resource(my_resource)
+mcp.add_prompt(my_prompt)
+```
+
+### 移除组件
+
+按名称或 URI 移除组件：
+
+```python
+mcp.local_provider.remove_tool("my_tool")
+mcp.local_provider.remove_resource("data://info")
+mcp.local_provider.remove_prompt("my_prompt")
+```
+
+## 重复项处理
+
+尝试添加已存在组件时，具体行为取决于 `on_duplicate` 设置：
+
+| 模式 | 行为 |
+|------|----------|
+| `"error"`（默认） | 抛出 `ValueError` |
+| `"warn"` | 记录警告并替换 |
+| `"replace"` | 静默替换 |
+| `"ignore"` | 保留现有组件 |
+
+创建服务端时配置此项：
+
+```python
+mcp = FastMCP("MyServer", on_duplicate="warn")
+```
+
+## 组件可见性
+
+<VersionBadge version="3.0.0" />
+
+组件可以在运行时动态启用或禁用。被禁用的组件不会出现在列表中，也不能被调用。
+
+```python
+@mcp.tool(tags={"admin"})
+def delete_all() -> str:
+    """删除所有内容。"""
+    return "Deleted"
+
+@mcp.tool
+def get_status() -> str:
+    """获取系统状态。"""
+    return "OK"
+
+# 禁用 admin 工具
+mcp.disable(tags={"admin"})
+
+# 或者只启用特定工具
+mcp.enable(keys={"tool:get_status"}, only=True)
+```
+
+关于 keys、tags、allowlist 模式和 provider 级控制的完整文档，请参阅[可见性](/zh/servers/visibility)。
+
+## 独立 LocalProvider
+
+你可以独立创建 LocalProvider，并将其附加到多个服务端：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.providers import LocalProvider
+
+# 创建可复用 provider
+shared_tools = LocalProvider()
+
+@shared_tools.tool
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+
+@shared_tools.resource("data://version")
+def get_version() -> str:
+    return "1.0.0"
+
+# 附加到多个服务端
+server1 = FastMCP("Server1", providers=[shared_tools])
+server2 = FastMCP("Server2", providers=[shared_tools])
+```
+
+这适用于：
+- 跨服务端共享组件
+- 隔离测试组件
+- 构建可复用组件库
+
+独立 provider 也支持使用 `enable()` 和 `disable()` 进行可见性控制。详情请参阅[可见性](/zh/servers/visibility)。

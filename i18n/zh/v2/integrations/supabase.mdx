@@ -1,0 +1,123 @@
+---
+title: Supabase 🤝 FastMCP
+sidebarTitle: Supabase
+description: 使用 Supabase Auth 保护你的 FastMCP 服务端
+icon: shield-check
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.13.0" />
+
+本指南展示如何使用 **Supabase Auth** 保护你的 FastMCP 服务端。该集成使用 [**Remote OAuth**](/zh/v2/servers/auth/remote-oauth) 模式，由 Supabase 处理用户身份认证，而你的 FastMCP 服务端负责验证令牌。
+
+<Warning>
+Supabase Auth 目前不支持 [RFC 8707](https://www.rfc-editor.org/rfc/rfc8707.html) 资源指示符，因此 FastMCP 无法验证令牌是否是为特定资源服务端签发的。
+</Warning>
+
+## 同意界面要求
+
+Supabase 的 OAuth Server 会将用户同意界面委托给你的应用。当 MCP 客户端发起授权时，Supabase 会对用户进行身份认证，然后重定向到你应用中配置的回调 URL（例如 `https://your-app.com/oauth/callback?authorization_id=...`）。你的应用必须托管一个页面，调用 Supabase 的 `approveAuthorization()` 或 `denyAuthorization()` API 来完成流程。
+
+`SupabaseProvider` 负责资源服务端侧的工作（令牌验证和元数据），但你需要单独构建并托管同意界面。有关实现授权页面的详细信息，请参阅 [Supabase 的 OAuth Server 文档](https://supabase.com/docs/guides/auth/oauth-server/getting-started)。
+
+## 配置
+
+### 前置条件
+
+开始之前，你需要：
+1. 一个带有项目的 **[Supabase 账号](https://supabase.com/)**，或一个自托管的 **Supabase Auth** 实例
+2. 在 Supabase Dashboard 中启用 **OAuth Server**（Authentication → OAuth Server）
+3. 在同一设置中启用 **Dynamic Client Registration**
+4. 在你配置的授权路径上托管一个**同意界面**（见上文）
+5. 你的 FastMCP 服务端 URL（开发时可以是 localhost，例如 `http://localhost:8000`）
+
+### 第 1 步：启用 Supabase OAuth Server
+
+在 Supabase Dashboard 中：
+1. 前往 **Authentication → OAuth Server**
+2. 启用 **OAuth Server**
+3. 将 **Site URL** 设置为托管同意界面的位置
+4. 设置 **Authorization Path**（例如 `/oauth/callback`）
+5. 启用 **Allow Dynamic OAuth Apps**，用于 MCP 客户端注册
+
+### 第 2 步：获取 Supabase Project URL
+
+在 Supabase Dashboard 中：
+1. 前往 **Project Settings**
+2. 复制你的 **Project URL**（例如 `https://abc123.supabase.co`）
+
+### 第 3 步：FastMCP 配置
+
+使用 `SupabaseProvider` 创建 FastMCP 服务端：
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.supabase import SupabaseProvider
+
+auth = SupabaseProvider(
+    project_url="https://abc123.supabase.co",
+    base_url="http://localhost:8000",
+)
+
+mcp = FastMCP("Supabase Protected Server", auth=auth)
+
+@mcp.tool
+def protected_tool(message: str) -> str:
+    """此工具需要身份认证。"""
+    return f"Authenticated user says: {message}"
+
+if __name__ == "__main__":
+    mcp.run(transport="http", port=8000)
+```
+
+## 测试
+
+### 运行服务端
+
+使用 HTTP 传输启动 FastMCP 服务端，以启用 OAuth 流程：
+
+```bash
+fastmcp run server.py --transport http --port 8000
+```
+
+### 使用客户端测试
+
+创建一个测试客户端，对受 Supabase 保护的服务端进行身份认证：
+
+```python client.py
+from fastmcp import Client
+import asyncio
+
+async def main():
+    async with Client("http://localhost:8000/mcp", auth="oauth") as client:
+        print("Authenticated with Supabase!")
+
+        result = await client.call_tool("protected_tool", {"message": "Hello!"})
+        print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+首次运行客户端时：
+1. 浏览器会打开 Supabase 的授权端点
+2. 完成身份认证后，Supabase 会重定向到你的同意界面
+3. 你批准后，客户端会收到令牌，并可以发起已认证的请求
+
+## 生产配置
+
+对于生产部署，请从环境变量加载配置：
+
+```python server.py
+import os
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.supabase import SupabaseProvider
+
+auth = SupabaseProvider(
+    project_url=os.environ["SUPABASE_PROJECT_URL"],
+    base_url=os.environ.get("BASE_URL", "https://your-server.com"),
+)
+
+mcp = FastMCP(name="Supabase Secured App", auth=auth)
+```

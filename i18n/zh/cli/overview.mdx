@@ -1,0 +1,104 @@
+---
+title: CLI
+sidebarTitle: 概览
+description: fastmcp 命令行接口
+icon: terminal
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+`fastmcp` CLI 会随 FastMCP 自动安装。它是在终端中运行、测试、安装 MCP 服务端并与之交互的主要方式。
+
+```bash
+fastmcp --help
+```
+
+## 命令速览
+
+| 命令 | 作用 |
+| ------- | ------------ |
+| [`run`](/zh/cli/running) | 运行服务端（本地文件、工厂函数、远程 URL 或配置文件） |
+| [`dev apps`](/zh/cli/running#预览应用) | 为 Prefab App 工具启动基于浏览器的预览 UI |
+| [`dev inspector`](/zh/cli/running#使用-inspector-开发) | 在 MCP Inspector 中启动服务端，用于交互式测试 |
+| [`install`](/zh/cli/install-mcp) | 将服务端安装到 Claude Code、Claude Desktop、Cursor、Gemini CLI 或 Goose |
+| [`inspect`](/zh/cli/inspecting) | 以摘要或 JSON 报告形式打印服务端的工具、资源和提示词 |
+| [`list`](/zh/cli/client) | 列出服务端的工具（也可选择列出资源和提示词） |
+| [`call`](/zh/cli/client#调用工具) | 带参数调用单个工具 |
+| [`discover`](/zh/cli/client#发现已配置的服务端) | 查找编辑器和工具中配置的 MCP 服务端 |
+| [`generate-cli`](/zh/cli/generate-cli) | 根据服务端的工具 schema 搭建独立的类型化 CLI |
+| [`project prepare`](/zh/cli/running#预构建环境) | 将依赖预安装到可复用的 uv 项目中 |
+| [`auth cimd`](/zh/cli/auth) | 为 OAuth 创建并验证 CIMD 文档 |
+| `version` | 打印版本信息（使用 `--copy` 复制到剪贴板） |
+
+## 服务端目标
+
+大多数命令都需要知道要与*哪个服务端*通信。你将“服务端 spec”作为第一个参数传入，FastMCP 会自动解析合适的传输方式。
+
+**URL** 会连接到正在运行的 HTTP 服务端：
+
+```bash
+fastmcp list http://localhost:8000/mcp
+fastmcp call http://localhost:8000/mcp get_forecast city=London
+```
+
+**Python 文件**会被直接加载，无需 `mcp.run()` 样板代码。FastMCP 会在文件中查找名为 `mcp`、`server` 或 `app` 的服务端实例，你也可以显式指定：
+
+```bash
+fastmcp list server.py
+fastmcp run server.py:my_custom_server
+```
+
+**配置文件**也可以使用，包括 FastMCP 自己的 `fastmcp.json` 格式，以及带 `mcpServers` 键的标准 MCP 配置文件：
+
+```bash
+fastmcp run fastmcp.json
+fastmcp list mcp-config.json
+```
+
+**Stdio 命令**可以连接到任何通过标准 I/O 通信的 MCP 服务端。请使用 `--command`，而不是位置参数：
+
+```bash
+fastmcp list --command 'npx -y @modelcontextprotocol/server-github'
+```
+
+### 基于名称的解析
+
+如果你的服务端已经配置在编辑器或工具中，可以按名称引用它们。FastMCP 会扫描 Claude Desktop、Claude Code、Cursor、Gemini CLI 和 Goose 的配置：
+
+```bash
+fastmcp list weather
+fastmcp call weather get_forecast city=London
+```
+
+当同一个名称出现在多个配置中时，请使用 `source:name` 形式明确指定来源：
+
+```bash
+fastmcp list claude-code:my-server
+fastmcp call cursor:weather get_forecast city=London
+```
+
+运行 [`fastmcp discover`](/zh/cli/client#发现已配置的服务端) 查看你机器上有哪些可用服务端。
+
+## 认证
+
+当目标是 HTTP URL 时，CLI 默认启用 OAuth 认证。如果服务端要求认证，你会被引导完成流程（通常会打开浏览器）。如果服务端不需要认证，该设置会静默跳过。
+
+要完全跳过认证（这对本地开发服务端很有用），请传入 `--auth none`：
+
+```bash
+fastmcp call http://localhost:8000/mcp my_tool --auth none
+```
+
+你也可以直接传入 bearer token：
+
+```bash
+fastmcp list http://localhost:8000/mcp --auth "Bearer sk-..."
+```
+
+## 覆盖传输方式
+
+对于 URL 目标，FastMCP 默认使用 Streamable HTTP。如果服务端只支持 Server-Sent Events（SSE），请强制使用较旧的传输：
+
+```bash
+fastmcp list http://localhost:8000 --transport sse
+```

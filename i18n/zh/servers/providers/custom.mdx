@@ -1,0 +1,245 @@
+---
+title: 自定义提供方
+sidebarTitle: 自定义
+description: 构建可从任意数据源提供组件的提供方
+icon: code
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+自定义提供方允许你从任何地方提供组件：数据库、API、配置系统，或动态运行时逻辑。只要你能写 Python 代码来获取或生成组件，就可以把它包装进提供方。
+
+## 何时构建自定义提供方
+
+内置提供方覆盖常见场景：装饰器（`LocalProvider`）、组合（`FastMCPProvider`）和代理（`ProxyProvider`）。当组件来自其他地方时，可以构建自定义提供方：
+
+- **数据库驱动的工具**：管理员用户在数据库中定义工具，你的服务端动态暴露它们
+- **API 驱动的资源**：资源按需从外部服务获取内容
+- **配置驱动的组件**：启动时从 YAML/JSON 配置文件加载组件
+- **多租户系统**：不同用户基于权限看到不同工具
+- **插件系统**：第三方代码在运行时注册组件
+
+## 提供方与中间件
+
+提供方和[中间件](/zh/servers/middleware)都可以影响客户端看到的组件，但它们工作在不同层级。
+
+**提供方**是提供组件来源的对象。它们让你更容易理解工具、资源和提示词来自哪里：数据库、另一个服务端，或某个 API。
+
+**中间件**拦截单个请求。它更适合日志、限流或认证这类与请求相关的决策。
+
+你*可以*用中间件根据请求上下文动态添加工具。但更清晰的做法通常是：由提供方提供所有可能的工具，再用中间件或[可见性控制](/zh/servers/visibility)过滤每个请求能看到什么。这种分离能让组件来源以及它们与其他服务端机制的交互更容易推理。
+
+## 提供方接口
+
+提供方实现受保护的 `_list_*` 方法，用于返回可用组件。公开的 `list_*` 方法会自动处理转换；你要覆盖的是以下划线开头的版本：
+
+```python
+from collections.abc import Sequence
+from fastmcp.server.providers import Provider
+from fastmcp.tools import Tool
+from fastmcp.resources import Resource
+from fastmcp.prompts import Prompt
+
+class MyProvider(Provider):
+    async def _list_tools(self) -> Sequence[Tool]:
+        """返回此提供方提供的所有工具。"""
+        return []
+
+    async def _list_resources(self) -> Sequence[Resource]:
+        """返回此提供方提供的所有资源。"""
+        return []
+
+    async def _list_prompts(self) -> Sequence[Prompt]:
+        """返回此提供方提供的所有提示词。"""
+        return []
+```
+
+你只需要实现自己提供的组件类型对应的方法。基类默认返回空序列。
+
+`_get_*` 方法（`_get_tool`、`_get_resource`、`_get_prompt`）有默认实现，会在列表结果中搜索。只有当你能比遍历完整列表更高效地获取单个组件时，才需要覆盖它们。
+
+## 提供方返回什么
+
+提供方返回的是可直接使用的组件对象。当客户端调用工具时，FastMCP 会调用工具函数；你的提供方不会参与执行。这意味着你返回的 `Tool`、`Resource` 或 `Prompt` 必须真的可以工作。
+
+创建组件最简单的方式是从函数创建：
+
+```python
+from fastmcp.tools import Tool
+
+def add(a: int, b: int) -> int:
+    """将两个数字相加。"""
+    return a + b
+
+tool = Tool.from_function(add)
+```
+
+函数的类型提示会成为输入 schema，docstring 会成为描述。你也可以覆盖这些内容：
+
+```python
+tool = Tool.from_function(
+    add,
+    name="calculator_add",
+    description="Add two integers together"
+)
+```
+
+`Resource` 和 `Prompt` 也有类似的 `from_function` 方法。
+
+## 注册提供方
+
+创建服务端时添加提供方：
+
+```python
+mcp = FastMCP(
+    "MyServer",
+    providers=[
+        DatabaseProvider(db_url),
+        ConfigProvider(config_path),
+    ]
+)
+```
+
+也可以在创建之后添加：
+
+```python
+mcp = FastMCP("MyServer")
+mcp.add_provider(DatabaseProvider(db_url))
+```
+
+## 简单提供方
+
+下面是一个最小提供方示例，它从字典中提供工具：
+
+```python
+from collections.abc import Callable, Sequence
+from fastmcp import FastMCP
+from fastmcp.server.providers import Provider
+from fastmcp.tools import Tool
+
+class DictProvider(Provider):
+    def __init__(self, tools: dict[str, Callable]):
+        super().__init__()
+        self._tools = [
+            Tool.from_function(fn, name=name)
+            for name, fn in tools.items()
+        ]
+
+    async def _list_tools(self) -> Sequence[Tool]:
+        return self._tools
+```
+
+这样使用它：
+
+```python
+def add(a: int, b: int) -> int:
+    """将两个数字相加。"""
+    return a + b
+
+def multiply(a: int, b: int) -> int:
+    """将两个数字相乘。"""
+    return a * b
+
+mcp = FastMCP("Calculator", providers=[
+    DictProvider({"add": add, "multiply": multiply})
+])
+```
+
+## 生命周期管理
+
+提供方通常需要在服务端启动时建立连接，并在停止时清理连接。可以覆盖 `lifespan` 方法：
+
+```python
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator, Sequence
+
+class DatabaseProvider(Provider):
+    def __init__(self, db_url: str):
+        super().__init__()
+        self.db_url = db_url
+        self.db = None
+
+    @asynccontextmanager
+    async def lifespan(self) -> AsyncIterator[None]:
+        self.db = await connect_database(self.db_url)
+        try:
+            yield
+        finally:
+            await self.db.close()
+
+    async def _list_tools(self) -> Sequence[Tool]:
+        rows = await self.db.fetch("SELECT * FROM tools")
+        return [self._make_tool(row) for row in rows]
+```
+
+FastMCP 会在服务端启动和关闭期间调用提供方的 `lifespan`。服务端运行时，你的方法可以使用该连接。
+
+## 完整示例：API 驱动的资源
+
+下面是一个完整的提供方，它从外部 REST API 获取资源：
+
+```python
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator, Sequence
+from fastmcp.server.providers import Provider
+from fastmcp.resources import Resource
+import httpx
+
+class ApiResourceProvider(Provider):
+    """提供由外部 API 支持的资源。"""
+
+    def __init__(self, base_url: str, api_key: str):
+        super().__init__()
+        self.base_url = base_url
+        self.api_key = api_key
+        self.client = None
+
+    @asynccontextmanager
+    async def lifespan(self) -> AsyncIterator[None]:
+        self.client = httpx.AsyncClient(
+            base_url=self.base_url,
+            headers={"Authorization": f"Bearer {self.api_key}"}
+        )
+        try:
+            yield
+        finally:
+            await self.client.aclose()
+
+    async def _list_resources(self) -> Sequence[Resource]:
+        response = await self.client.get("/resources")
+        response.raise_for_status()
+        return [
+            self._make_resource(item)
+            for item in response.json()["items"]
+        ]
+
+    def _make_resource(self, data: dict) -> Resource:
+        resource_id = data["id"]
+
+        async def read_content() -> str:
+            response = await self.client.get(
+                f"/resources/{resource_id}/content"
+            )
+            return response.text
+
+        return Resource.from_function(
+            read_content,
+            uri=f"api://resources/{resource_id}",
+            name=data["name"],
+            description=data.get("description", ""),
+            mime_type=data.get("mime_type", "text/plain")
+        )
+```
+
+像注册其他提供方一样注册它：
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP("API Resources", providers=[
+    ApiResourceProvider("https://api.example.com", "my-api-key")
+])
+```

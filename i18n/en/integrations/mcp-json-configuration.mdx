@@ -5,7 +5,7 @@ description: Generate standard MCP configuration files for any compatible client
 icon: brackets-curly
 ---
 
-import { VersionBadge } from "/snippets/version-badge.mdx"
+import { VersionBadge } from "/en/snippets/version-badge.mdx"
 
 <VersionBadge version="2.10.3" />
 
@@ -84,7 +84,7 @@ This format is widely adopted across the MCP ecosystem:
 The `fastmcp install mcp-json` command generates configuration in the standard `mcpServers` format used across the MCP ecosystem. This is useful when:
 
 - **Working with unsupported clients** - Any MCP client not directly integrated with FastMCP
-- **CI/CD environments** - Automated configuration generation for deployments
+- **CI/CD environments** - Automated configuration generation for deployments  
 - **Configuration sharing** - Easy distribution of server setups to team members
 - **Custom tooling** - Integration with your own MCP management tools
 - **Manual setup** - When you prefer to manually configure your MCP client
@@ -106,7 +106,7 @@ This outputs the server configuration JSON with the server name as the root key:
     "args": [
       "run",
       "--with",
-      "fastmcp",
+      "fastmcp", 
       "fastmcp",
       "run",
       "/absolute/path/to/server.py"
@@ -125,7 +125,7 @@ To use this in a client configuration file, add it to the `mcpServers` object in
       "args": [
         "run",
         "--with",
-        "fastmcp",
+        "fastmcp", 
         "fastmcp",
         "run",
         "/absolute/path/to/server.py"
@@ -163,7 +163,7 @@ Add Python packages your server needs:
 # Single package
 fastmcp install mcp-json server.py --with pandas
 
-# Multiple packages
+# Multiple packages  
 fastmcp install mcp-json server.py --with pandas --with requests --with httpx
 
 # Editable local package
@@ -259,7 +259,7 @@ Output:
       "run",
       "--with",
       "fastmcp",
-      "fastmcp",
+      "fastmcp", 
       "run",
       "/home/user/dice_server.py"
     ]
@@ -299,11 +299,11 @@ Output:
       "--with",
       "fastmcp",
       "--with",
-      "python-dotenv",
+      "python-dotenv", 
       "--with",
       "requests",
       "fastmcp",
-      "run",
+      "run", 
       "/home/user/api_server.py"
     ],
     "env": {
@@ -356,6 +356,98 @@ CONFIG=$(fastmcp install mcp-json server.py --name "CI Server")
 echo "$CONFIG" | jq '."CI Server".command'
 # Output: "uv"
 ```
+
+### UV-Managed Project Dependencies
+
+For servers that live inside a uv-managed project (with `pyproject.toml`), use the `--project` flag to run within that project's environment:
+
+```bash
+fastmcp install mcp-json server.py --project .
+```
+
+Output:
+```json
+{
+  "My Server": {
+    "command": "uv",
+    "args": [
+      "run",
+      "--project",
+      "/absolute/path/to/project",
+      "--with",
+      "fastmcp",
+      "fastmcp",
+      "run",
+      "/absolute/path/to/project/server.py"
+    ]
+  }
+}
+```
+
+You can also use `fastmcp.json` with a local project:
+
+```json fastmcp.json
+{
+  "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
+  "source": {
+    "path": "server.py"
+  },
+  "environment": {
+    "project": "."
+  }
+}
+```
+
+If your server needs additional packages beyond those in `pyproject.toml`, add them via the `dependencies` array or `--with`.
+
+### Published Packages with `uvx`
+
+If your team publishes MCP servers as pip packages, you can configure clients to run them with `uvx` directly instead of `uv run`. For example, if your package is called `my-mcp-server` and provides a CLI entry point of the same name:
+
+```json
+{
+  "mcpServers": {
+    "My Server": {
+      "command": "uvx",
+      "args": ["my-mcp-server"]
+    }
+  }
+}
+```
+
+If the package name differs from the CLI command (e.g., package `weather-mcp` with command `weather-server`):
+
+```json
+{
+  "mcpServers": {
+    "Weather": {
+      "command": "uvx",
+      "args": ["--from", "weather-mcp", "weather-server"]
+    }
+  }
+}
+```
+
+You can also pin Python versions or add extra dependencies:
+
+```json
+{
+  "mcpServers": {
+    "My Server": {
+      "command": "uvx",
+      "args": [
+        "--python", "3.12",
+        "--with", "requests",
+        "my-mcp-server"
+      ]
+    }
+  }
+}
+```
+
+<Note>
+`fastmcp install mcp-json` generates `uv run` configurations for local development. For published packages, you'll typically write the `uvx` configuration manually or generate it through your own packaging workflow.
+</Note>
 
 ## Integration with MCP Clients
 

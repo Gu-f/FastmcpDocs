@@ -1,0 +1,121 @@
+---
+title: file_upload
+sidebarTitle: file_upload
+---
+
+# `fastmcp.apps.file_upload`
+
+
+FileUpload 是一个 Provider，可为任意服务端添加拖放式文件上传。
+
+它允许用户通过交互式 UI 将文件直接上传到服务端，完全绕过 LLM 上下文窗口。随后，LLM 可以通过模型可见工具读取和处理已上传文件。
+
+需要 ``fastmcp[apps]``（prefab-ui）。
+
+Usage::
+
+    from fastmcp import FastMCP
+    from fastmcp.apps import FileUpload
+
+    mcp = FastMCP("My Server")
+    mcp.add_provider(FileUpload())
+
+如需自定义持久化，请覆盖存储方法::
+
+    class S3Upload(FileUpload):
+        def on_store(self, files, ctx):
+            # 写入 S3，返回摘要
+            ...
+
+        def on_list(self, ctx):
+            # 从 S3 列出
+            ...
+
+        def on_read(self, name, ctx):
+            # 从 S3 读取
+            ...
+
+
+## Classes
+
+### `FileUpload` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/file_upload.py#L102" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+为服务端添加文件上传能力的 Provider。
+
+注册一个拖放式 UI 工具、一个后端存储工具，以及用于列出和读取已上传文件的模型可见工具。
+
+默认情况下，文件按 MCP 会话限定作用域，并存储在内存中。覆盖 ``on_store``、``on_list`` 和 ``on_read`` 可实现自定义持久化（文件系统、S3、数据库等）。每个方法都会接收当前 ``Context``，从而可访问会话 ID、认证 token 和请求元数据，用于分区和授权。
+
+**会话作用域：** 默认存储使用 ``ctx.session_id`` 按会话隔离文件。它适用于 stdio、SSE 和有状态 HTTP 传输。在**无状态 HTTP** 模式下，每个请求都会创建新会话，因此文件不会跨请求保留。对于无状态部署，请覆盖存储方法，并基于认证上下文中的稳定标识符进行分区::
+
+    class UserScopedUpload(FileUpload):
+        def on_store(self, files, ctx):
+            user_id = ctx.access_token["sub"]
+            ...
+
+Example::
+
+    from fastmcp import FastMCP
+    from fastmcp.apps.file_upload import FileUpload
+
+    mcp = FastMCP("My Server")
+    mcp.add_provider(FileUpload())
+
+
+**Methods:**
+
+#### `on_store` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/file_upload.py#L183" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+on_store(self, files: list[dict[str, Any]], ctx: Context) -> list[dict[str, Any]]
+```
+
+存储已上传文件并返回摘要。
+
+**参数：**
+- `files`：文件字典列表，每个字典包含 ``name``、``size``、``type`` 和 ``data``（base64 编码内容）。
+- `ctx`：当前请求上下文。可用于会话 ID、认证 token，或分区所需的任何元数据。
+
+覆盖此方法可实现自定义持久化。默认实现会将文件存储在内存中，并由 ``_get_scope_key(ctx)`` 限定作用域。
+
+**返回：**
+- 文件摘要字典列表（``name``、``type``、``size``、``size_display``、``uploaded_at``）。
+
+
+#### `on_list` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/file_upload.py#L216" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+on_list(self, ctx: Context) -> list[dict[str, Any]]
+```
+
+列出所有已存储文件。
+
+**参数：**
+- `ctx`：当前请求上下文。
+
+覆盖此方法可实现自定义持久化。默认实现会返回当前作用域中的文件。
+
+**返回：**
+- 文件摘要字典列表。
+
+
+#### `on_read` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/file_upload.py#L232" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+on_read(self, name: str, ctx: Context) -> dict[str, Any]
+```
+
+按名称读取文件内容。
+
+**参数：**
+- `name`：要读取的文件名。
+- `ctx`：当前请求上下文。
+
+覆盖此方法可实现自定义持久化。默认实现会从当前作用域的内存存储中读取。文本文件会从 base64 解码；二进制文件会返回截断后的 base64 预览。
+
+**返回：**
+- 包含文件元数据和 ``content``（文本）或 ``content_base64``（二进制预览）的字典。
+
+**抛出：**
+- `ValueError`：如果未找到文件。

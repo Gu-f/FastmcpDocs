@@ -5,117 +5,140 @@ sidebarTitle: components
 
 # `fastmcp.utilities.components`
 
-## 类
+## Functions
 
-### `FastMCPMeta` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L16" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `get_fastmcp_metadata` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L26" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
-### `FastMCPComponent` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L29" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+```python
+get_fastmcp_metadata(meta: dict[str, Any] | None) -> FastMCPMeta
+```
 
 
-FastMCP 工具、提示、资源和资源模板的基类。
+从组件的 meta 字典中提取 FastMCP 元数据。
+
+同时处理当前的 `fastmcp` 命名空间和旧版 `_fastmcp` 命名空间，以兼容较旧的 FastMCP 服务端。
 
 
-**方法：**
+## Classes
 
-#### `key` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L66" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `FastMCPMeta` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L20" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+### `FastMCPComponent` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L74" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+FastMCP 工具、提示词、资源和资源模板的基类。
+
+
+**Methods:**
+
+#### `make_key` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L125" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+make_key(cls, identifier: str) -> str
+```
+
+为此组件类型构造查找 key。
+
+**参数：**
+- `identifier`：原始标识符（工具/提示词为名称，资源为 uri）
+
+**返回：**
+- 带前缀的 key，例如 "tool:name" 或 "resource:uri"
+
+
+#### `key` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L139" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 key(self) -> str
 ```
 
-组件的键。这用于内部簿记，
-可能反映例如前缀或其他标识符。您不应该依赖于
-键具有特定值，因为从不同服务器层次结构加载的相同工具
-可能具有不同的键。
+此组件的全局唯一查找 key。
+
+格式："{key_prefix}:{identifier}@{version}" 或 "{key_prefix}:{identifier}@"，例如 "tool:my_tool@v2"、"tool:my_tool@"、"resource:file://x.txt@"
+
+@ 后缀始终存在，以便对 key 进行无歧义解析（URI 可能包含 @ 字符，因此始终包含该分隔符）。
+
+子类应覆盖此项以使用其特定标识符。基础实现使用 name。
+
+对于任何跨组件身份工作（去重、分组、冲突检测、查找表），应优先使用 `.key`，而不是临时拼接 `name or uri or uri_template` 逻辑。它会编码类型、标识符和版本，因此同一组件的不同变体不会错误冲突，跨类型标识符（例如工具和资源都名为 "foo"）也不会冲突。
 
 
-#### `get_meta` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L75" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-get_meta(self, include_fastmcp_meta: bool | None = None) -> dict[str, Any] | None
-```
-
-获取有关组件的元信息。
-
-如果 include_fastmcp_meta 为 True，将在元信息中添加一个 `_fastmcp` 键，
-包含一个带有组件标签的 `tags` 字段。
-
-
-#### `model_copy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L99" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `get_meta` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L161" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-model_copy(self) -> Self
+get_meta(self) -> dict[str, Any]
 ```
 
-创建组件的副本。
+获取组件的 meta 信息。
 
-**参数：**
-- `update`: 要更新的字段字典。
-- `deep`: 是否深度复制组件。
-- `key`: 用于副本的键。
+返回的字典始终包含 `fastmcp` key，其中包含：
+- `tags`：排序后的组件标签列表
+- `version`：组件版本（仅在设置时包含）
+
+内部 key（以 `_` 为前缀）会从 fastmcp 命名空间中移除。
 
 
-#### `enable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L132" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `enable` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L209" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 enable(self) -> None
 ```
 
-启用组件。
+已在 3.0 中移除。请改用 server.enable(keys=[...])。
 
 
-#### `disable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L136" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-disable(self) -> None
-```
-
-禁用组件。
-
-
-#### `copy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L140" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-copy(self) -> Self
-```
-
-创建组件的副本。
-
-
-### `MirroredComponent` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L145" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-
-从远程服务器镜像的组件的基类。
-
-镜像组件不能直接启用或禁用。请先调用 copy() 
-创建一个可修改的本地版本。
-
-
-**方法：**
-
-#### `enable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L158" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-enable(self) -> None
-```
-
-启用组件。
-
-
-#### `disable` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L167" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `disable` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L216" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 disable(self) -> None
 ```
 
-禁用组件。
+已在 3.0 中移除。请改用 server.disable(keys=[...])。
 
 
-#### `copy` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/components.py#L176" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `copy` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L223" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 copy(self) -> Self
 ```
 
-创建可以修改的组件副本。
+创建组件副本。
 
+
+#### `register_with_docket` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L227" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+register_with_docket(self, docket: Docket) -> None
+```
+
+将此组件注册到 docket，以便后台执行。
+
+如果 task_config.mode 为 "forbidden"，则不执行任何操作。子类会覆盖此方法，以注册其可调用对象（self.run、self.read、self.render 或 self.fn）。
+
+
+#### `add_to_docket` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L235" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+add_to_docket(self, docket: Docket, *args: Any, **kwargs: Any) -> Execution
+```
+
+通过 docket 调度此组件进行后台执行。
+
+子类会覆盖此方法以处理各自的调用约定：
+- Tool: add_to_docket(docket, arguments: dict, **kwargs)
+- Resource: add_to_docket(docket, **kwargs)
+- ResourceTemplate: add_to_docket(docket, params: dict, **kwargs)
+- Prompt: add_to_docket(docket, arguments: dict | None, **kwargs)
+
+**kwargs 会透传给 docket.add()（例如 key=task_key）。
+
+
+#### `get_span_attributes` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/components.py#L257" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_span_attributes(self) -> dict[str, Any]
+```
+
+返回用于遥测的 span 属性。
+
+子类应调用 super()，并合并其特定属性。

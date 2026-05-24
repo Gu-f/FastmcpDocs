@@ -1,0 +1,124 @@
+---
+title: 用户征询
+sidebarTitle: 用户征询
+description: 使用结构化 schema 处理服务端发起的用户输入请求。
+icon: message-question
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx";
+
+<VersionBadge version="2.10.0" />
+
+## 什么是用户征询？
+
+用户征询允许 MCP 服务端在工具执行期间向用户请求结构化输入。服务端无需预先要求所有输入，而是可以按需交互式地向用户询问信息，例如提示缺失参数、请求澄清或收集额外上下文。
+
+例如，文件管理工具可能会询问“我应该创建哪个目录？”，数据分析工具可能会请求“我要分析哪个日期范围？”
+
+## FastMCP 如何简化用户征询
+
+FastMCP 客户端提供了一个实用的抽象层，可以：
+
+- **将 JSON schema 转换为 Python 类型**：原始 MCP 协议使用 JSON schema，但 FastMCP 会自动将其转换为 Python dataclass
+- **提供结构化构造器**：无需手动构建匹配 schema 的字典，你会得到可确保结构正确的 dataclass 构造器
+- **处理类型转换**：FastMCP 会负责 JSON 表示与 Python 对象之间的转换
+- **运行时内省**：你可以检查生成的 dataclass 字段，了解预期结构
+
+实现用户征询处理器时，FastMCP 会提供一个与服务端 schema 匹配的 dataclass 类型，让你无需手动解析 JSON schema，也能轻松创建结构正确的响应。
+
+## 用户征询处理器
+
+创建客户端时提供 `elicitation_handler` 函数。FastMCP 会自动将服务端的 JSON schema 转换为 Python dataclass 类型，让构造响应变得简单：
+
+```python
+from fastmcp import Client
+from fastmcp.client.elicitation import ElicitResult
+
+async def elicitation_handler(message: str, response_type: type, params, context):
+    # 向用户展示消息并收集输入
+    user_input = input(f"{message}: ")
+    
+    # 使用提供的 dataclass 类型创建响应
+    # FastMCP 已经为你将 JSON schema 转换成此 Python 类型
+    response_data = response_type(value=user_input)
+    
+    # 你可以直接返回数据，FastMCP 会隐式接受该用户征询
+    return response_data
+    
+    # 或者显式返回 ElicitResult 以获得更多控制
+    # return ElicitResult(action="accept", content=response_data)
+
+client = Client(
+    "my_mcp_server.py",
+    elicitation_handler=elicitation_handler,
+)
+```
+
+### 处理器参数
+
+用户征询处理器接收四个参数：
+
+<Card icon="code" title="用户征询处理器参数">
+<ResponseField name="message" type="str">
+  要展示给用户的提示词消息
+</ResponseField>
+
+<ResponseField name="response_type" type="type">
+  FastMCP 根据服务端 JSON schema 创建的 Python dataclass 类型。使用它可以构造带正确类型和 IDE 支持的响应。如果服务端请求空对象（表示无响应），这里会是 `None`。
+</ResponseField>
+
+<ResponseField name="params" type="ElicitRequestParams">
+  原始 MCP 用户征询请求参数；如有需要，其中包含 `params.requestedSchema` 中的原始 JSON schema
+</ResponseField>
+
+<ResponseField name="context" type="RequestContext">
+  包含该用户征询请求相关元数据的请求上下文
+</ResponseField>
+</Card>
+
+### 响应动作
+
+处理器可以直接返回数据（这会隐式接受该用户征询），也可以返回 `ElicitResult` 对象，以便更精细地控制响应动作：
+
+<Card icon="code" title="ElicitResult 结构">
+<ResponseField name="action" type="Literal['accept', 'decline', 'cancel']">
+  用户如何响应用户征询请求
+</ResponseField>
+
+<ResponseField name="content" type="dataclass instance | dict | None">
+  用户输入数据（`"accept"` 时必需，`"decline"`/`"cancel"` 时省略）
+</ResponseField>
+</Card>
+
+**动作类型：**
+- **`accept`**：用户提供了有效输入，在 `content` 字段中包含其数据
+- **`decline`**：用户选择不提供请求的信息，省略 `content`  
+- **`cancel`**：用户取消了整个操作，省略 `content`
+
+## 基础示例
+
+```python
+from fastmcp import Client
+from fastmcp.client.elicitation import ElicitResult
+
+async def basic_elicitation_handler(message: str, response_type: type, params, context):
+    print(f"Server asks: {message}")
+    
+    # 用于演示的简单文本输入
+    user_response = input("Your response: ")
+    
+    if not user_response:
+        # 对于非接受动作，显式使用 ElicitResult
+        return ElicitResult(action="decline")
+    
+    # 使用 response_type dataclass 创建结构正确的响应
+    # FastMCP 会处理 JSON schema 到 Python 类型的转换
+    # 直接返回数据，FastMCP 会隐式接受该用户征询
+    return response_type(value=user_response)
+
+client = Client(
+    "my_mcp_server.py", 
+    elicitation_handler=basic_elicitation_handler
+)
+```
+

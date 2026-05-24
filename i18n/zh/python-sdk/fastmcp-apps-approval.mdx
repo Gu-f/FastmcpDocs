@@ -1,0 +1,51 @@
+---
+title: approval
+sidebarTitle: approval
+---
+
+# `fastmcp.apps.approval`
+
+
+Approval：一个为任意服务端添加人在回路审批的 Provider。
+
+LLM 会展示它即将执行内容的摘要，用户通过按钮批准或拒绝。结果会作为消息发送回对话中，提示 LLM 进入下一轮。
+
+需要 ``fastmcp[apps]``（prefab-ui）。
+
+用法::
+
+    from fastmcp import FastMCP
+    from fastmcp.apps.approval import Approval
+
+    mcp = FastMCP("My Server")
+    mcp.add_provider(Approval())
+
+
+## 类
+
+### `Approval` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/approval.py#L49" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+一个为服务端添加人在回路审批的 Provider。
+
+LLM 调用 ``request_approval`` 工具，并传入摘要和可选详情。用户会看到一张审批卡片，其中包含批准和拒绝按钮。点击任一按钮都会通过 ``SendMessage`` 向对话发送消息，从而触发 LLM 的下一轮。
+
+这条消息看起来像是用户发送的，因此 LLM 会看到类似 ``'"Deploy v3.2 to production" is APPROVED'`` 的内容。
+
+示例::
+
+    from fastmcp import FastMCP
+    from fastmcp.apps.approval import Approval
+
+    mcp = FastMCP("My Server")
+    mcp.add_provider(Approval())
+
+自定义::
+
+    Approval(
+        title="Deploy Gate",
+        approve_text="Ship it",
+        approve_variant="default",
+        reject_text="Abort",
+        reject_variant="destructive",
+    )

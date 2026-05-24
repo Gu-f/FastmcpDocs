@@ -1,0 +1,858 @@
+---
+title: 工具
+sidebarTitle: 工具
+description: 将函数作为可执行功能暴露给您的 MCP 客户端。
+icon: wrench
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+工具是核心构建块，允许您的 LLM 与外部系统交互、执行代码并访问不在其训练数据中的数据。在 FastMCP 中，工具是通过 MCP 协议暴露给 LLM 的 Python 函数。
+
+FastMCP 中的工具将常规 Python 函数转换为 LLM 在对话期间可以调用的功能。当 LLM 决定使用工具时：
+
+1.  它发送一个基于工具架构的带参数的请求。
+2.  FastMCP 根据您函数的签名验证这些参数。
+3.  您的函数使用验证的输入执行。
+4.  结果返回给 LLM，LLM 可以在其响应中使用它。
+
+这允许 LLM 执行查询数据库、调用 API、进行计算或访问文件等任务——将其功能扩展到训练数据之外。
+
+
+## `@tool` 装饰器
+
+创建工具就像用 `@mcp.tool` 装饰 Python 函数一样简单：
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP(name="CalculatorServer")
+
+@mcp.tool
+def add(a: int, b: int) -> int:
+    """将两个整数相加。"""
+    return a + b
+```
+
+当此工具注册时，FastMCP 自动：
+- 使用函数名称（`add`）作为工具名称。
+- 使用函数的文档字符串（`将两个整数相加...`）作为工具描述。
+- 基于函数的参数和类型注解生成输入架构。
+- 处理参数验证和错误报告。
+
+您定义 Python 函数的方式决定了工具如何为 LLM 客户端进行展示和执行行为。
+
+<Tip>
+不支持带有 `*args` 或 `**kwargs` 的函数作为工具。存在此限制是因为 FastMCP 需要为 MCP 协议生成完整的参数架构，这对于可变参数列表是不可能的。
+</Tip>
+
+### 装饰器参数
+
+虽然 FastMCP 从您的函数中推断名称和描述，但您可以使用 `@mcp.tool` 装饰器的参数来覆盖这些并添加额外的元数据：
+
+```python
+@mcp.tool(
+    name="find_products",           # LLM 的自定义工具名称
+    description="搜索产品目录，带有可选的分类过滤。", # 自定义描述
+    tags={"catalog", "search"},      # 用于组织/过滤的可选标签
+    meta={"version": "1.2", "author": "product-team"}  # 自定义元数据
+)
+def search_products_implementation(query: str, category: str | None = None) -> list[dict]:
+    """内部函数描述（如果上面提供了描述则忽略）。"""
+    # 实现...
+    print(f"Searching for '{query}' in category '{category}'")
+    return [{"id": 2, "name": "Another Product"}]
+```
+
+<Card icon="code" title="@tool 装饰器参数">
+<ParamField body="name" type="str | None">
+  设置通过 MCP 暴露的显式工具名称。如果未提供，则使用函数名称
+</ParamField>
+
+<ParamField body="description" type="str | None">
+  提供通过 MCP 暴露的描述。如果设置，函数的文档字符串将被忽略
+</ParamField>
+
+<ParamField body="tags" type="set[str] | None">
+  用于对工具进行分类的字符串集合。服务器和在某些情况下客户端可以使用这些来过滤或分组可用工具。
+</ParamField>
+
+<ParamField body="enabled" type="bool" default="True">
+  启用或禁用工具的布尔值。更多信息请参阅[禁用工具](#禁用工具)
+</ParamField>
+
+<ParamField body="icons" type="list[Icon] | None">
+  <VersionBadge version="2.14.0" />
+
+  此工具的可选图标表示列表。详细示例请参阅[图标](/zh/v2/servers/icons)
+</ParamField>
+
+<ParamField body="exclude_args" type="list[str] | None">
+  要从显示给 LLM 的工具架构中排除的参数名称列表。更多信息请参阅[排除参数](#排除参数)
+</ParamField>
+
+<ParamField body="annotations" type="ToolAnnotations | dict | None">
+    可选的 `ToolAnnotations` 对象或字典，用于添加关于工具的额外元数据。
+  <Expandable title="ToolAnnotations 属性">
+    <ParamField body="title" type="str | None">
+      工具的人类可读标题。
+    </ParamField>
+    <ParamField body="readOnlyHint" type="bool | None">
+      如果为 true，工具不会修改其环境。
+    </ParamField>
+    <ParamField body="destructiveHint" type="bool | None">
+      如果为 true，工具可能对其环境执行破坏性更新。
+    </ParamField>
+    <ParamField body="idempotentHint" type="bool | None">
+      如果为 true，使用相同参数重复调用工具不会对其环境产生额外影响。
+    </ParamField>
+    <ParamField body="openWorldHint" type="bool | None">
+      如果为 true，此工具可能与外部实体的"开放世界"交互。如果为 false，工具的交互域是封闭的。
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="meta" type="dict[str, Any] | None">
+  <VersionBadge version="2.11.0" />
+
+  关于工具的可选元信息。此数据作为客户端工具对象的 `_meta` 字段传递给 MCP 客户端，可用于自定义元数据、版本控制或其他应用程序特定目的。
+</ParamField>
+</Card>
+
+
+### 异步支持
+
+FastMCP 是一个异步优先的框架，无缝支持异步（`async def`）和同步（`def`）函数作为工具。对于 I/O 绑定操作，首选异步工具以保持服务器响应。
+
+虽然同步工具在 FastMCP 中无缝工作，但它们在执行期间可能会阻塞事件循环。对于 CPU 密集型或可能阻塞的同步操作，请考虑替代策略。一种方法是使用 `anyio`（FastMCP 内部已经使用）将它们包装为异步函数，例如：
+
+```python {1, 13}
+import anyio
+from fastmcp import FastMCP
+
+mcp = FastMCP()
+
+def cpu_intensive_task(data: str) -> str:
+    # 可能阻塞事件循环的一些繁重计算
+    return processed_data
+
+@mcp.tool
+async def wrapped_cpu_task(data: str) -> str:
+    """包装以防止阻塞的 CPU 密集型任务。"""
+    return await anyio.to_thread.run_sync(cpu_intensive_task, data)
+```
+
+替代方法包括使用 `asyncio.get_event_loop().run_in_executor()` 或其他线程技术来管理阻塞操作而不影响服务器响应性。例如，这里是使用 `asyncer` 库（FastMCP 中不包含）创建包装同步函数的装饰器的配方，由 [@hsheth2](https://github.com/jlowin/fastmcp/issues/864#issuecomment-3103678258) 提供：
+
+<CodeGroup>
+```python 装饰器配方
+import asyncer
+import functools
+from typing import Callable, ParamSpec, TypeVar, Awaitable
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+def make_async_background(fn: Callable[_P, _R]) -> Callable[_P, Awaitable[_R]]:
+    @functools.wraps(fn)
+    async def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+        return await asyncer.asyncify(fn)(*args, **kwargs)
+
+    return wrapper
+```
+
+```python 使用装饰器 {6}
+from fastmcp import FastMCP
+
+mcp = FastMCP()
+
+@mcp.tool()
+@make_async_background
+def my_tool() -> None:
+    time.sleep(5)
+```
+</CodeGroup>
+
+## 参数
+
+默认情况下，FastMCP 通过检查函数的签名和类型注解将 Python 函数转换为 MCP 工具。这允许您为工具使用标准的 Python 类型注解。总的来说，框架努力做到"开箱即用"：符合语言习惯的 Python 行为如参数默认值和类型注解会自动转换为 MCP 架构。但是，有很多方法可以自定义工具的行为。
+
+### 类型注解
+
+MCP 工具有类型化参数，FastMCP 使用类型注解来确定这些类型。因此，您应该为工具参数使用标准的 Python 类型注解：
+
+```python
+@mcp.tool
+def analyze_text(
+    text: str,
+    max_tokens: int = 100,
+    language: str | None = None
+) -> dict:
+    """分析提供的文本。"""
+    # 实现...
+```
+
+FastMCP 支持广泛的类型注解，包括所有 Pydantic 类型：
+
+| 类型注解                 | 示例                          | 描述                               |
+| :---------------------- | :---------------------------- | :---------------------------------- |
+| 基本类型                | `int`, `float`, `str`, `bool` | 简单标量值 |
+| 二进制数据              | `bytes`                       | 二进制内容（原始字符串，不是自动解码的 base64） |
+| 日期和时间              | `datetime`, `date`, `timedelta` | 日期和时间对象（ISO 格式字符串） |
+| 集合类型                | `list[str]`, `dict[str, int]`, `set[int]` | 项目集合 |
+| 可选类型                | `float \| None`, `Optional[float]`| 可能为空/省略的参数 |
+| 联合类型                | `str \| int`, `Union[str, int]`| 接受多种类型的参数 |
+| 受限类型                | `Literal["A", "B"]`, `Enum`   | 具有特定允许值的参数 |
+| 路径                    | `Path`                        | 文件系统路径（从字符串自动转换） |
+| UUID                    | `UUID`                        | 通用唯一标识符（从字符串自动转换） |
+| Pydantic 模型           | `UserData`                    | 具有验证的复杂结构化数据 |
+
+FastMCP 支持 Pydantic 作为字段支持的所有类型，包括所有 Pydantic 自定义类型。一些需要注意的 FastMCP 特定行为：
+
+**二进制数据**：`bytes` 参数接受原始字符串而不自动解码 base64。对于 base64 数据，使用 `str` 并手动使用 `base64.b64decode()` 解码。
+
+**枚举**：客户端发送枚举值（`"red"`），而不是名称（`"RED"`）。您的函数接收枚举成员（`Color.RED`）。
+
+**路径和 UUID**：字符串输入自动转换为 `Path` 和 `UUID` 对象。
+
+**Pydantic 模型**：必须作为 JSON 对象（字典）提供，而不是字符串化的 JSON。即使使用灵活验证，`{"user": {"name": "Alice"}}` 有效，但 `{"user": '{"name": "Alice"}'}` 无效。
+
+### 可选参数
+
+FastMCP 遵循 Python 的标准函数参数约定。没有默认值的参数是必需的，而有默认值的参数是可选的。
+
+```python
+@mcp.tool
+def search_products(
+    query: str,                   # 必需 - 没有默认值
+    max_results: int = 10,        # 可选 - 有默认值
+    sort_by: str = "relevance",   # 可选 - 有默认值
+    category: str | None = None   # 可选 - 可以为 None
+) -> list[dict]:
+    """搜索产品目录。"""
+    # 实现...
+```
+
+在这个例子中，LLM 必须提供 `query` 参数，而 `max_results`、`sort_by` 和 `category` 如果没有显式提供将使用它们的默认值。
+
+### 验证模式
+
+<VersionBadge version="2.13.0" />
+
+默认情况下，FastMCP 使用 Pydantic 的灵活验证，强制转换兼容的输入以匹配您的类型注解。这提高了与可能发送值的字符串表示（如整数的 `"10"`）的 LLM 客户端的兼容性。
+
+如果您需要更严格的验证来拒绝任何类型不匹配，可以启用严格输入验证。严格模式使用 MCP SDK 的内置 JSON Schema 验证，在将输入传递给函数之前根据确切架构验证输入：
+
+```python
+# 为此服务器启用严格验证
+mcp = FastMCP("StrictServer", strict_input_validation=True)
+
+@mcp.tool
+def add_numbers(a: int, b: int) -> int:
+    """将两个数字相加。"""
+    return a + b
+
+# 使用 strict_input_validation=True，发送 {"a": "10", "b": "20"} 将失败
+# 使用 strict_input_validation=False（默认），它将被强制转换为整数
+```
+
+**验证行为比较：**
+
+| 输入类型 | strict_input_validation=False（默认） | strict_input_validation=True |
+| :--------- | :-------------------------------------- | :--------------------------- |
+| 字符串整数（`"10"` 用于 `int`） | ✅ 强制转换为整数 | ❌ 验证错误 |
+| 字符串浮点数（`"3.14"` 用于 `float`） | ✅ 强制转换为浮点数 | ❌ 验证错误 |
+| 字符串布尔值（`"true"` 用于 `bool`） | ✅ 强制转换为布尔值 | ❌ 验证错误 |
+| 带字符串元素的列表（`["1", "2"]` 用于 `list[int]`） | ✅ 元素强制转换 | ❌ 验证错误 |
+| 类型不匹配的 Pydantic 模型字段 | ✅ 字段强制转换 | ❌ 验证错误 |
+| 无效值（`"abc"` 用于 `int`） | ❌ 验证错误 | ❌ 验证错误 |
+
+<Note>
+**关于 Pydantic 模型的注意**：即使使用 `strict_input_validation=False`，Pydantic 模型参数也必须作为 JSON 对象（字典）提供，而不是字符串化的 JSON。例如，`{"user": {"name": "Alice"}}` 有效，但 `{"user": '{"name": "Alice"}'}` 无效。
+</Note>
+
+默认的灵活验证模式推荐用于大多数用例，因为它优雅地处理常见的 LLM 客户端行为，同时仍然通过 Pydantic 的验证提供强大的类型安全。
+
+### 参数元数据
+
+您可以通过几种方式提供关于参数的额外元数据：
+
+#### 简单字符串描述
+
+<VersionBadge version="2.11.0" />
+
+对于基本参数描述，您可以使用 `Annotated` 的便捷简写：
+
+```python
+from typing import Annotated
+
+@mcp.tool
+def process_image(
+    image_url: Annotated[str, "要处理的图像的 URL"],
+    resize: Annotated[bool, "是否调整图像大小"] = False,
+    width: Annotated[int, "目标宽度（像素）"] = 800,
+    format: Annotated[str, "输出图像格式"] = "jpeg"
+) -> dict:
+    """使用可选调整大小处理图像。"""
+    # 实现...
+```
+
+这种简写语法等同于使用 `Field(description=...)`，但对于简单描述更简洁。
+
+<Tip>
+这种简写语法仅适用于具有单个字符串描述的 `Annotated` 类型。
+</Tip>
+
+#### 使用字段的高级元数据
+
+对于验证约束和高级元数据，请将 Pydantic 的 `Field` 类与 `Annotated` 一起使用：
+
+```python
+from typing import Annotated
+from pydantic import Field
+
+@mcp.tool
+def process_image(
+    image_url: Annotated[str, Field(description="要处理的图像的 URL")],
+    resize: Annotated[bool, Field(description="是否调整图像大小")] = False,
+    width: Annotated[int, Field(description="目标宽度（像素）", ge=1, le=2000)] = 800,
+    format: Annotated[
+        Literal["jpeg", "png", "webp"],
+        Field(description="输出图像格式")
+    ] = "jpeg"
+) -> dict:
+    """使用可选调整大小处理图像。"""
+    # 实现...
+```
+
+
+您也可以将 Field 用作默认值，但更推荐使用 Annotated 方法：
+
+```python
+@mcp.tool
+def search_database(
+    query: str = Field(description="搜索查询字符串"),
+    limit: int = Field(10, description="最大结果数", ge=1, le=100)
+) -> list:
+    """使用提供的查询搜索数据库。"""
+    # 实现...
+```
+
+Field 提供了几个验证和文档功能：
+- `description`：参数的人类可读解释（显示给 LLM）
+- `ge`/`gt`/`le`/`lt`：大于/小于（或等于）约束
+- `min_length`/`max_length`：字符串或集合长度约束
+- `pattern`：字符串验证的正则表达式模式
+- `default`：如果省略参数时的默认值
+
+
+
+
+### 排除参数
+
+<VersionBadge version="2.6.0" />
+
+您可以从显示给 LLM 的工具架构中排除某些参数。这对于在运行时注入的参数（如 `state`、`user_id` 或凭据）很有用，这些参数不应该暴露给 LLM 或客户端。只有具有默认值的参数才能被排除；尝试排除必需参数将引发错误。
+
+示例：
+
+```python
+@mcp.tool(
+    name="get_user_details",
+    exclude_args=["user_id"]
+)
+def get_user_details(user_id: str = None) -> str:
+    # user_id 将由服务器注入，不是由 LLM 提供
+    ...
+```
+
+使用此配置，`user_id` 不会出现在工具的参数架构中，但仍可以在运行时由服务器或框架设置。
+
+有关更复杂的工具转换，请参阅[转换工具](/zh/v2/patterns/tool-transformation)。
+
+
+## 返回值
+
+
+FastMCP 工具可以以两种互补格式返回数据：**传统内容块**（如文本和图像）和**结构化输出**（机器可读的 JSON）。当您添加返回类型注解时，FastMCP 自动生成**输出架构**来验证结构化数据，并使客户端能够将结果反序列化回 Python 对象。
+
+理解这三个概念如何协同工作：
+
+- **返回值**：您的 Python 函数返回的内容（决定内容块和结构化数据）
+- **结构化输出**：与传统内容一起发送的 JSON 数据，用于机器处理
+- **输出架构**：描述和验证结构化输出格式的 JSON Schema 声明
+
+以下部分详细解释每个概念。
+
+### 内容块
+
+FastMCP 自动将工具返回值转换为适当的 MCP 内容块：
+
+- **`str`**: 作为 `TextContent` 发送
+- **`bytes`**: Base64 编码并作为 `BlobResourceContents` 发送（在 `EmbeddedResource` 内）
+- **`fastmcp.utilities.types.Image`**: 作为 `ImageContent` 发送
+- **`fastmcp.utilities.types.Audio`**: 作为 `AudioContent` 发送
+- **`fastmcp.utilities.types.File`**: 作为 base64 编码的 `EmbeddedResource` 发送
+- **MCP SDK 内容块**: 按原样发送
+- **以上任何类型的列表**: 根据上述规则转换每个项目
+- **`None`**: 导致空响应
+
+#### 媒体助手类
+
+FastMCP 提供用于返回图像、音频和文件的助手类。当您直接返回这些类之一或作为列表的一部分返回时，FastMCP 会自动将其转换为适当的 MCP 内容块。例如，如果您返回 `fastmcp.utilities.types.Image` 对象，FastMCP 将将其转换为具有正确 MIME 类型和 base64 编码的 MCP `ImageContent` 块。
+
+```python
+from fastmcp.utilities.types import Image, Audio, File
+
+@mcp.tool
+def get_chart() -> Image:
+    """生成图表图像。"""
+    return Image(path="chart.png")
+
+@mcp.tool
+def get_multiple_charts() -> list[Image]:
+    """返回多个图表。"""
+    return [Image(path="chart1.png"), Image(path="chart2.png")]
+```
+
+<Tip>
+助手类只有在**直接**返回或作为**列表**的一部分返回时才会自动转换为 MCP 内容块。对于更复杂的容器如字典，您可以手动将它们转换为 MCP 类型：
+
+```python
+# ✅ 自动转换
+return Image(path="chart.png")
+return [Image(path="chart1.png"), "text content"]
+
+# ❌ 不会自动转换
+return {"image": Image(path="chart.png")}
+
+# ✅ 嵌套使用的手动转换
+return {"image": Image(path="chart.png").to_image_content()}
+```
+</Tip>
+
+每个助手类接受 `path=` 或 `data=`（互斥）：
+- **`path`**：文件路径（字符串或 Path 对象）- 从扩展名检测 MIME 类型
+- **`data`**：原始字节 - 需要 `format=` 参数来指定 MIME 类型
+- **`format`**：可选的格式覆盖（例如，"png"、"wav"、"pdf"）
+- **`name`**：使用 `data=` 时 `File` 的可选名称
+- **`annotations`**：内容的可选 MCP 注释
+
+### 结构化输出
+
+<VersionBadge version="2.10.0" />
+
+2025年6月18日的 MCP 规范更新[引入](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#structured-content)了结构化内容，这是从工具返回数据的新方式。结构化内容是与传统内容一起发送的 JSON 对象。当您的工具返回具有 JSON 对象表示的数据时，FastMCP 会自动创建与传统内容一起的结构化输出。这提供了客户端可以反序列化回 Python 对象的机器可读 JSON 数据。
+
+**自动结构化内容规则：**
+- **类对象结果**（`dict`、Pydantic 模型、数据类）→ 始终成为结构化内容（即使没有输出架构）
+- **非对象结果**（`int`、`str`、`list`）→ 仅在有输出架构来验证/序列化它们时才成为结构化内容
+- **所有结果**→ 始终成为传统内容块以保持向后兼容性
+
+<Note>
+这种自动行为使客户端能够接收机器可读数据以及人类可读内容，而无需为类对象返回提供显式输出架构。
+</Note>
+
+#### 类对象结果（自动结构化内容）
+
+<CodeGroup>
+```python 字典返回（无需架构）
+@mcp.tool
+def get_user_data(user_id: str) -> dict:
+    """获取用户数据，无需类型注解。"""
+    return {"name": "Alice", "age": 30, "active": True}
+```
+
+```json 传统内容
+"{\n  \"name\": \"Alice\",\n  \"age\": 30,\n  \"active\": true\n}"
+```
+
+```json 结构化内容（自动）
+{
+  "name": "Alice",
+  "age": 30,
+  "active": true
+}
+```
+</CodeGroup>
+
+#### 非对象结果（需要架构）
+
+<CodeGroup>
+```python 整数返回（无架构）
+@mcp.tool
+def calculate_sum(a: int, b: int):
+    """计算和，无需返回注解。"""
+    return a + b  # 返回 8
+```
+
+```json 仅传统内容
+"8"
+```
+
+```python 整数返回（有架构）
+@mcp.tool
+def calculate_sum(a: int, b: int) -> int:
+    """计算和，带有返回注解。"""
+    return a + b  # 返回 8
+```
+
+```json 传统内容
+"8"
+```
+
+```json 结构化内容（来自架构）
+{
+  "result": 8
+}
+```
+</CodeGroup>
+
+#### 复杂类型示例
+
+<CodeGroup>
+```python 工具定义
+from dataclasses import dataclass
+from fastmcp import FastMCP
+
+mcp = FastMCP()
+
+@dataclass
+class Person:
+    name: str
+    age: int
+    email: str
+
+@mcp.tool
+def get_user_profile(user_id: str) -> Person:
+    """获取用户档案信息。"""
+    return Person(name="Alice", age=30, email="alice@example.com")
+```
+
+```json 生成的输出架构
+{
+  "properties": {
+    "name": {"title": "Name", "type": "string"},
+    "age": {"title": "Age", "type": "integer"},
+    "email": {"title": "Email", "type": "string"}
+  },
+  "required": ["name", "age", "email"],
+  "title": "Person",
+  "type": "object"
+}
+```
+
+```json 结构化输出
+{
+  "name": "Alice",
+  "age": 30,
+  "email": "alice@example.com"
+}
+```
+</CodeGroup>
+
+### 输出架构
+
+<VersionBadge version="2.10.0" />
+
+2025年6月18日的 MCP 规范更新[引入](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#output-schema)了输出架构，这是描述工具预期输出格式的新方法。当提供输出架构时，工具**必须**返回与架构匹配的结构化输出。
+
+当您为函数添加返回类型注解时，FastMCP 自动生成描述预期输出格式的 JSON 架构。这些架构帮助 MCP 客户端理解并验证他们接收的结构化数据。
+
+#### 基本类型包装
+
+对于基本返回类型（如 `int`、`str`、`bool`），FastMCP 自动将结果包装在 `"result"` 键下以创建有效的结构化输出：
+
+<CodeGroup>
+```python 基本返回类型
+@mcp.tool
+def calculate_sum(a: int, b: int) -> int:
+    """将两个数字相加。"""
+    return a + b
+```
+
+```json 生成的架构（包装）
+{
+  "type": "object",
+  "properties": {
+    "result": {"type": "integer"}
+  },
+  "x-fastmcp-wrap-result": true
+}
+```
+
+```json 结构化输出
+{
+  "result": 8
+}
+```
+</CodeGroup>
+
+#### 手动架构控制
+
+您可以通过提供自定义的 `output_schema` 来覆盖自动生成的架构：
+
+```python
+@mcp.tool(output_schema={
+    "type": "object",
+    "properties": {
+        "data": {"type": "string"},
+        "metadata": {"type": "object"}
+    }
+})
+def custom_schema_tool() -> dict:
+    """具有自定义输出架构的工具。"""
+    return {"data": "Hello", "metadata": {"version": "1.0"}}
+```
+
+架构生成适用于大多数常见类型，包括基本类型、集合、联合类型、Pydantic 模型、TypedDict 结构和数据类。
+
+<Warning>
+**重要约束**：
+- 输出架构必须是对象类型（`"type": "object"`）
+- 如果您提供输出架构，您的工具**必须**返回匹配它的结构化输出
+- 但是，您可以在没有输出架构的情况下提供结构化输出（使用 `ToolResult`）
+</Warning>
+
+### 使用 ToolResult 完全控制
+
+要完全控制传统内容和结构化输出，请返回 `ToolResult` 对象：
+
+```python
+from fastmcp.tools.tool import ToolResult
+
+@mcp.tool
+def advanced_tool() -> ToolResult:
+    """具有完全输出控制的工具。"""
+    return ToolResult(
+        content=[TextContent(type="text", text="人类可读的摘要")],
+        structured_content={"data": "value", "count": 42}
+    )
+```
+
+当返回 `ToolResult` 时：
+- 您精确控制发送什么内容和结构化数据
+- 输出架构是可选的 - 可以在没有架构的情况下提供结构化内容
+- 客户端接收传统内容块和结构化数据
+
+<Note>
+如果您的返回类型注解无法转换为 JSON 架构（例如，没有 Pydantic 支持的复杂自定义类），输出架构将被省略，但工具仍将与传统内容正常工作。
+</Note>
+
+## 错误处理
+
+<VersionBadge version="2.4.1" />
+
+如果您的工具遇到错误，您可以引发标准 Python 异常（`ValueError`、`TypeError`、`FileNotFoundError`、自定义异常等）或 FastMCP `ToolError`。
+
+默认情况下，所有异常（包括其详细信息）都会被记录并转换为 MCP 错误响应，发送回客户端 LLM。这有助于 LLM 理解故障并适当反应。
+
+如果您出于安全原因想要掩盖内部错误详细信息，您可以：
+
+1. 在创建 `FastMCP` 实例时使用 `mask_error_details=True` 参数：
+```python
+mcp = FastMCP(name="SecureServer", mask_error_details=True)
+```
+
+2. 或使用 `ToolError` 来显式控制发送给客户端的错误信息：
+```python
+from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
+
+@mcp.tool
+def divide(a: float, b: float) -> float:
+    """a 除以 b。"""
+
+    if b == 0:
+        # 来自 ToolError 的错误消息总是发送给客户端，
+        # 无论 mask_error_details 设置如何
+        raise ToolError("不允许除以零。")
+
+    # 如果 mask_error_details=True，此消息将被掩盖
+    if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+        raise TypeError("Both arguments must be numbers.")
+
+    return a / b
+```
+
+当 `mask_error_details=True` 时，只有来自 `ToolError` 的错误消息会包含详细信息，其他异常将被转换为通用消息。
+
+## 禁用工具
+
+<VersionBadge version="2.8.0" />
+
+您可以通过启用或禁用来控制工具的可见性和可用性。这对于功能标记、维护或动态更改客户端可用的工具集很有用。禁用的工具不会出现在 `list_tools` 返回的可用工具列表中，尝试调用禁用的工具将导致"未知工具"错误，就像该工具不存在一样。
+
+默认情况下，所有工具都是启用的。您可以在创建时使用装饰器中的 `enabled` 参数禁用工具：
+
+```python
+@mcp.tool(enabled=False)
+def maintenance_tool():
+    """此工具当前正在维护中。"""
+    return "This tool is disabled."
+```
+
+您也可以在创建工具后以编程方式切换工具的状态：
+
+```python
+@mcp.tool
+def dynamic_tool():
+    return "I am a dynamic tool."
+
+# 禁用并重新启用工具
+dynamic_tool.disable()
+dynamic_tool.enable()
+```
+## MCP 注释
+
+<VersionBadge version="2.2.7" />
+
+FastMCP 允许您通过注释为工具添加专门的元数据。这些注释向客户端应用程序传达工具的行为方式，而不会在 LLM 提示中消耗令牌上下文。
+
+注释在客户端应用程序中有几个用途：
+- 为显示目的添加用户友好的标题
+- 指示工具是否修改数据或系统
+- 描述工具的安全配置文件（破坏性 vs 非破坏性）
+- 表示工具是否与外部系统交互
+
+您可以使用 `@mcp.tool` 装饰器中的 `annotations` 参数为工具添加注释：
+
+```python
+@mcp.tool(
+    annotations={
+        "title": "计算和",
+        "readOnlyHint": True,
+        "openWorldHint": False
+    }
+)
+def calculate_sum(a: float, b: float) -> float:
+    """将两个数字相加。"""
+    return a + b
+```
+
+FastMCP 支持这些标准注释：
+
+| 注释 | 类型 | 默认值 | 目的 |
+| :--------- | :--- | :------ | :------ |
+| `title` | string | - | 用户界面的显示名称 |
+| `readOnlyHint` | boolean | false | 指示工具是否只读取而不进行更改 |
+| `destructiveHint` | boolean | true | 对于非只读工具，表示更改是否具有破坏性 |
+| `idempotentHint` | boolean | false | 指示重复的相同调用是否与单次调用具有相同的效果 |
+| `openWorldHint` | boolean | true | 指定工具是否与外部系统交互 |
+
+请记住，注释有助于创造更好的用户体验，但应被视为建议性提示。它们帮助客户端应用程序呈现适当的 UI 元素和安全控制，但不会自行强制执行安全边界。始终专注于使您的注释准确反映您的工具实际做什么。
+
+## 通知
+
+<VersionBadge version="2.9.1" />
+
+当工具被添加、移除、启用或禁用时，FastMCP 自动向连接的客户端发送 `notifications/tools/list_changed` 通知。这允许客户端保持与当前工具集的最新状态，而无需手动轮询更改。
+
+```python
+@mcp.tool
+def example_tool() -> str:
+    return "Hello!"
+
+# 这些操作会触发通知：
+mcp.add_tool(example_tool)     # 发送 tools/list_changed 通知
+example_tool.disable()         # 发送 tools/list_changed 通知
+example_tool.enable()          # 发送 tools/list_changed 通知
+mcp.remove_tool("example_tool") # 发送 tools/list_changed 通知
+```
+
+只有当这些操作在活动的 MCP 请求上下文中发生时（例如，从工具或其他 MCP 操作中调用时），才会发送通知。在服务器初始化期间执行的操作不会触发通知。
+
+客户端可以使用[消息处理器](/zh/v2/clients/messages)处理这些通知，以自动刷新其工具列表或更新其界面。
+
+## 访问 MCP 上下文
+
+工具可以通过 `Context` 对象访问 MCP 功能，如日志记录、读取资源或报告进度。要使用它，请为您的工具函数添加一个带有 `Context` 类型提示的参数。
+
+```python
+from fastmcp import FastMCP, Context
+
+mcp = FastMCP(name="ContextDemo")
+
+@mcp.tool
+async def process_data(data_uri: str, ctx: Context) -> dict:
+    """处理来自资源的数据，带有进度报告。"""
+    await ctx.info(f"正在处理来自 {data_uri} 的数据")
+
+    # 读取资源
+    resource = await ctx.read_resource(data_uri)
+    data = resource[0].content if resource else ""
+
+    # 报告进度
+    await ctx.report_progress(progress=50, total=100)
+
+    # 示例：向客户端的 LLM 请求帮助
+    summary = await ctx.sample(f"用10个词总结：{data[:200]}")
+
+    await ctx.report_progress(progress=100, total=100)
+    return {
+        "length": len(data),
+        "summary": summary.text
+    }
+```
+
+Context 对象提供对以下功能的访问：
+
+- **日志记录**：`ctx.debug()`、`ctx.info()`、`ctx.warning()`、`ctx.error()`
+- **进度报告**：`ctx.report_progress(progress, total)`
+- **资源访问**：`ctx.read_resource(uri)`
+- **LLM 采样**：`ctx.sample(...)`
+- **请求信息**：`ctx.request_id`、`ctx.client_id`
+
+有关 Context 对象及其所有功能的完整文档，请参阅[Context 文档](/zh/v2/servers/context)。
+
+## 服务器行为
+
+### 重复工具
+
+<VersionBadge version="2.1.0" />
+
+您可以控制当您尝试注册多个具有相同名称的工具时 FastMCP 服务器的行为。这是在创建 `FastMCP` 实例时使用 `on_duplicate_tools` 参数配置的。
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP(
+    name="StrictServer",
+    # 为重复工具名称配置行为
+    on_duplicate_tools="error"
+)
+
+@mcp.tool
+def my_tool(): return "Version 1"
+
+# 现在这将引发 ValueError，因为 'my_tool' 已经存在
+# 并且 on_duplicate_tools 设置为 "error"。
+# @mcp.tool
+# def my_tool(): return "Version 2"
+```
+
+重复行为选项包括：
+
+-   `"warn"`（默认）：记录警告，新工具替换旧工具。
+-   `"error"`：引发 `ValueError`，防止重复注册。
+-   `"replace"`：静默地用新工具替换现有工具。
+-   `"ignore"`：保留原始工具，忽略新的注册尝试。
+
+### 移除工具
+
+<VersionBadge version="2.3.4" />
+
+您可以使用 `remove_tool` 方法动态地从服务器中移除工具：
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP(name="DynamicToolServer")
+
+@mcp.tool
+def calculate_sum(a: int, b: int) -> int:
+    """将两个数字相加。"""
+    return a + b
+
+mcp.remove_tool("calculate_sum")
+```

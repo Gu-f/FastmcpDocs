@@ -1,0 +1,206 @@
+---
+title: versions
+sidebarTitle: versions
+---
+
+# `fastmcp.utilities.versions`
+
+
+用于组件版本管理的版本比较工具。
+
+此模块提供比较组件版本的工具。版本会先尝试按 PEP 440 版本解析（使用 `packaging` 库），如果无法解析，则回退到按字典序比较字符串。
+
+示例：
+    - "1"、"2"、"10" → 按 PEP 440 解析，并按语义比较（1 < 2 < 10）
+    - "1.0"、"2.0" → 按 PEP 440 解析
+    - "v1.0" → 去掉 `v` 前缀，按 "1.0" 解析
+    - "2025-01-15" → 不是有效的 PEP 440，按字符串比较
+    - None → 排序最低（无版本组件）
+
+
+## 函数
+
+### `parse_version_key` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L197" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+parse_version_key(version: str | None) -> VersionKey
+```
+
+
+将版本字符串解析为可排序的键。
+
+**参数：**
+- `version`：版本字符串；如果为 None，则表示无版本。
+
+**返回：**
+- 适合排序的 VersionKey。
+
+
+### `version_sort_key` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L209" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+version_sort_key(component: FastMCPComponent) -> tuple[VersionKey, str]
+```
+
+
+根据组件版本获取排序键。
+
+可与 `sorted()` 或 `max()` 一起使用，按版本对组件排序。
+
+该键是 `(VersionKey, raw)` 元组。`VersionKey` 按 PEP 440 语义排序（或对非 PEP 440 字符串按字典序排序）；原始版本字符串是确定性的平局决胜项，因此两个在 PEP 440 下等价但写法不同的版本（例如 `"1"` 和 `"1.0"`）会以可复现方式排序，而不是依赖注册顺序。原始平局决胜项只影响等价版本之间的平局，绝不会影响主要版本顺序，因此范围/相等匹配（直接使用 `VersionKey`）保持不变。
+
+**参数：**
+- `component`：要获取排序键的组件。
+
+**返回：**
+- 一个确定性、可排序的 `(VersionKey, raw)` 元组。
+
+
+### `compare_versions` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L237" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+compare_versions(a: str | None, b: str | None) -> int
+```
+
+
+比较两个版本字符串。
+
+**参数：**
+- `a`：第一个版本字符串（或 None）。
+- `b`：第二个版本字符串（或 None）。
+
+**返回：**
+- 如果 a &lt; b，则为 -1；如果 a == b，则为 0；如果 a &gt; b，则为 1。
+
+
+### `is_version_greater` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L259" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+is_version_greater(a: str | None, b: str | None) -> bool
+```
+
+
+检查版本 a 是否大于版本 b。
+
+**参数：**
+- `a`：第一个版本字符串（或 None）。
+- `b`：第二个版本字符串（或 None）。
+
+**返回：**
+- 如果 a > b，则为 True；否则为 False。
+
+
+### `max_version` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L272" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+max_version(a: str | None, b: str | None) -> str | None
+```
+
+
+返回两个版本中较大的那个。
+
+**参数：**
+- `a`：第一个版本字符串（或 None）。
+- `b`：第二个版本字符串（或 None）。
+
+**返回：**
+- 较大的版本；如果两者都是 None，则为 None。
+
+
+### `min_version` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L289" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+min_version(a: str | None, b: str | None) -> str | None
+```
+
+
+返回两个版本中较小的那个。
+
+**参数：**
+- `a`：第一个版本字符串（或 None）。
+- `b`：第二个版本字符串（或 None）。
+
+**返回：**
+- 较小的版本；如果两者都是 None，则为 None。
+
+
+### `dedupe_with_versions` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L306" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+dedupe_with_versions(components: Sequence[C], key_fn: Callable[[C], str]) -> list[C]
+```
+
+
+按键对组件去重，并保留最高版本。
+
+按键对组件分组，从每组中选择最高版本；如果任一组件带版本，则把可用版本注入 meta。
+
+**参数：**
+- `components`：组件序列。
+- `key_fn`：从组件中提取分组键的函数。
+
+**返回：**
+- 已去重并注入版本信息到 meta 的列表。
+
+
+## 类
+
+### `VersionSpec` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L31" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+用于按版本过滤组件的规范。
+
+转换和提供方会使用它将组件过滤到特定版本或版本范围。无版本组件（version=None）总是匹配任意规范。
+
+**参数：**
+- `gte`：如果设置，仅匹配大于等于此值的版本。
+- `lt`：如果设置，仅匹配小于此值的版本。
+- `eq`：如果设置，仅匹配此精确版本（忽略 gte/lt）。
+匹配会按 PEP 440 规范化，并且对 `v` 前缀不敏感，因此 `eq="v1.0"` 会匹配版本为 `"1.0"` 的组件，`eq="1.0"` 也会匹配 `"1"`（PEP 440 将 `1` 和 `1.0` 视为相同版本）。如果服务端注册了同一组件的两个 PEP 440 等价写法（例如同时注册 `"1"` 和 `"1.0"`），它们在此规范下属于同一版本；选择其中哪个是确定性的（参见 `version_sort_key`），不依赖注册顺序。
+
+
+**方法：**
+
+#### `matches` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L55" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+matches(self, version: str | None) -> bool
+```
+
+检查某个版本是否匹配此规范。
+
+**参数：**
+- `version`：要检查的版本；如果为 None，则表示无版本。
+- `match_none`：无版本（None）组件是否匹配。为了与检索操作保持向后兼容，默认值为 True。在进行过滤（例如启用/禁用）时可设为 False，以便从特定版本规则中排除无版本组件。
+
+**返回：**
+- 如果版本匹配此规范，则为 True。
+
+
+#### `intersect` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L88" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+intersect(self, other: VersionSpec | None) -> VersionSpec
+```
+
+返回同时满足此规范和另一规范的规范。
+
+转换会使用它把调用方约束与过滤约束组合起来。例如，如果 VersionFilter 具有 lt="3.0"，而调用方请求 eq="1.0"，交集会验证 "1.0" 位于范围内，并返回精确规范。
+
+**参数：**
+- `other`：要与之求交的另一个规范，或 None。
+
+**返回：**
+- 一个只匹配同时满足两个规范的版本的 VersionSpec。
+
+
+### `VersionKey` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/versions.py#L124" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+可比较的版本键，支持 None、PEP 440 版本和字符串。
+
+比较顺序：
+1. None（无版本）排序最低
+2. PEP 440 版本按语义版本顺序排序
+3. 无效版本（字符串）按字典序排序
+4. 比较 PEP 440 与字符串时，PEP 440 排在前面

@@ -1,0 +1,146 @@
+---
+title: 安装 MCP 服务端
+sidebarTitle: 安装 MCP
+description: 将 MCP 服务端安装到 Claude、Cursor、Gemini 和其他客户端中
+icon: download
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="2.10.3" />
+
+`fastmcp install` 会将服务端注册到 MCP 客户端应用中，使客户端可以自动启动它。每个 MCP 客户端都会在自己的隔离环境中运行服务端，这意味着依赖需要显式声明，不能依赖本地碰巧安装了什么。
+
+```bash
+fastmcp install claude-desktop server.py
+fastmcp install claude-code server.py --with pandas --with matplotlib
+fastmcp install cursor server.py -e .
+```
+
+<Warning>
+`uv` 必须已安装，并可在系统 PATH 中使用。Claude Desktop 和 Cursor 都会在由 `uv` 管理的隔离环境中运行服务端。在 macOS 上，为了兼容 Claude Desktop，请使用 Homebrew 全局安装：`brew install uv`。
+</Warning>
+
+## 支持的客户端
+
+| 客户端 | 安装方式 |
+| ------ | -------------- |
+| `claude-code` | Claude Code 内置 MCP 管理 |
+| `claude-desktop` | 直接修改配置文件 |
+| `cursor` | 打开 Cursor 进行确认的 deeplink |
+| `gemini-cli` | Gemini CLI 内置 MCP 管理 |
+| `goose` | 打开 Goose 进行确认的 deeplink（使用 `uvx`） |
+| `mcp-json` | 生成标准 MCP JSON 配置，供手动使用 |
+| `stdio` | 输出通过 stdio 运行的 shell 命令 |
+
+## 声明依赖
+
+由于 MCP 客户端会在隔离环境中运行服务端，你需要告诉安装命令服务端需要什么。有两种方式：
+
+**命令行标志**允许你直接指定依赖：
+
+```bash
+fastmcp install claude-desktop server.py --with pandas --with "sqlalchemy>=2.0"
+fastmcp install cursor server.py -e . --with-requirements requirements.txt
+```
+
+**`fastmcp.json`** 配置文件会在服务端定义旁声明依赖。当你从配置文件安装时，依赖会自动读取：
+
+```bash
+fastmcp install claude-desktop fastmcp.json
+fastmcp install claude-desktop  # auto-detects fastmcp.json in current directory
+```
+
+完整配置格式请参阅[服务端配置](/zh/deployment/server-configuration)。
+
+## 选项
+
+| 选项 | 标志 | 描述 |
+| ------ | ---- | ----------- |
+| 服务端名称 | `--server-name`, `-n` | 服务端的自定义名称 |
+| 可编辑包 | `--with-editable`, `-e` | 以 editable 模式安装目录 |
+| 额外包 | `--with` | 额外包（可重复） |
+| 环境变量 | `--env` | `KEY=VALUE` 对（可重复） |
+| 环境文件 | `--env-file`, `-f` | 从 `.env` 文件加载环境变量 |
+| Python | `--python` | Python 版本（例如 `3.11`） |
+| 项目 | `--project` | 在 uv 项目目录中运行 |
+| Requirements | `--with-requirements` | 从 requirements 文件安装 |
+| 配置路径 | `--config-path` | Claude Desktop 配置目录的自定义路径（仅 `claude-desktop`） |
+
+## 示例
+
+```bash
+# 使用自动检测的服务端实例进行基础安装
+fastmcp install claude-desktop server.py
+
+# 通过自动检测从 fastmcp.json 安装
+fastmcp install claude-desktop
+
+# 带依赖的显式入口点
+fastmcp install claude-desktop server.py:my_server \
+  --server-name "My Analysis Server" \
+  --with pandas
+
+# 带环境变量
+fastmcp install claude-code server.py \
+  --env API_KEY=secret \
+  --env DEBUG=true
+
+# 带 env 文件
+fastmcp install cursor server.py --env-file .env
+
+# 指定 Python 版本和 requirements 文件
+fastmcp install claude-desktop server.py \
+  --python 3.11 \
+  --with-requirements requirements.txt
+
+# 带自定义配置路径（仅 claude-desktop）
+fastmcp install claude-desktop server.py \
+  --config-path "C:\Users\username\AppData\Local\Packages\Claude_xyz\LocalCache\Roaming\Claude"
+```
+
+## 生成 MCP JSON
+
+`mcp-json` 目标会生成标准 MCP 配置 JSON，而不是安装到特定客户端中。这对 FastMCP 尚未直接支持的客户端、CI/CD 环境，或共享服务端配置很有用：
+
+```bash
+fastmcp install mcp-json server.py
+```
+
+输出遵循 Claude Desktop、Cursor 和其他 MCP 客户端使用的标准格式：
+
+```json
+{
+  "server-name": {
+    "command": "uv",
+    "args": ["run", "--with", "fastmcp", "fastmcp", "run", "/path/to/server.py"],
+    "env": {
+      "API_KEY": "value"
+    }
+  }
+}
+```
+
+使用 `--copy` 可将其发送到剪贴板，而不是 stdout。
+
+## 生成 Stdio 命令
+
+`stdio` 目标会输出 MCP 宿主用于通过 stdio 启动服务端的 shell 命令：
+
+```bash
+fastmcp install stdio server.py
+# Output: uv run --with fastmcp fastmcp run /absolute/path/to/server.py
+```
+
+从 `fastmcp.json` 安装时，配置中的依赖会自动包含：
+
+```bash
+fastmcp install stdio fastmcp.json
+# Output: uv run --with fastmcp --with pillow --with 'qrcode[pil]>=8.0' fastmcp run /path/to/server.py
+```
+
+使用 `--copy` 可复制到剪贴板。
+
+<Tip>
+`fastmcp install` 专为使用 stdio 传输的本地服务端文件设计。对于通过 HTTP 运行的远程服务端，请使用客户端的原生配置；FastMCP 在这里的价值，是简化涉及 `uv`、依赖和环境变量的复杂本地设置。
+</Tip>

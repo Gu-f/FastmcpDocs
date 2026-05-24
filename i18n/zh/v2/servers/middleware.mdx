@@ -1,0 +1,756 @@
+---
+title: MCP 中间件
+sidebarTitle: 中间件
+description: 通过中间件为您的 MCP 服务器添加横切功能，可以检查、修改和响应所有 MCP 请求和响应。
+icon: layer-group
+tag: NEW
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.9.0" />
+
+MCP 中间件是一个强大的概念，允许您为 FastMCP 服务器添加横切功能。与传统的 Web 中间件不同，MCP 中间件是专门为模型上下文协议设计的，为不同类型的 MCP 操作（如工具调用、资源读取和提示请求）提供钩子。
+
+<Tip>
+MCP 中间件是 FastMCP 特有的概念，不是官方 MCP 协议规范的一部分。这个中间件系统专为 FastMCP 服务器设计，可能与其他 MCP 实现不兼容。
+</Tip>
+
+<Warning>
+MCP 中间件是一个全新的概念，在未来版本中可能会有破坏性变更。
+</Warning>
+
+## 什么是 MCP 中间件？
+
+MCP 中间件允许您在 MCP 请求和响应流经您的服务器时拦截和修改它们。您可以将它想象为一个管道，其中每个中间件都可以检查正在发生的事情、进行更改，然后将控制权传递给链中的下一个中间件。
+
+MCP 中间件的常见用例包括：
+- **身份验证和授权**：在执行操作之前验证客户端权限
+- **日志记录和监控**：跟踪使用模式和性能指标
+- **速率限制**：按客户端或操作类型控制请求频率
+- **请求/响应转换**：在数据到达工具之前或离开之后修改数据
+- **缓存**：存储经常请求的数据以提高性能
+- **错误处理**：在您的服务器中提供一致的错误响应
+
+## 中间件如何工作
+
+FastMCP 中间件采用管道模型运行。当请求进入时，它会按照添加到服务器的顺序流经您的中间件。每个中间件都可以：
+
+1. **检查传入的请求**及其上下文
+2. **修改请求**，然后将其传递给下一个中间件或处理程序
+3. **执行链中的下一个中间件/处理程序**，通过调用 `call_next()`
+4. **检查和修改响应**，然后返回它
+5. **处理**在处理过程中发生的错误
+
+关键洞察是中间件形成了一个链，其中每个部分都决定是继续处理还是完全停止链。
+
+如果您熟悉 ASGI 中间件，那么 FastMCP 中间件的基本结构会让您感到熟悉。在核心部分，中间件是一个可调用的类，它接收一个包含当前 JSON-RPC 消息信息的上下文对象和一个用于继续中间件链的处理函数。
+
+重要的是要理解 MCP 基于 [JSON-RPC 规范](https://spec.modelcontextprotocol.io/specification/basic/transports/) 运行。虽然 FastMCP 以熟悉的方式呈现请求和响应，但这些本质上是 JSON-RPC 消息，而不是您在 Web 应用程序中可能习惯的 HTTP 请求/响应对。FastMCP 中间件适用于所有[传输类型](/zh/v2/clients/transports)，包括本地 stdio 传输和 HTTP 传输，尽管不是所有中间件实现都在所有传输中兼容（例如，检查 HTTP 头的中间件不适用于 stdio 传输）。
+
+实现中间件的最基本方式是通过重写 `Middleware` 基类上的 `__call__` 方法：
+
+```python
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+
+class RawMiddleware(Middleware):
+    async def __call__(self, context: MiddlewareContext, call_next):
+        # 此方法接收所有消息，无论类型如何
+        print(f"原始中间件正在处理：{context.method}")
+        result = await call_next(context)
+        print(f"原始中间件完成：{context.method}")
+        return result
+```
+
+这给了您对流经服务器的每个消息的完全控制，但需要您手动处理所有消息类型。
+
+## 中间件钩子
+
+为了使用户更容易针对特定类型的消息，FastMCP 中间件提供了各种专用钩子。您可以重写仅在特定类型的操作中调用的特定钩子方法，而不是实现原始的 `__call__` 方法，这允许您准确地针对中间件逻辑所需的特定性级别。
+
+### 钩子层次结构和执行顺序
+
+FastMCP 提供了多个在不同特定性级别下调用的钩子。理解这个层次结构对于有效的中间件设计至关重要。
+
+当请求进入时，**同一个请求可能会调用多个钩子**，从一般到特定：
+
+1. **`on_message`** - 为所有 MCP 消息（请求和通知）调用
+2. **`on_request` 或 `on_notification`** - 根据消息类型调用
+3. **操作特定钩子** - 为特定的 MCP 操作调用，如 `on_call_tool`
+
+例如，当客户端调用工具时，您的中间件将接收到**多个钩子调用**：
+1. 为任何初始工具发现操作（list_tools）调用 `on_message` 和 `on_request`
+2. 为工具调用本身调用 `on_message`（因为它是任何 MCP 消息）
+3. 为工具调用本身调用 `on_request`（因为工具调用期望响应）
+4. 为工具调用本身调用 `on_call_tool`（因为它特定是工具执行）
+
+请注意，MCP SDK 可能会执行额外的操作，如为缓存目的列出工具，这将在直接工具执行之外触发额外的中间件调用。
+
+这个层次结构允许您以正确的特定性级别针对中间件逻辑。使用 `on_message` 处理广泛的关注点（如日志记录），使用 `on_request` 处理身份验证，使用 `on_call_tool` 处理工具特定的逻辑（如性能监控）。
+
+### 可用钩子
+<VersionBadge version="2.9.0" />
+
+- `on_message`：为所有 MCP 消息（请求和通知）调用
+- `on_request`：专门为 MCP 请求（期望响应）调用
+- `on_notification`：专门为 MCP 通知（发送后忘记）调用
+- `on_call_tool`：在执行工具时调用
+
+- `on_read_resource`：在读取资源时调用
+- `on_get_prompt`：在检索提示时调用
+- `on_list_tools`：在列出可用工具时调用
+- `on_list_resources`：在列出可用资源时调用
+- `on_list_resource_templates`：在列出资源模板时调用
+- `on_list_prompts`：在列出可用提示时调用
+<VersionBadge version="2.13.0" />
+- `on_initialize`：在客户端连接并初始化会话时调用（返回`None`）
+<Note>
+`on_initialize`钩子接收客户端的初始化请求，但**返回`None`**而不是结果。初始化响应由MCP协议内部处理，中间件无法修改。此钩子对于客户端检测、记录连接或初始化会话状态很有用，但不能用于修改初始化握手本身。
+</Note>
+
+## 中间件中的组件访问
+
+理解如何在中间件中访问组件信息（工具、资源、提示）对于构建强大的中间件功能至关重要。列表操作和执行操作之间的访问模式差异显著。
+
+### 列表操作 vs 执行操作
+
+FastMCP 中间件对两种类型的操作处理不同：
+
+**列表操作**（`on_list_tools`、`on_list_resources`、`on_list_prompts` 等）：
+- 中间件接收带有完整元数据的 **FastMCP 组件对象**
+- 这些对象包括 FastMCP 特有的属性（如 `tags`），可以直接从组件访问
+- 结果包含完整的组件信息，在转换为 MCP 格式之前
+- 标签包含在返回给 MCP 客户端的列表响应中组件的 `meta` 字段中
+
+**执行操作**（`on_call_tool`、`on_read_resource`、`on_get_prompt`）：
+- 中间件在组件执行**之前**运行
+- 中间件结果是执行结果或在找不到组件时的错误
+- 组件元数据在钩子参数中不直接可用
+
+### 在执行期间访问组件元数据
+
+如果您需要在执行操作期间检查组件属性（如标签），请使用通过上下文可用的 FastMCP 服务器实例：
+
+```python
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+from fastmcp.exceptions import ToolError
+
+class TagBasedMiddleware(Middleware):
+    async def on_call_tool(self, context: MiddlewareContext, call_next):
+        # 访问工具对象以检查其元数据
+        if context.fastmcp_context:
+            try:
+                tool = await context.fastmcp_context.fastmcp.get_tool(context.message.name)
+                
+                # 检查此工具是否具有 "private" 标签
+                if "private" in tool.tags:
+                    raise ToolError("访问被拒绝：私有工具")
+                    
+                # 检查工具是否已启用
+                if not tool.enabled:
+                    raise ToolError("工具当前已禁用")
+                    
+            except Exception:
+                # 找不到工具或其他错误 - 让执行继续
+                # 并自然地处理错误
+                pass
+        
+        return await call_next(context)
+```
+
+相同的模式适用于资源和提示：
+
+```python
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+from fastmcp.exceptions import ResourceError, PromptError
+
+class ComponentAccessMiddleware(Middleware):
+    async def on_read_resource(self, context: MiddlewareContext, call_next):
+        if context.fastmcp_context:
+            try:
+                resource = await context.fastmcp_context.fastmcp.get_resource(context.message.uri)
+                if "restricted" in resource.tags:
+                    raise ResourceError("访问被拒绝：受限资源")
+            except Exception:
+                pass
+        return await call_next(context)
+    
+    async def on_get_prompt(self, context: MiddlewareContext, call_next):
+        if context.fastmcp_context:
+            try:
+                prompt = await context.fastmcp_context.fastmcp.get_prompt(context.message.name)
+                if not prompt.enabled:
+                    raise PromptError("提示当前已禁用")
+            except Exception:
+                pass
+        return await call_next(context)
+```
+
+### 处理列表结果
+
+对于列表操作，中间件的 `call_next` 函数在转换为 MCP 格式之前返回 FastMCP 组件列表。您可以过滤或修改此列表并将其返回给客户端。例如：
+
+```python
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+
+class ListingFilterMiddleware(Middleware):
+    async def on_list_tools(self, context: MiddlewareContext, call_next):
+        result = await call_next(context)
+        
+        # 过滤出带有 "private" 标签的工具
+        filtered_tools = [
+            tool for tool in result 
+            if "private" not in tool.tags
+        ]
+        
+        # 返回修改后的列表
+        return filtered_tools
+```
+
+这种过滤在组件转换为 MCP 格式并返回给客户端之前发生。标签在过滤期间可访问，并包含在最终列表响应中组件的 `meta` 字段中。
+
+<Tip>
+在列表操作中过滤组件时，请确保您也在相应的执行钩子（`on_call_tool`、`on_read_resource`、`on_get_prompt`）中阻止已过滤组件的执行，以保持一致性。
+</Tip>
+
+### 工具调用拒绝
+
+您可以通过在中间件中抛出 `ToolError` 来拒绝对特定工具的访问。这是阻止工具执行的正确方式，因为它与 FastMCP 错误处理系统正确集成。
+
+```python
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+from fastmcp.exceptions import ToolError
+
+class AuthMiddleware(Middleware):
+    async def on_call_tool(self, context: MiddlewareContext, call_next):
+        tool_name = context.message.name
+        
+        # 拒绝对受限工具的访问
+        if tool_name.lower() in ["delete", "admin_config"]:
+            raise ToolError("访问被拒绝：工具需要管理员权限")
+        
+        # 允许其他工具继续
+        return await call_next(context)
+```
+
+<Warning>
+在拒绝工具调用时，始终抛出 `ToolError` 而不是返回 `ToolResult` 对象或其他值。`ToolError` 确保通过中间件链的正确错误传播，并转换为正确的 MCP 错误响应格式。
+</Warning>
+
+### 工具调用修改
+
+对于工具调用等执行操作，您可以在执行之前修改参数或在之后转换结果：
+
+```python
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+
+class ToolCallMiddleware(Middleware):
+    async def on_call_tool(self, context: MiddlewareContext, call_next):
+        # 在执行之前修改参数
+        if context.message.name == "calculate":
+            # 确保输入为正数
+            if context.message.arguments.get("value", 0) < 0:
+                context.message.arguments["value"] = abs(context.message.arguments["value"])
+        
+        result = await call_next(context)
+        
+        # 在执行后转换结果
+        if context.message.name == "get_data":
+            # 向结果添加元数据
+            if result.structured_content:
+                result.structured_content["processed_at"] = "2024-01-01T00:00:00Z"
+        
+        return result
+```
+
+<Tip>
+对于更复杂的工具重写场景，请考虑使用[工具转换](/zh/v2/patterns/tool-transformation)模式，它为创建修改的工具变体提供了更结构化的方法。
+</Tip>
+
+### 钩子的解析
+
+每个中间件钩子都遵循相同的模式。让我们检查 `on_message` 钩子来理解结构：
+
+```python
+async def on_message(self, context: MiddlewareContext, call_next):
+    # 1. 预处理：检查并可选修改请求
+    print(f"正在处理 {context.method}")
+    
+    # 2. 链继续：调用下一个中间件/处理程序
+    result = await call_next(context)
+    
+    # 3. 后处理：检查并可选修改响应
+    print(f"已完成 {context.method}")
+    
+    # 4. 返回结果（可能已修改）
+    return result
+```
+
+### 钩子参数
+
+每个钩子都接收两个参数：
+
+1. **`context: MiddlewareContext`** - 包含当前请求的信息：
+   - `context.method` - MCP 方法名称（例如，"tools/call"）
+   - `context.source` - 请求来源（"client" 或 "server"）
+   - `context.type` - 消息类型（"request" 或 "notification"）
+   - `context.message` - MCP 消息数据
+   - `context.timestamp` - 接收请求的时间
+   - `context.fastmcp_context` - FastMCP 上下文对象（如果可用）
+
+2. **`call_next`** - 继续中间件链的函数。您**必须**调用它来继续，除非您希望完全停止处理。
+
+### 控制流
+
+您对请求流有完全的控制：
+- **继续处理**：调用 `await call_next(context)` 来继续
+- **修改请求**：在调用 `call_next` 之前更改上下文
+- **修改响应**：在调用 `call_next` 之后更改结果
+- **停止链**：不调用 `call_next`（很少需要）
+- **处理错误**：在 try/catch 块中包装 `call_next`
+
+#### 状态管理
+
+<VersionBadge version="2.11.0" />
+
+除了修改请求和响应外，您还可以存储状态数据，您的工具可以（可选地）在后面访问。为此，请使用 FastMCP 上下文适当地调用 `set_state` 或 `get_state`。有关更多信息，请参阅[上下文状态管理](/zh/v2/servers/context#状态管理)文档。
+
+## 创建中间件
+
+FastMCP 中间件通过子类化 `Middleware` 基类并重写您需要的钩子来实现。您只需要实现与您的用例相关的钩子。
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+
+class LoggingMiddleware(Middleware):
+    """记录所有 MCP 操作的中间件。"""
+    
+    async def on_message(self, context: MiddlewareContext, call_next):
+        """为所有 MCP 消息调用。"""
+        print(f"正在处理来自 {context.source} 的 {context.method}")
+        
+        result = await call_next(context)
+        
+        print(f"已完成 {context.method}")
+        return result
+
+# 向您的服务器添加中间件
+mcp = FastMCP("MyServer")
+mcp.add_middleware(LoggingMiddleware())
+```
+
+这创建了一个基本的日志记录中间件，它将打印流经您服务器的每个请求的信息。
+
+## 向您的服务器添加中间件
+
+### 单个中间件
+
+向您的服务器添加中间件很简单：
+
+```python
+mcp = FastMCP("MyServer")
+mcp.add_middleware(LoggingMiddleware())
+```
+
+### 多个中间件
+
+中间件按照添加到服务器的顺序执行。第一个添加的中间件在进入时首先运行，在退出时最后运行：
+
+```python
+mcp = FastMCP("MyServer")
+
+mcp.add_middleware(AuthenticationMiddleware("secret-token"))
+mcp.add_middleware(PerformanceMiddleware())
+mcp.add_middleware(LoggingMiddleware())
+```
+
+这创建了以下执行流：
+1. AuthenticationMiddleware（预处理）
+2. PerformanceMiddleware（预处理）
+3. LoggingMiddleware（预处理）
+4. 实际工具/资源处理程序
+5. LoggingMiddleware（后处理）
+6. PerformanceMiddleware（后处理）
+7. AuthenticationMiddleware（后处理）
+
+## 服务器组合和中间件
+
+当使用 `mount` 或 `import_server` 进行[服务器组合](/zh/v2/servers/composition)时，中间件行为遵循以下规则：
+
+1. **父服务器中间件**为所有请求运行，包括路由到挂载服务器的请求
+2. **挂载服务器中间件**仅为该特定服务器处理的请求运行
+3. **中间件顺序**在每个服务器内保持
+
+这允许您创建分层的中间件架构，其中父服务器处理横切关注点（如身份验证），而子服务器专注于特定领域的中间件。
+
+```python
+# 带有中间件的父服务器
+parent = FastMCP("Parent")
+parent.add_middleware(AuthenticationMiddleware("token"))
+
+# 带有自己中间件的子服务器
+child = FastMCP("Child")
+child.add_middleware(LoggingMiddleware())
+
+@child.tool
+def child_tool() -> str:
+    return "from child"
+
+# 挂载子服务器
+parent.mount(child, prefix="child")
+```
+
+当客户端调用 "child_tool" 时，请求将首先流经父服务器的身份验证中间件，然后路由到子服务器，在那里它将经过子服务器的日志记录中间件。
+
+## 内置中间件示例
+
+FastMCP 包含几个中间件实现，它们展示了最佳实践并提供立即可用的功能。让我们通过构建简化版本来探索每种类型如何工作，然后看看如何使用完整的实现。
+
+### 计时中间件
+
+性能监控对于理解您服务器的行为和识别瓶颈至关重要。FastMCP 在 `fastmcp.server.middleware.timing` 中包含计时中间件。
+
+以下是它如何工作的示例：
+
+```python
+import time
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+
+class SimpleTimingMiddleware(Middleware):
+    async def on_request(self, context: MiddlewareContext, call_next):
+        start_time = time.perf_counter()
+        
+        try:
+            result = await call_next(context)
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            print(f"Request {context.method} completed in {duration_ms:.2f}ms")
+            return result
+        except Exception as e:
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            print(f"Request {context.method} failed after {duration_ms:.2f}ms: {e}")
+            raise
+```
+
+使用具有适当日志记录和配置的完整版本：
+
+```python
+from fastmcp.server.middleware.timing import (
+    TimingMiddleware, 
+    DetailedTimingMiddleware
+)
+
+# 所有请求的基本计时
+mcp.add_middleware(TimingMiddleware())
+
+# 详细的按操作计时（工具、资源、提示）
+mcp.add_middleware(DetailedTimingMiddleware())
+```
+
+内置版本包括自定义记录器支持、正确的格式，**DetailedTimingMiddleware**提供特定于操作的钩子，如"on_call_tool"和"on_read_resource"，用于细粒度计时。
+
+### 工具注入中间件
+
+工具注入中间件是在请求生命周期中向服务器注入工具的中间件：
+
+```python
+from fastmcp.server.middleware.tool_injection import ToolInjectionMiddleware
+
+def my_tool_fn(a: int, b: int) -> int:
+    return a + b
+
+my_tool = Tool.from_function(fn=my_tool_fn, name="my_tool")
+
+mcp.add_middleware(ToolInjectionMiddleware(tools=[my_tool]))
+```
+
+### 提示工具中间件
+
+提示工具中间件是针对无法列出或获取提示的客户端的兼容性中间件。它提供两个工具：`list_prompts` 和 `get_prompt`，允许客户端仅使用工具调用来分别列出和获取提示。
+
+```python
+from fastmcp.server.middleware.tool_injection import PromptToolMiddleware
+
+mcp.add_middleware(PromptToolMiddleware())
+```
+
+### 资源工具中间件
+
+资源工具中间件是针对无法列出或读取资源的客户端的兼容性中间件。它提供两个工具：`list_resources` 和 `read_resource`，允许客户端仅使用工具调用来分别列出和读取资源。
+
+```python
+from fastmcp.server.middleware.tool_injection import ResourceToolMiddleware
+
+mcp.add_middleware(ResourceToolMiddleware())
+```
+
+### 缓存中间件
+
+缓存中间件对于提高性能和减少服务器负载至关重要。FastMCP 在 `fastmcp.server.middleware.caching` 中提供缓存中间件。
+
+以下是使用完整版本的方法：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+
+mcp.add_middleware(ResponseCachingMiddleware())
+```
+
+开箱即用，它将调用/列出工具、资源和提示缓存到具有基于 TTL 过期的内存缓存中。缓存条目根据其 TTL 过期；没有基于事件的缓存失效。列表调用存储在全局键下——在多个服务器之间共享存储后端时，请考虑命名空间集合以防止冲突。有关高级配置选项，请参阅[存储后端](/zh/v2/servers/storage-backends)。
+
+每个方法可以单独配置，例如，缓存列出工具 30 秒，将缓存限制在特定工具，并禁用资源读取的缓存：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware, CallToolSettings, ListToolsSettings, ReadResourceSettings
+
+mcp.add_middleware(ResponseCachingMiddleware(
+    list_tools_settings=ListToolsSettings(
+        ttl=30,
+    ),
+    call_tool_settings=CallToolSettings(
+        included_tools=["tool1"],
+    ),
+    read_resource_settings=ReadResourceSettings(
+        enabled=False
+    )
+))
+```
+
+#### 存储后端
+
+默认情况下，缓存使用内存存储，这速度很快但不能在重启后持久化。对于生产环境或在服务器重启后持久化缓存，请配置不同的存储后端。有关完整选项，包括磁盘、Redis、DynamoDB 和自定义实现，请参阅[存储后端](/zh/v2/servers/storage-backends)。
+
+基于磁盘的缓存示例：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+from key_value.aio.stores.disk import DiskStore
+
+mcp.add_middleware(ResponseCachingMiddleware(
+    cache_storage=DiskStore(directory="cache"),
+))
+```
+
+用于分布式部署的 Redis：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+from key_value.aio.stores.redis import RedisStore
+
+mcp.add_middleware(ResponseCachingMiddleware(
+    cache_storage=RedisStore(host="redis.example.com", port=6379),
+))
+```
+
+#### 缓存统计
+
+缓存中间件通过底层存储层收集操作统计信息（命中、未命中等）。从中间件实例访问统计信息：
+
+```python
+from fastmcp.server.middleware.caching import ResponseCachingMiddleware
+
+middleware = ResponseCachingMiddleware()
+mcp.add_middleware(middleware)
+
+# 稍后检索统计信息
+stats = middleware.statistics()
+print(f"总缓存操作数：{stats}")
+```
+
+### 日志记录中间件
+
+请求和响应日志记录对于调试、监控和理解 MCP 服务器中的使用模式至关重要。FastMCP 在 `fastmcp.server.middleware.logging` 中提供了全面的日志记录中间件。
+
+以下是它如何工作的示例：
+
+```python
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+
+class SimpleLoggingMiddleware(Middleware):
+    async def on_message(self, context: MiddlewareContext, call_next):
+        print(f"正在处理来自 {context.source} 的 {context.method}")
+
+        try:
+            result = await call_next(context)
+            print(f"已完成 {context.method}")
+            return result
+        except Exception as e:
+            print(f"失败 {context.method}：{e}")
+            raise
+```
+
+要使用具有高级功能的完整版本：
+
+```python
+from fastmcp.server.middleware.logging import (
+    LoggingMiddleware,
+    StructuredLoggingMiddleware
+)
+
+# 具有载荷支持的人类可读日志记录
+mcp.add_middleware(LoggingMiddleware(
+    include_payloads=True,
+    max_payload_length=1000
+))
+
+# 用于日志聚合工具的 JSON 结构化日志记录
+mcp.add_middleware(StructuredLoggingMiddleware(include_payloads=True))
+```
+
+内置版本包括载荷日志记录、结构化 JSON 输出、自定义日志记录器支持、载荷大小限制以及用于精细控制的操作特定钩子。
+
+### 速率限制中间件
+
+速率限制对于保护您的服务器免受滥用、确保公平的资源使用以及在负载下保持性能至关重要。FastMCP 在 `fastmcp.server.middleware.rate_limiting` 中包含复杂的速率限制中间件。
+
+以下是其工作原理的示例：
+
+```python
+import time
+from collections import defaultdict
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+from mcp import McpError
+from mcp.types import ErrorData
+
+class SimpleRateLimitMiddleware(Middleware):
+    def __init__(self, requests_per_minute: int = 60):
+        self.requests_per_minute = requests_per_minute
+        self.client_requests = defaultdict(list)
+
+    async def on_request(self, context: MiddlewareContext, call_next):
+        current_time = time.time()
+        client_id = "default"  # 实际使用中，从标头或上下文提取
+
+        # 清理旧请求并检查限制
+        cutoff_time = current_time - 60
+        self.client_requests[client_id] = [
+            req_time for req_time in self.client_requests[client_id]
+            if req_time > cutoff_time
+        ]
+
+        if len(self.client_requests[client_id]) >= self.requests_per_minute:
+            raise McpError(ErrorData(code=-32000, message="速率限制超出"))
+
+        self.client_requests[client_id].append(current_time)
+        return await call_next(context)
+```
+
+要使用具有高级算法的完整版本：
+
+```python
+from fastmcp.server.middleware.rate_limiting import (
+    RateLimitingMiddleware,
+    SlidingWindowRateLimitingMiddleware
+)
+
+# 令牌桶速率限制（允许受控突发）
+mcp.add_middleware(RateLimitingMiddleware(
+    max_requests_per_second=10.0,
+    burst_capacity=20
+))
+
+# 滑动窗口速率限制（精确的基于时间的控制）
+mcp.add_middleware(SlidingWindowRateLimitingMiddleware(
+    max_requests=100,
+    window_minutes=1
+))
+```
+
+内置版本包括令牌桶算法、按客户端识别、全局速率限制，以及具有可配置客户端识别函数的异步安全实现。
+
+### 错误处理中间件
+
+一致的错误处理和恢复对于健壮的 MCP 服务器至关重要。FastMCP 在 `fastmcp.server.middleware.error_handling` 中提供全面的错误处理中间件。
+
+以下是其工作原理的示例：
+
+```python
+import logging
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+
+class SimpleErrorHandlingMiddleware(Middleware):
+    def __init__(self):
+        self.logger = logging.getLogger("errors")
+        self.error_counts = {}
+
+    async def on_message(self, context: MiddlewareContext, call_next):
+        try:
+            return await call_next(context)
+        except Exception as error:
+            # 记录错误并跟踪统计信息
+            error_key = f"{type(error).__name__}:{context.method}"
+            self.error_counts[error_key] = self.error_counts.get(error_key, 0) + 1
+
+            self.logger.error(f"错误在 {context.method} 中：{type(error).__name__}：{error}")
+            raise
+```
+
+要使用具有高级功能的完整版本：
+
+```python
+from fastmcp.server.middleware.error_handling import (
+    ErrorHandlingMiddleware,
+    RetryMiddleware
+)
+
+# 全面的错误日志记录和转换
+mcp.add_middleware(ErrorHandlingMiddleware(
+    include_traceback=True,
+    transform_errors=True,
+    error_callback=my_error_callback
+))
+
+# 具有指数退避的自动重试
+mcp.add_middleware(RetryMiddleware(
+    max_retries=3,
+    retry_exceptions=(ConnectionError, TimeoutError)
+))
+```
+
+内置版本包括错误转换、自定义回调、可配置的重试逻辑以及正确的 MCP 错误格式化。
+
+### 组合中间件
+
+这些中间件可以无缝协作：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.middleware.timing import TimingMiddleware
+from fastmcp.server.middleware.logging import LoggingMiddleware
+from fastmcp.server.middleware.rate_limiting import RateLimitingMiddleware
+from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
+
+mcp = FastMCP("生产服务器")
+
+# 按逻辑顺序添加中间件
+mcp.add_middleware(ErrorHandlingMiddleware())  # 首先处理错误
+mcp.add_middleware(RateLimitingMiddleware(max_requests_per_second=50))
+mcp.add_middleware(TimingMiddleware())  # 计时实际执行
+mcp.add_middleware(LoggingMiddleware())  # 记录一切
+
+@mcp.tool
+def my_tool(data: str) -> str:
+    return f"已处理：{data}"
+```
+
+这种配置为您的 MCP 服务器提供了全面的监控、保护和可观察性。
+
+### 自定义中间件示例
+
+您也可以通过扩展基类来创建自定义中间件：
+
+```python
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+
+class CustomHeaderMiddleware(Middleware):
+    async def on_request(self, context: MiddlewareContext, call_next):
+        # 在此添加自定义逻辑
+        print(f"正在处理 {context.method}")
+
+        result = await call_next(context)
+
+        print(f"已完成 {context.method}")
+        return result
+
+mcp.add_middleware(CustomHeaderMiddleware())
+```

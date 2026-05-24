@@ -1,0 +1,106 @@
+---
+title: AuthKit 🤝 FastMCP
+sidebarTitle: AuthKit
+description: 使用 WorkOS 的 AuthKit 保护你的 FastMCP 服务端
+icon: shield-check
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.11.0" />
+
+本指南展示如何使用 WorkOS 的 **AuthKit** 保护 FastMCP 服务端。AuthKit 是完整的身份认证和用户管理解决方案。此集成使用带 [RFC 8707](https://www.rfc-editor.org/rfc/rfc8707.html) resource indicators 的 [**Remote OAuth**](/zh/v2/servers/auth/remote-oauth) 模式：AuthKit 会签发 `aud` claim 绑定到服务端资源 URL 的 token，FastMCP 会自动验证该 claim。
+
+## 配置
+
+### 前置条件
+
+开始前，你需要：
+1.  一个 **[WorkOS Account](https://workos.com/)** 和一个新的 **Project**。
+2.  在 WorkOS project 中配置好的 **[AuthKit](https://www.authkit.com/)** 实例。
+3.  FastMCP 服务端的 URL（开发时可以是 localhost，例如 `http://127.0.0.1:8000`）。
+
+### 第 1 步：WorkOS Dashboard
+
+在 WorkOS Dashboard 中，进入 **Connect → Configuration** 并配置：
+
+<Steps>
+<Step title="MCP Auth">
+    启用 **Dynamic Client Registration**（DCR），让 MCP 客户端可以自行注册。或者，如果你的客户端支持，也可以启用 **Client ID Metadata Document**（CIMD）。
+</Step>
+
+<Step title="MCP resource indicators">
+    将 FastMCP 服务端的资源 URL（例如 `http://127.0.0.1:8000/mcp`）添加为有效 resource indicator。
+
+    它必须与 FastMCP 在其 protected resource metadata 中公布的值完全匹配。先启动服务端，它会在启动时记录正确 URL，请复制该值。
+
+    如果没有此步骤，AuthKit 会回退到默认的环境级 audience，audience 验证会以 401 失败。
+</Step>
+
+<Step title="记录你的 AuthKit Domain">
+    在配置页面找到你的 **AuthKit Domain**。它看起来像 `https://your-project-12345.authkit.app`。FastMCP 服务端配置会需要它。
+</Step>
+</Steps>
+
+### 第 2 步：FastMCP 配置
+
+创建 FastMCP 服务端文件，并使用 `AuthKitProvider` 自动处理所有 OAuth 集成：
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.workos import AuthKitProvider
+
+# AuthKitProvider 会自动发现 WorkOS 端点、配置 JWT 验证，
+# 并将 token audience 绑定到此服务端的资源 URL。
+auth_provider = AuthKitProvider(
+    authkit_domain="https://your-project-12345.authkit.app",
+    base_url="http://127.0.0.1:8000",  # 使用你的实际服务端 URL
+)
+
+mcp = FastMCP(name="AuthKit Secured App", auth=auth_provider)
+```
+
+服务端启动时，会记录它正在验证的资源 URL。将该 URL 粘贴到 Dashboard 的 **MCP resource indicators** 列表中。
+
+## 测试
+
+要测试服务端，可以使用 `fastmcp` CLI 在本地运行它。假设你已将上述代码保存为 `server.py`（并将 `authkit_domain` 和 `base_url` 替换为实际值！），可以运行以下命令：
+
+```bash
+fastmcp run server.py --transport http --port 8000
+```
+
+AuthKit 默认让 DCR 客户端使用 `client_secret_basic` 进行 token exchange，这会与某些 MCP 客户端发送凭据的方式冲突。为避免 token exchange 错误，请通过将 `token_endpoint_auth_method` 设置为 `"none"` 注册为 public client：
+
+```python client.py
+from fastmcp import Client
+from fastmcp.client.auth import OAuth
+import asyncio
+
+auth = OAuth(additional_client_metadata={"token_endpoint_auth_method": "none"})
+
+async def main():
+    async with Client("http://127.0.0.1:8000/mcp", auth=auth) as client:
+        assert await client.ping()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## 生产配置
+
+对于生产部署，请从环境变量加载敏感配置：
+
+```python server.py
+import os
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.workos import AuthKitProvider
+
+# 从环境变量加载配置
+auth = AuthKitProvider(
+    authkit_domain=os.environ.get("AUTHKIT_DOMAIN"),
+    base_url=os.environ.get("BASE_URL", "https://your-server.com"),
+)
+
+mcp = FastMCP(name="AuthKit Secured App", auth=auth)
+```

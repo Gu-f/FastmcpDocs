@@ -1,0 +1,166 @@
+---
+title: 运行服务端
+sidebarTitle: 运行
+description: 从命令行启动、开发和配置服务端
+icon: play
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+## 启动服务端
+
+`fastmcp run` 会启动服务端。可以指向 Python 文件、工厂函数、远程 URL 或配置文件：
+
+```bash
+fastmcp run server.py
+fastmcp run server.py:create_server
+fastmcp run https://example.com/mcp
+fastmcp run fastmcp.json
+```
+
+默认情况下，服务端通过 **stdio** 运行，这是 Claude Desktop 等 MCP 客户端期望的传输方式。要改为通过 HTTP 提供服务，请指定传输方式：
+
+```bash
+fastmcp run server.py --transport http
+fastmcp run server.py --transport http --host 0.0.0.0 --port 9000
+```
+
+### 入口点
+
+FastMCP 支持通过多种方式定位并启动服务端：
+
+**推断实例**：FastMCP 导入文件并查找名为 `mcp`、`server` 或 `app` 的变量：
+
+```bash
+fastmcp run server.py
+```
+
+**显式实例**：指向特定变量：
+
+```bash
+fastmcp run server.py:my_server
+```
+
+**工厂函数**：FastMCP 调用该函数并使用返回的服务端。当服务端需要异步设置，或需要在启动前运行配置逻辑时，这很有用：
+
+```bash
+fastmcp run server.py:create_server
+```
+
+**远程 URL**：启动一个桥接到远程服务端的本地代理。适合针对已部署服务端进行本地开发，或将远程 HTTP 服务端桥接到 stdio：
+
+```bash
+fastmcp run https://example.com/mcp
+```
+
+**FastMCP 配置**：使用 `fastmcp.json` 文件以声明式方式指定服务端、依赖和部署设置。当你不带参数运行 `fastmcp run` 时，它会自动检测当前目录中的 `fastmcp.json`：
+
+```bash
+fastmcp run
+fastmcp run my-config.fastmcp.json
+```
+
+完整的 `fastmcp.json` 格式请参阅[服务端配置](/zh/deployment/server-configuration)。
+
+**MCP 配置**：运行标准 MCP 配置文件中定义的服务端（任何带 `mcpServers` 键的 `.json` 文件）：
+
+```bash
+fastmcp run mcp.json
+```
+
+<Warning>
+`fastmcp run` 会完全忽略 `if __name__ == "__main__"` 代码块。该代码块中的任何设置代码都不会执行。如果需要运行初始化逻辑，请使用[工厂函数](/zh/cli/overview)。
+</Warning>
+
+### 选项
+
+| 选项 | 标志 | 描述 |
+| ------ | ---- | ----------- |
+| 传输 | `--transport`, `-t` | `stdio`（默认）、`http` 或 `sse` |
+| 主机 | `--host` | HTTP 绑定地址（默认：`127.0.0.1`） |
+| 端口 | `--port`, `-p` | HTTP 绑定端口（默认：`8000`） |
+| 路径 | `--path` | HTTP 的 URL 路径（默认：`/mcp/`） |
+| 日志级别 | `--log-level`, `-l` | `DEBUG`、`INFO`、`WARNING`、`ERROR`、`CRITICAL` |
+| 无横幅 | `--no-banner` | 隐藏启动横幅 |
+| 自动重载 | `--reload` / `--no-reload` | 监听文件变更并自动重启 |
+| 重载目录 | `--reload-dir` | 要监听的目录（可重复） |
+| 跳过环境 | `--skip-env` | 不设置 uv 环境（已在环境中时使用） |
+| Python | `--python` | 要使用的 Python 版本（例如 `3.11`） |
+| 额外包 | `--with` | 要安装的额外包（可重复） |
+| 项目 | `--project` | 在特定 uv 项目目录中运行 |
+| Requirements | `--with-requirements` | 从 requirements 文件安装 |
+
+### 依赖管理
+
+默认情况下，`fastmcp run` 会直接使用当前 Python 环境。当你传入 `--python`、`--with`、`--project` 或 `--with-requirements` 时，它会切换为在子进程中通过 `uv run` 运行，并自动处理依赖隔离。
+
+当你已经位于激活的 venv、预安装依赖的 Docker 容器，或 uv 管理的项目中时，`--skip-env` 标志很有用：它会阻止 uv 尝试再设置一层环境。
+
+## 预览应用
+
+<VersionBadge version="3.2.0" />
+
+`fastmcp dev apps` 会为带有 [Prefab App 工具](/zh/apps/prefab)的服务端启动基于浏览器的预览 UI。它会在一个端口启动 MCP 服务端，并在另一个端口启动本地开发 UI，从而提供一个实时交互式选择器，让你无需完整 MCP 宿主客户端就能调用应用工具并查看渲染输出。
+
+```bash
+fastmcp dev apps server.py
+fastmcp dev apps server.py:mcp --mcp-port 9000 --dev-port 9090
+```
+
+选择器会根据每个工具的输入 schema 自动生成表单。提交表单后，结果会以渲染后的 Prefab UI 形式在新标签页中打开。
+
+默认启用自动重载：保存文件后，MCP 服务端会自动重启。
+
+<Tip>
+`fastmcp dev apps` 需要 `fastmcp[apps]`，请使用 `pip install "fastmcp[apps]"` 安装。
+</Tip>
+
+| 选项 | 标志 | 描述 |
+| ------ | ---- | ----------- |
+| MCP 端口 | `--mcp-port` | MCP 服务端端口（默认：`8000`） |
+| 开发端口 | `--dev-port` | 开发 UI 端口（默认：`8080`） |
+| 自动重载 | `--reload` / `--no-reload` | 监听文件变更（默认：开启） |
+
+## 使用 Inspector 开发
+
+`fastmcp dev inspector` 会在 [MCP Inspector](https://github.com/modelcontextprotocol/inspector) 中启动你的服务端。MCP Inspector 是一个基于浏览器的工具，用于交互式测试 MCP 服务端。默认启用自动重载，因此保存更改时服务端会重启。
+
+```bash
+fastmcp dev inspector server.py
+fastmcp dev inspector server.py -e . --with pandas
+```
+
+<Tip>
+Inspector 始终在子进程中通过 `uv run` 运行你的服务端，不会直接使用本地环境。请使用 `--with`、`--with-editable`、`--with-requirements` 或通过 `fastmcp.json` 文件指定依赖。
+</Tip>
+
+<Warning>
+Inspector **只能通过 stdio** 连接。启动后，你可能需要从传输下拉菜单中选择 "STDIO" 并点击连接。要测试通过 HTTP 运行的服务端，请先用 `fastmcp run server.py --transport http` 单独启动它，然后让 Inspector 指向该 URL。
+</Warning>
+
+| 选项 | 标志 | 描述 |
+| ------ | ---- | ----------- |
+| 可编辑包 | `--with-editable`, `-e` | 以 editable 模式安装目录 |
+| 额外包 | `--with` | 额外包（可重复） |
+| Inspector 版本 | `--inspector-version` | 要使用的 MCP Inspector 版本 |
+| UI 端口 | `--ui-port` | Inspector UI 使用的端口 |
+| 服务端端口 | `--server-port` | Inspector 代理使用的端口 |
+| 自动重载 | `--reload` / `--no-reload` | 文件监听（默认：开启） |
+| 重载目录 | `--reload-dir` | 要监听的目录（可重复） |
+| Python | `--python` | Python 版本 |
+| 项目 | `--project` | 在 uv 项目目录中运行 |
+| Requirements | `--with-requirements` | 从 requirements 文件安装 |
+
+## 预构建环境
+
+`fastmcp project prepare` 会根据 `fastmcp.json` 文件创建一个持久化 uv 项目，并预安装所有依赖。这样可以将环境设置与服务端执行分离：安装一次，运行多次。
+
+```bash
+# 步骤 1：构建环境（较慢，会执行依赖解析）
+fastmcp project prepare fastmcp.json --output-dir ./env
+
+# 步骤 2：使用准备好的环境运行（较快，没有安装步骤）
+fastmcp run fastmcp.json --project ./env
+```
+
+准备好的目录包含一个 `pyproject.toml`、一个已安装所有包的 `.venv`，以及用于可复现性的 `uv.lock`。在需要确定性预构建环境的部署场景中，这尤其有用。

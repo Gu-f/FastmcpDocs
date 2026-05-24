@@ -1,0 +1,161 @@
+---
+title: 客户端 CLI
+sidebarTitle: CLI
+description: 使用 fastmcp list 和 fastmcp call 直接从终端查询并调用 MCP 服务端工具。
+icon: terminal
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+MCP 服务端面向 AI 助手和应用的程序化调用而设计。但在开发过程中，你经常会想直接探查一个服务端：检查它暴露了哪些工具、用测试参数调用某个工具，或验证某个部署是否正确响应。FastMCP CLI 通过 `fastmcp list` 和 `fastmcp call` 两个命令提供这种直接访问能力，让你无需编写一行 Python 就能查询和调用任意 MCP 服务端。
+
+这些命令对缺少原生 MCP 支持的 LLM agent 也很有价值。能够执行 shell 命令的 agent 可以使用 `fastmcp list --json` 发现可用工具，并使用 `fastmcp call --json` 调用它们；结构化 JSON 输出专为程序化消费而设计。
+
+## 服务端目标
+
+这两个命令都需要知道要连接哪个服务端。你将“server spec”作为第一个参数提供，FastMCP 会自动确定传输方式。它可以指向正在运行的服务端 HTTP URL、定义服务端的 Python 文件、描述服务端的 JSON 配置文件，或 JavaScript 文件。CLI 会解析正确的连接机制，让你专注于查询本身。
+
+```bash
+fastmcp list http://localhost:8000/mcp
+fastmcp list server.py
+fastmcp list mcp-config.json
+```
+
+Python 文件会被特别处理。CLI 不要求你的脚本在底部调用 `mcp.run()`，而是在内部通过 `fastmcp run` 路由它。这意味着任何定义了 FastMCP 服务端对象的 Python 文件都可以作为目标使用，无需样板代码。
+
+对于通过 stdio 通信的服务端（基于 Node.js 的 MCP 服务端中很常见），请使用 `--command` 标志，而不是位置参数形式的 server spec。该字符串会按 shell 规则拆分为命令和参数。
+
+```bash
+fastmcp list --command 'npx -y @modelcontextprotocol/server-github'
+```
+
+### 基于名称解析
+
+如果你的 MCP 服务端已经配置在编辑器或工具中，可以直接通过名称引用它们，而不必写出 URL 或文件路径。CLI 会扫描 Claude Desktop、Claude Code、Cursor、Gemini CLI 和 Goose 的配置文件，并匹配你提供的名称。
+
+```bash
+fastmcp list weather
+fastmcp call weather get_forecast city=London
+```
+
+你也可以使用 `source:name` 形式直接定位特定来源。当同一个服务端名称出现在多个配置中，或你想明确指定使用哪个配置时，这很有用。
+
+```bash
+fastmcp list claude-code:my-server
+fastmcp call cursor:weather get_forecast city=London
+```
+
+可用的来源名称包括 `claude-desktop`、`claude-code`、`cursor`、`gemini`、`goose` 和 `project`（对应 `./mcp.json`）。运行 `fastmcp discover` 可查看可用项。
+
+## 发现已配置的服务端
+
+`fastmcp discover` 会扫描本地编辑器和项目配置，查找 MCP 服务端定义。它会检查 Claude Desktop、Claude Code (`~/.claude.json`)、Cursor 工作区配置（从当前目录向上查找）、Gemini CLI (`~/.gemini/settings.json`)、Goose (`~/.config/goose/config.yaml`)，以及当前目录中的 `mcp.json`。
+
+```bash
+fastmcp discover
+```
+
+输出会按来源对服务端分组，显示每个服务端的名称和传输方式。使用 `--source` 可筛选特定来源，使用 `--json` 可获得机器可读输出。
+
+```bash
+fastmcp discover --source claude-code
+fastmcp discover --source cursor --source gemini --json
+```
+
+这里出现的任何服务端都可以通过名称（或 `source:name`）与 `fastmcp list` 和 `fastmcp call` 一起使用。这意味着你可以从“我在 Claude Code 中配置了一个服务端”直接进入查询，而无需复制任何 URL 或路径。
+
+## 发现工具
+
+`fastmcp list` 会连接到服务端，并打印它暴露的每个工具。默认输出很紧凑：每个工具都会以函数签名形式显示，包含参数名称、类型和描述。
+
+```bash
+fastmcp list http://localhost:8000/mcp
+```
+
+输出看起来像 Python 函数签名，因此你可以一眼看出工具期望什么参数以及返回什么结果。必需参数只显示类型标注，可选参数会显示默认值。
+
+当你需要查看工具输入或输出的完整 JSON Schema 时，可以使用 `--input-schema` 或 `--output-schema`。这对于理解嵌套对象结构或枚举约束很有用。这些选项会在每个工具签名下方打印原始 schema。
+
+### 不只是工具
+
+MCP 服务端除了工具，还可以暴露资源和提示词。默认情况下，`fastmcp list` 只显示工具，因为工具是最常见的交互点。添加 `--resources` 或 `--prompts` 可将它们纳入输出。
+
+```bash
+fastmcp list server.py --resources --prompts
+```
+
+资源会显示其 URI 和描述。提示词会显示参数名称，方便你了解它们接受哪些参数。
+
+### 机器可读输出
+
+`--json` 标志会把面向人类的文本切换为结构化 JSON。每个工具都包含名称、描述和完整输入 schema（如果存在输出 schema，也会包含）。与 `--resources` 或 `--prompts` 结合使用时，它们会作为额外顶层键包含在输出中。
+
+```bash
+fastmcp list server.py --json
+```
+
+当你围绕 MCP 服务端构建自动化，或把工具定义提供给需要决定调用哪个工具的 LLM agent 时，应使用这种格式。
+
+## 调用工具
+
+`fastmcp call` 会调用服务端上的单个工具。你需要提供 server spec、工具名称，以及 `key=value` 形式的参数。CLI 会获取工具 schema，将字符串值强制转换为正确类型（整数、浮点数、布尔值、数组、对象），然后发起调用。
+
+```bash
+fastmcp call http://localhost:8000/mcp search query=hello limit=5
+```
+
+类型转换由工具的 JSON Schema 驱动。如果某个参数声明为整数，字符串 `"5"` 会变成整数 `5`。布尔值接受 `true`/`false`、`yes`/`no` 和 `1`/`0`。数组和对象参数会按 JSON 解析。
+
+对于参数复杂或深度嵌套的工具，`key=value` 语法会变得笨重。你可以改为传入单个 JSON 对象作为参数，CLI 会将其视为完整输入字典。
+
+```bash
+fastmcp call server.py create_item '{"name": "Widget", "tags": ["sale", "new"], "metadata": {"color": "blue"}}'
+```
+
+也可以使用 `--input-json` 提供基础参数字典。与它一起添加的任何 `key=value` 参数都会覆盖 JSON 中的键，这对于模板化复杂调用并一次只改变一个参数很有用。
+
+### 错误处理
+
+CLI 会在发送前验证调用。如果你拼错了工具名称，它会使用模糊匹配给出修正建议。如果你遗漏了必需参数，它会告诉你缺少哪些参数，并打印工具签名作为提醒。
+
+当工具调用本身返回错误（服务端执行了工具但失败）时，CLI 会打印错误消息并以非零状态码退出，因此很容易在脚本中使用。
+
+### 结构化输出
+
+与 `fastmcp list` 一样，`fastmcp call` 的 `--json` 标志会输出结构化 JSON，而不是格式化文本。输出包括内容块、错误状态，以及服务端提供的结构化内容。当你需要以程序方式解析工具结果时，请使用它。
+
+```bash
+fastmcp call server.py get_weather city=London --json
+```
+
+## 认证
+
+当服务端目标是 HTTP URL 时，CLI 会自动启用 OAuth 认证。如果服务端要求认证，它会引导你完成 OAuth 流程（通常会打开浏览器进行授权）。如果服务端没有认证要求，OAuth 设置会静默跳过。
+
+若要显式禁用认证，例如连接到本地开发服务端且 OAuth 设置只会拖慢流程时，请传入 `--auth none`。
+
+```bash
+fastmcp call http://localhost:8000/mcp my_tool --auth none
+```
+
+## 覆盖传输
+
+对于 URL 目标，FastMCP 默认使用 Streamable HTTP。如果你连接的服务端只支持 Server-Sent Events (SSE)，请使用 `--transport sse` 强制使用旧传输。它会自动向 URL 路径追加 `/sse`，让客户端选择正确协议。
+
+```bash
+fastmcp list http://localhost:8000 --transport sse
+```
+
+## 交互式用户征询
+
+一些 MCP 工具会在执行过程中通过称为用户征询的机制向用户请求额外输入。当工具发送用户征询请求时，CLI 会在终端打印服务端的问题并提示你响应。用户征询 schema 中的每个字段都会显示名称和预期类型，必需字段也会清楚标记。
+
+你可以输入 `decline` 跳过问题，或输入 `cancel` 完全中止工具调用。这种交互行为意味着 CLI 能自然配合多步骤或会话式工作流的工具。
+
+## LLM Agent 集成
+
+对于能够执行 shell 命令但缺少内置 MCP 支持的 LLM agent，CLI 提供了一条清晰的集成路径。agent 调用 `fastmcp list --json` 获取每个可用工具的结构化描述（包括完整输入 schema），然后使用选定的工具和参数调用 `fastmcp call --json`。两个命令都会返回格式良好、易于解析的 JSON。
+
+由于 CLI 会在内部处理连接管理、传输选择和类型转换，agent 不需要理解 MCP 协议细节。它只需要读取 JSON 并构造 shell 命令即可。

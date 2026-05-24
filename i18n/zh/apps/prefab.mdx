@@ -1,0 +1,297 @@
+---
+title: 交互式工具
+sidebarTitle: 交互式工具
+description: 将你的工具变成交互式 UI，包含图表、表格和仪表盘。
+icon: palette
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+import PrefabPinWarning from '/zh/snippets/prefab-pin-warning.mdx'
+import { PrefabDemoFrame } from '/zh/snippets/prefab-demo-frame.mdx'
+
+<VersionBadge version="3.1.0" />
+
+<PrefabPinWarning />
+
+<PrefabDemoFrame demo="dashboard" height="680px" title="销售仪表盘演示" />
+
+信不信由你，那个仪表盘就是一个 FastMCP 工具。图表有工具提示，表格可以排序，徽章会根据交易阶段设置样式。整个东西大约 40 行 Python，用户会在对话中直接看到它，而不是面对一墙 JSON。
+
+本页每个示例背后的模式都一样：给工具添加 `app=True`，用 [Prefab](https://prefab.prefect.io) 组件构建 UI，并将其作为 `PrefabApp` 返回。Prefab 有 [100+ 个组件](https://prefab.prefect.io/docs/components)，涵盖数据表、图表、表单和进度条等。你用 Python 组合它们；宿主将它们渲染为实时交互式应用。
+
+## 从表格开始
+
+大多数工具都会返回用户想要探索的数据。`DataTable` 通常是最小但有用的升级：你的数据会从 JSON 数据块变成可搜索、可排序的表格：
+
+<PrefabDemoFrame demo="data-table" height="530px" title="数据表演示" />
+
+```python
+from prefab_ui.components import DataTable, DataTableColumn
+from fastmcp import FastMCP
+
+mcp = FastMCP("Directory")
+
+
+@mcp.tool(app=True)
+def team_directory() -> DataTable:
+    """浏览团队目录。"""
+    employees = [
+        {"name": "Alice Chen", "role": "Staff Engineer", "dept": "Platform"},
+        {"name": "Bob Martinez", "role": "Lead Designer", "dept": "Design"},
+        {"name": "Carol Johnson", "role": "Senior Engineer", "dept": "Platform"},
+        {"name": "David Kim", "role": "Product Manager", "dept": "Product"},
+        {"name": "Eva Mueller", "role": "Engineer", "dept": "Platform"},
+        {"name": "Frank Lee", "role": "Data Scientist", "dept": "ML"},
+        {"name": "Grace Park", "role": "Eng Manager", "dept": "Platform"},
+    ]
+
+    return DataTable(
+        columns=[
+            DataTableColumn(key="name", header="Name", sortable=True),
+            DataTableColumn(key="role", header="Role", sortable=True),
+            DataTableColumn(key="dept", header="Dept", sortable=True),
+        ],
+        rows=employees,
+        search=True,
+    )
+```
+
+就这么简单。添加 `app=True`，返回 Prefab 组件而不是原始 dict。FastMCP 会处理渲染、沙盒和安全性。像这种简单场景不需要包装类。
+
+## 添加图表
+
+当数字以可视化形式更能说明问题时，就换成图表。API 是一样的：把数据作为 dict 列表传入，并告诉图表要绘制哪些键。
+
+<PrefabDemoFrame demo="bar-chart" height="430px" title="柱状图演示" />
+
+```python
+@mcp.tool(app=True)
+def quarterly_revenue(year: int) -> BarChart:
+    """以柱状图显示季度收入。"""
+    data = [
+        {"quarter": "Q1", "revenue": 42000, "costs": 28000},
+        {"quarter": "Q2", "revenue": 51000, "costs": 31000},
+        {"quarter": "Q3", "revenue": 47000, "costs": 29000},
+        {"quarter": "Q4", "revenue": 63000, "costs": 35000},
+    ]
+
+    return BarChart(
+        data=data,
+        series=[
+            ChartSeries(data_key="revenue", label="Revenue"),
+            ChartSeries(data_key="costs", label="Costs"),
+        ],
+        x_axis="quarter",
+        show_legend=True,
+    )
+```
+
+每个 `ChartSeries` 都会绘制数据中的不同键。`BarChart`、`LineChart`、`AreaChart`、`PieChart`、`RadarChart` 和 `RadialChart` 都遵循相同模式。将鼠标悬停在柱上即可查看工具提示。
+
+<PrefabDemoFrame demo="pie-chart" height="410px" title="饼图演示" />
+
+```python
+@mcp.tool(app=True)
+def ticket_breakdown() -> PieChart:
+    """按类别显示未关闭工单。"""
+    data = [
+        {"category": "Bug", "count": 42},
+        {"category": "Feature", "count": 28},
+        {"category": "Docs", "count": 15},
+        {"category": "Infra", "count": 10},
+    ]
+
+    return PieChart(
+        data=data,
+        data_key="count",
+        name_key="category",
+        inner_radius=50,
+        show_legend=True,
+    )
+```
+
+关于堆叠、曲线、自定义颜色等内容，请参阅 [Prefab 图表文档](https://prefab.prefect.io/docs/components)。
+
+## 组合仪表盘
+
+表格和图表本身就很有用，但真正的力量来自组合。`Column` 会垂直堆叠子项，`Row` 会将它们并排布局，而 `with` 块会建立嵌套关系：缩进就是布局。
+
+<PrefabDemoFrame demo="dashboard" height="680px" title="销售仪表盘演示" />
+
+```python expandable
+@mcp.tool(app=True)
+def sales_dashboard() -> PrefabApp:
+    """显示销售 KPI、趋势和交易。"""
+    monthly = [
+        {"month": "Jan", "revenue": 48200, "costs": 31000},
+        {"month": "Feb", "revenue": 52100, "costs": 32500},
+        {"month": "Mar", "revenue": 61800, "costs": 34200},
+        {"month": "Apr", "revenue": 58400, "costs": 33800},
+    ]
+    deals = [
+        {"account": "Acme Corp", "value": "$84,000", "stage": "Won"},
+        {"account": "Globex Inc", "value": "$52,000", "stage": "Negotiation"},
+        {"account": "Initech", "value": "$31,500", "stage": "Proposal"},
+        {"account": "Wayne Enterprises", "value": "$45,000", "stage": "Lost"},
+    ]
+
+    rows = [
+        {
+            "account": d["account"],
+            "value": d["value"],
+            "stage": Badge(
+                d["stage"],
+                variant="success" if d["stage"] == "Won"
+                else "destructive" if d["stage"] == "Lost"
+                else "secondary",
+            ),
+        }
+        for d in deals
+    ]
+
+    total = sum(m["revenue"] for m in monthly)
+
+    with PrefabApp() as app:
+        with Column(gap=4, css_class="p-6"):
+            with Row(gap=6):
+                Metric(label="Revenue (Q1-Q4)", value=f"${total:,}")
+                Metric(label="Deals", value=f"{len(deals)}")
+            BarChart(
+                data=monthly,
+                series=[
+                    ChartSeries(data_key="revenue", label="Revenue"),
+                    ChartSeries(data_key="costs", label="Costs"),
+                ],
+                x_axis="month",
+                show_legend=True,
+            )
+            Separator()
+            DataTable(
+                columns=[
+                    DataTableColumn(key="account", header="Account", sortable=True),
+                    DataTableColumn(key="value", header="Value", sortable=True),
+                    DataTableColumn(key="stage", header="Stage"),
+                ],
+                rows=rows,
+            )
+
+    return app
+```
+
+注意 `Badge` 组件可以放在表格单元格中：任何 Prefab 组件都可以作为单元格值，因此你也可以把进度条、图标或按钮放进表格。
+
+## 让它响应交互
+
+上面的所有内容都会根据你的 Python 提供的数据渲染一次。但交互式工具也可以实时响应用户输入，不需要任何服务端往返。Prefab 的 state 系统让组件可以读取和写入客户端值，因此 UI 会随着用户交互立即更新。
+
+<PrefabDemoFrame demo="reactive" height="500px" title="响应式销售演示" />
+
+试着在下拉菜单中切换地区，并打开/关闭开关。
+
+```python expandable
+from prefab_ui.rx import Rx
+
+@mcp.tool(app=True)
+def regional_sales() -> PrefabApp:
+    """按地区显示销售额，并带实时筛选。"""
+    north = [
+        {"month": "Jan", "sales": 22000},
+        {"month": "Feb", "sales": 25500},
+        {"month": "Mar", "sales": 24200},
+    ]
+    south = [
+        {"month": "Jan", "sales": 5800},
+        {"month": "Feb", "sales": 6400},
+        {"month": "Mar", "sales": 5600},
+    ]
+    west = [
+        {"month": "Jan", "sales": 6000},
+        {"month": "Feb", "sales": 6000},
+        {"month": "Mar", "sales": 5600},
+    ]
+
+    with PrefabApp(
+        state={
+            "region": "north",
+            "north": north, "south": south, "west": west,
+            "show_target": True,
+        },
+    ) as app:
+        with Column(
+            gap=4,
+            css_class="p-6",
+            let={"data": "{{ region == 'south' ? south"
+                         " : region == 'west' ? west"
+                         " : north }}"},
+        ):
+            with Row(gap=4, align="center"):
+                with Select(name="region", css_class="w-40"):
+                    SelectOption(value="north", label="North")
+                    SelectOption(value="south", label="South")
+                    SelectOption(value="west", label="West")
+                Switch(name="show_target", css_class="ml-auto")
+                Text("Show target", css_class="text-sm text-muted-foreground")
+            BarChart(
+                data=Rx("data"),
+                series=[ChartSeries(data_key="sales", label="Sales")],
+                x_axis="month",
+            )
+            with If(Rx("show_target")):
+                Metric(label="Q1 Target", value="$75,000")
+
+    return app
+```
+
+`PrefabApp` 上的 `state` dict 声明初始值。`Select` 会在每次变更时写入 `region` 键。`let` 绑定会选择匹配的数据集，图表随即重新渲染。`Switch` 通过 `If(Rx("show_target"))` 切换 `Metric` 的显示与隐藏。这一切都发生在浏览器中，不会回调你的服务端。
+
+`Rx` 是响应式引用：`Rx("region")` 会编译为渲染器实时求值的表达式。它支持算术、比较、格式化管道（`.currency()`、`.percent()`）和三元条件（`.then()`）。完整 state 系统请参阅 [Prefab state 文档](https://prefab.prefect.io/docs/concepts/state)和[表达式文档](https://prefab.prefect.io/docs/concepts/expressions)。
+
+## Content Security Policy
+
+交互式工具会在带有严格 CSP 的沙盒 iframe 中渲染。如果工具加载外部资源，例如嵌入 iframe、从 API 获取数据或加载脚本，请添加所需域名：
+
+```python
+from fastmcp.apps import PrefabAppConfig, ResourceCSP
+
+@mcp.tool(app=PrefabAppConfig(
+    csp=ResourceCSP(frame_domains=["https://example.com"]),
+))
+def dashboard_with_embed() -> PrefabApp:
+    ...
+```
+
+不带参数的 `PrefabAppConfig()` 等同于 `app=True`。
+
+## 为 LLM 提供上下文
+
+默认情况下，LLM 会将 `"[Rendered Prefab UI]"` 视为工具结果。如果模型需要围绕数据推理，请返回一个 `ToolResult`，在 UI 旁附带文本摘要：
+
+```python
+from fastmcp.tools import ToolResult
+
+@mcp.tool(app=True)
+def sales_overview(year: int) -> ToolResult:
+    """以可视化方式显示销售额，并为模型摘要。"""
+    data = get_sales_data(year)
+    total = sum(row["revenue"] for row in data)
+
+    with Column(gap=4, css_class="p-6") as view:
+        BarChart(data=data, series=[ChartSeries(data_key="revenue")])
+
+    return ToolResult(
+        content=f"Total revenue for {year}: ${total:,} across {len(data)} quarters",
+        structured_content=view,
+    )
+```
+
+用户看到图表。模型看到摘要。
+
+## 接下来
+
+- **[FastMCPApp](/zh/apps/fastmcp-app)**：当 UI 需要调用后端工具时使用（表单、搜索、CRUD）
+- **[生成式 UI](/zh/apps/generative)**：让 LLM 在运行时设计 UI
+- **[自定义 HTML](/zh/apps/low-level)**：当 Prefab 不够用时使用（地图、3D、你自己的框架）
+- **[示例](/zh/apps/examples)**：可以今天就运行的完整服务端
+- **[开发](/zh/apps/development)**：使用 `fastmcp dev apps` 在本地预览你的工具
+- **[Prefab UI](https://prefab.prefect.io)**：完整组件参考，包含 100+ 个组件、主题和高级模式

@@ -1,0 +1,76 @@
+---
+title: config
+sidebarTitle: config
+---
+
+# `fastmcp.apps.config`
+
+
+MCP Apps 支持：扩展协商和类型化 UI 元数据模型。
+
+为 MCP Apps 扩展（io.modelcontextprotocol/ui）提供常量和 Pydantic 模型，使工具和资源能够为支持交互式 app 渲染的客户端携带 UI 元数据。
+
+
+## 函数
+
+### `app_config_to_meta_dict` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/config.py#L173" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+app_config_to_meta_dict(app: AppConfig | dict[str, Any]) -> dict[str, Any]
+```
+
+
+将 AppConfig 或 dict 转换为 ``meta["ui"]`` 的线协议格式 dict。
+
+
+## 类
+
+### `ResourceCSP` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/config.py#L20" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+MCP App 资源的内容安全策略。
+
+声明 app 允许连接哪些外部 origin，或允许从哪些外部 origin 加载资源。宿主会使用这些声明为沙箱 iframe 构建 ``Content-Security-Policy`` header。
+
+
+### `ResourcePermissions` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/config.py#L52" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+MCP App 资源的 iframe 沙箱权限。
+
+每个字段在设置后（通常设为 ``{}``），都会请求宿主向沙箱 iframe 授予对应的 Permission Policy 功能。宿主可以选择遵守这些请求；app 应使用 JS 功能检测作为备用方案。
+
+
+### `AppConfig` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/config.py#L79" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+MCP App 工具和资源的配置。
+
+控制工具或资源如何参与 MCP Apps 扩展。对于工具，``resource_uri`` 和 ``visibility`` 指定要渲染哪个 UI 资源以及工具出现的位置。对于资源，这些字段必须保持未设置（资源本身就是 UI）。
+
+所有字段都使用 ``exclude_none`` 序列化，因此只有显式设置的值会出现在传输内容中。别名匹配 MCP Apps 的线协议格式（camelCase）。
+
+
+### `PrefabAppConfig` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/config.py#L117" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+带合理默认值的 Prefab 工具 app 配置。
+
+类似 ``app=True``，但可自定义。它会自动连接 Prefab 渲染器 URI，并将渲染器的 CSP 与你指定的任何额外域名合并。渲染器资源会自动注册。
+
+示例::
+
+    @mcp.tool(app=PrefabAppConfig())  # same as app=True
+
+    @mcp.tool(app=PrefabAppConfig(
+        csp=ResourceCSP(frame_domains=["https://example.com"]),
+    ))
+
+
+**方法：**
+
+#### `model_post_init` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/config.py#L133" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+model_post_init(self, __context: Any) -> None
+```

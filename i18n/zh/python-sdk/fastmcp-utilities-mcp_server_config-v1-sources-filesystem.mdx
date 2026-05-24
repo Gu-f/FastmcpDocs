@@ -7,15 +7,15 @@ sidebarTitle: filesystem
 
 ## 类
 
-### `FileSystemSource` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/filesystem.py#L15" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `FileSystemSource` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/sources/filesystem.py#L16" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-本地 Python 文件的源。
+本地 Python 文件的来源。
 
 
 **方法：**
 
-#### `parse_path_with_object` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/filesystem.py#L28" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `parse_path_with_object` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/sources/filesystem.py#L29" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 parse_path_with_object(cls, v: str) -> str
@@ -23,15 +23,13 @@ parse_path_with_object(cls, v: str) -> str
 
 解析 path:object 语法并提取对象名称。
 
-此验证器在创建模型之前运行，允许我们在
-模型边界处理 "file.py:object" 语法。
+此验证器会在模型创建前运行，让我们可以在模型边界处理 "file.py:object" 语法。
 
 
-#### `load_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/filesystem.py#L63" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `load_server` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/sources/filesystem.py#L64" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 load_server(self) -> Any
 ```
 
-从文件系统加载服务器。
-
+从文件系统加载服务端。

@@ -144,7 +144,7 @@ python api_client.py
 FastMCP 允许用户使用"路由映射"的概念自定义此行为。`RouteMap` 是 API 路由到 MCP 类型的映射。FastMCP 按顺序检查每个 API 路由与您的自定义映射。如果路由与映射匹配，则将其转换为指定的 `mcp_type`。任何与您的自定义映射不匹配的路由将退回到默认行为（成为 `Tool`）。
 
 <Tip>
-在 [OpenAPI 集成文档](/zh/integrations/openapi#route-mapping) 中了解更多关于路由映射的信息。
+在 [OpenAPI 集成文档](/zh/integrations/openapi#路由映射) 中了解更多关于路由映射的信息。
 </Tip>
 
 以下是如何添加自定义路由映射将 `GET` 请求转换为 `Resources` 和 `ResourceTemplates`（如果它们具有路径参数）：

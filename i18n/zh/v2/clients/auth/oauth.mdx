@@ -1,0 +1,132 @@
+---
+title: OAuth 认证
+sidebarTitle: OAuth
+description: 通过 OAuth 2.1 认证你的 FastMCP 客户端。
+icon: window
+tag: NEW
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.6.0" />
+
+<Tip>
+OAuth 认证只适用于基于 HTTP 的传输，并且需要用户通过 Web 浏览器交互。
+</Tip>
+
+当 FastMCP 客户端需要访问受 OAuth 2.1 保护的 MCP 服务端，并且该过程需要用户交互（例如登录并同意授权）时，应使用授权码流程。FastMCP 提供 `fastmcp.client.auth.OAuth` 辅助类来简化整个过程。
+
+这种流程常见于面向用户的应用，此时应用会代表用户执行操作。
+
+## 客户端用法
+
+
+### 默认配置
+
+使用 OAuth 最简单的方式，是将字符串 `"oauth"` 传给 `Client` 或传输实例的 `auth` 参数。FastMCP 会自动使用默认设置为客户端配置 OAuth：
+
+```python {4}
+from fastmcp import Client
+
+# 使用默认 OAuth 设置
+async with Client("https://your-server.fastmcp.app/mcp", auth="oauth") as client:
+    await client.ping()
+```
+
+
+### `OAuth` 辅助类
+
+如需完整配置 OAuth 流程，可以使用 `OAuth` 辅助类，并将其传给 `Client` 或传输实例的 `auth` 参数。`OAuth` 会处理带 PKCE (Proof Key for Code Exchange) 的 OAuth 2.1 授权码授权中的复杂细节以增强安全性，并实现完整的 `httpx.Auth` 接口。
+
+```python {2, 4, 6}
+from fastmcp import Client
+from fastmcp.client.auth import OAuth
+
+oauth = OAuth(mcp_url="https://your-server.fastmcp.app/mcp")
+
+async with Client("https://your-server.fastmcp.app/mcp", auth=oauth) as client:
+    await client.ping()
+```
+
+#### `OAuth` 参数
+
+- **`mcp_url`** (`str`)：目标 MCP 服务端端点的完整 URL。用于发现 OAuth 服务端元数据
+- **`scopes`** (`str | list[str]`，可选)：要请求的 OAuth scope。可以是空格分隔的字符串或字符串列表
+- **`client_name`** (`str`，可选)：用于动态注册的客户端名称。默认为 `"FastMCP Client"`
+- **`token_storage`** (`AsyncKeyValue`，可选)：用于持久化 OAuth token 的存储后端。默认使用内存存储（重启后令牌丢失）。加密存储选项见[令牌存储](#令牌存储)
+- **`additional_client_metadata`** (`dict[str, Any]`，可选)：用于客户端注册的额外元数据
+- **`callback_port`** (`int`，可选)：OAuth 回调服务端使用的固定端口。未指定时使用随机可用端口
+
+
+## OAuth 流程
+
+当你使用配置为 OAuth 的 FastMCP `Client` 时，会触发 OAuth 流程。
+
+<Steps>
+<Step title="令牌检查">
+客户端首先检查配置的 `token_storage` 后端中是否已有目标服务端的有效令牌。如果找到，就用它来认证客户端。
+</Step>
+<Step title="OAuth 服务端发现">
+如果没有有效令牌，客户端会基于 `mcp_url` 使用 well-known URI（例如 `/.well-known/oauth-authorization-server`）尝试发现 OAuth 服务端端点。
+</Step>
+<Step title="动态客户端注册">
+如果 OAuth 服务端支持，并且客户端尚未注册（或凭据未缓存），客户端会根据 RFC 7591 执行动态客户端注册。
+</Step>
+<Step title="本地回调服务端">
+在一个可用端口（或通过 `callback_port` 指定的端口）上启动临时本地 HTTP 服务端。该服务端地址（例如 `http://127.0.0.1:<port>/callback`）会作为 OAuth 流程的 `redirect_uri`。
+</Step>
+<Step title="浏览器交互">
+系统会自动打开用户的默认 Web 浏览器，并跳转到 OAuth 服务端的授权端点。用户登录并同意（或拒绝）请求的 `scopes`。
+</Step>
+<Step title="授权码与令牌交换">
+用户同意后，OAuth 服务端会携带 `authorization_code` 将用户浏览器重定向到本地回调服务端。客户端捕获该代码，并使用 PKCE 与 OAuth 服务端的令牌端点交换 `access_token`（通常还包括 `refresh_token`）以保证安全。
+</Step>
+<Step title="令牌缓存">
+获取到的令牌会保存到配置的 `token_storage` 后端，供后续使用，从而避免重复的浏览器交互。
+</Step>
+<Step title="已认证请求">
+访问 MCP 服务端的请求会自动在 `Authorization` 头中包含访问令牌。
+</Step>
+<Step title="刷新令牌">
+如果访问令牌过期，客户端会自动使用刷新令牌获取新的访问令牌。
+</Step>
+</Steps>
+
+## 令牌存储
+
+<VersionBadge version="2.13.0" />
+
+默认情况下，令牌存储在内存中，并会在应用重启时丢失。如需持久化存储，请向 `token_storage` 参数传入兼容 `AsyncKeyValue` 的存储后端。
+
+<Warning>
+**安全注意事项**：生产环境请使用加密存储。MCP 客户端可能会随着时间积累许多服务端的 OAuth 凭据，一旦令牌存储被攻破，可能暴露对多个服务的访问权限。
+</Warning>
+
+```python
+from fastmcp import Client
+from fastmcp.client.auth import OAuth
+from key_value.aio.stores.disk import DiskStore
+from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
+from cryptography.fernet import Fernet
+import os
+
+# 创建加密磁盘存储
+encrypted_storage = FernetEncryptionWrapper(
+    key_value=DiskStore(directory="~/.fastmcp/oauth-tokens"),
+    fernet=Fernet(os.environ["OAUTH_STORAGE_ENCRYPTION_KEY"])
+)
+
+oauth = OAuth(
+    mcp_url="https://your-server.fastmcp.app/mcp",
+    token_storage=encrypted_storage
+)
+
+async with Client("https://your-server.fastmcp.app/mcp", auth=oauth) as client:
+    await client.ping()
+```
+
+你可以使用 [key-value library](https://github.com/strawgate/py-key-value) 中任何兼容 `AsyncKeyValue` 的后端，包括 Redis、DynamoDB 等。使用 `FernetEncryptionWrapper` 包装存储即可加密。
+
+<Note>
+选择存储后端时，请查看 [py-key-value 文档](https://github.com/strawgate/py-key-value)，了解所选后端的成熟度和限制。某些后端可能仍处于预览阶段，或存在会影响生产适用性的约束。
+</Note>

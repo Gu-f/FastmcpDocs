@@ -1,0 +1,155 @@
+---
+title: Scalekit 🤝 FastMCP
+sidebarTitle: Scalekit
+description: 使用 Scalekit 保护你的 FastMCP 服务端
+icon: shield-check
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.13.0" />
+
+使用 [Scalekit](https://scalekit.com) 和 [Remote OAuth](/zh/v2/servers/auth/remote-oauth) 模式为 FastMCP 服务端安装身份认证栈：Scalekit 处理用户身份认证，MCP 服务端验证已签发的令牌。
+
+### 前置条件
+
+开始之前：
+
+1. 获取 [Scalekit 账号](https://app.scalekit.com/)，并从 _Dashboard > Settings_ 中取得 **Environment URL**。
+2. 准备好 FastMCP 服务端的基础 URL（开发时可以是 localhost，例如 `http://localhost:8000/`）
+
+### 第 1 步：在 Scalekit 环境中配置 MCP 服务端
+
+<Steps>
+<Step title="注册 MCP 服务端并设置环境">
+
+在 Scalekit dashboard 中：
+    1. 打开 **MCP Servers** 部分，然后选择 **Create new server**
+    2. 输入服务端详情：名称、资源标识符，以及所需的 MCP 客户端身份认证设置
+    3. 保存，然后复制 **Resource ID**（例如 res_92015146095）
+
+在 FastMCP 项目的 `.env` 中：
+
+```sh
+SCALEKIT_ENVIRONMENT_URL=<YOUR_APP_ENVIRONMENT_URL>
+SCALEKIT_RESOURCE_ID=<YOUR_APP_RESOURCE_ID> # res_926EXAMPLE5878
+BASE_URL=http://localhost:8000/
+# 可选：令牌必须具备的额外 scope
+# SCALEKIT_REQUIRED_SCOPES=read,write
+```
+
+</Step>
+</Steps>
+
+### 第 2 步：向 FastMCP 服务端添加身份认证
+
+创建 FastMCP 服务端文件，并使用 ScalekitProvider 自动处理全部 OAuth 集成：
+
+> **警告：** 旧版 `mcp_url` 和 `client_id` 参数已弃用，并将在未来版本中移除。请使用 `base_url` 替代 `mcp_url`，并从配置中移除 `client_id`。
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.scalekit import ScalekitProvider
+
+# 发现 Scalekit 端点并设置 JWT 令牌验证
+auth_provider = ScalekitProvider(
+    environment_url=SCALEKIT_ENVIRONMENT_URL,    # Scalekit environment URL
+    resource_id=SCALEKIT_RESOURCE_ID,            # 资源服务端 ID
+    base_url=SERVER_URL,                         # 公共 MCP 端点
+    required_scopes=["read"],                    # 可选 scope 强制检查
+)
+
+# 创建带身份认证的 FastMCP 服务端
+mcp = FastMCP(name="My Scalekit Protected Server", auth=auth_provider)
+
+@mcp.tool
+def auth_status() -> dict:
+    """显示 Scalekit 身份认证状态。"""
+    # 从 JWT 中提取用户 claims
+    return {
+        "message": "This tool requires authentication via Scalekit",
+        "authenticated": True,
+        "provider": "Scalekit"
+    }
+
+```
+
+<Tip>
+当你需要令牌携带特定权限时，请设置 `required_scopes`。保持未设置则允许为该资源签发的任何令牌。
+</Tip>
+
+## Testing
+
+### 启动 MCP 服务端
+
+```sh
+uv run python server.py
+```
+
+使用任意 MCP 客户端（例如 mcp-inspector、Claude、VS Code 或 Windsurf）连接正在运行的服务端。确认身份认证成功，并且请求按预期获得授权。
+
+## 生产配置
+
+对于生产部署，请从环境变量加载配置：
+
+```python server.py
+import os
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.scalekit import ScalekitProvider
+
+# 从环境变量加载配置
+auth = ScalekitProvider(
+    environment_url=os.environ.get("SCALEKIT_ENVIRONMENT_URL"),
+    resource_id=os.environ.get("SCALEKIT_RESOURCE_ID"),
+    base_url=os.environ.get("BASE_URL", "https://your-server.com")
+)
+
+mcp = FastMCP(name="My Scalekit Protected Server", auth=auth)
+
+@mcp.tool
+def protected_action() -> str:
+    """需要身份认证的工具。"""
+    return "Access granted via Scalekit!"
+```
+
+## 能力
+
+Scalekit 支持面向 MCP 客户端和企业 SSO 的 OAuth 2.1 与 Dynamic Client Registration，并提供内置 JWT 验证和安全控制。
+
+**OAuth 2.1/DCR**：客户端可自注册，使用 PKCE，并在没有预置凭据的情况下配合 Remote OAuth 模式工作。
+
+**验证和 SSO**：令牌会经过验证（密钥、RS256、issuer、audience、过期时间），并支持 SAML、OIDC、OAuth 2.0、ADFS、Azure AD 和 Google Workspace；生产环境请使用 HTTPS，并按需查看身份认证日志。
+
+## 调试
+
+启用详细日志以排查身份认证问题：
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+### 令牌检查
+
+你可以在工具中检查 JWT 令牌，以了解用户上下文：
+
+```python
+from fastmcp.server.context import request_ctx
+import jwt
+
+@mcp.tool
+def inspect_token() -> dict:
+    """检查当前 JWT 令牌 claims。"""
+    context = request_ctx.get()
+
+    # 从 Authorization header 提取令牌
+    if hasattr(context, 'request') and hasattr(context.request, 'headers'):
+        auth_header = context.request.headers.get('authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            # 不验证直接解码（已由 provider 验证）
+            claims = jwt.decode(token, options={"verify_signature": False})
+            return claims
+
+    return {"error": "No token found"}
+```

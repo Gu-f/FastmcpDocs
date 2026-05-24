@@ -1,0 +1,137 @@
+---
+title: Pydantic AI 🤝 FastMCP
+sidebarTitle: Pydantic AI
+description: 使用 FastMCPToolset 将 FastMCP 服务端连接到 Pydantic AI agent
+icon: message-code
+---
+
+[Pydantic AI](https://ai.pydantic.dev/) 提供了 [`FastMCPToolset`](https://ai.pydantic.dev/mcp/fastmcp-client/)，让 Pydantic AI agent 可以通过 [FastMCP Client](/zh/clients/client) 调用任意 MCP 服务端暴露的工具。由于该 toolset 构建在 FastMCP Client 之上，它既适用于 FastMCP 服务端，也适用于任何其他 MCP 服务端，并支持完整的[传输](/zh/clients/transports)：内存内、STDIO、Streamable HTTP 和 SSE。
+
+本页展示如何让 `FastMCPToolset` 指向 FastMCP 服务端，并为每种传输提供示例。有关该 toolset 的完整 API，请参阅 [Pydantic AI 文档](https://ai.pydantic.dev/mcp/fastmcp-client/)。
+
+<Tip>
+`FastMCPToolset` 目前会向 agent 暴露**工具**。用户征询和采样等其他 MCP 特性尚不能通过此 toolset 使用；如需这些能力，请使用 Pydantic AI 标准的 [`MCPServer`](https://ai.pydantic.dev/mcp/client/) 客户端。
+</Tip>
+
+## 安装
+
+`FastMCPToolset` 位于 `pydantic-ai-slim` 中的 `fastmcp` 可选组：
+
+```bash
+pip install "pydantic-ai-slim[fastmcp]"
+```
+
+## 创建服务端
+
+创建一个包含你想暴露的工具的 FastMCP 服务端。本指南会一直使用一个简单的掷骰子工具。
+
+```python server.py
+import random
+from fastmcp import FastMCP
+
+mcp = FastMCP(name="Dice Roller")
+
+@mcp.tool
+def roll_dice(n_dice: int) -> list[int]:
+    """掷 `n_dice` 个六面骰子并返回结果。"""
+    return [random.randint(1, 6) for _ in range(n_dice)]
+
+if __name__ == "__main__":
+    mcp.run(transport="http", port=8000)
+```
+
+## 内存内
+
+如果 FastMCP 服务端与 agent 位于同一进程中，请直接传入 `FastMCP` 实例。该 toolset 会复用[内存内传输](/zh/clients/transports#内存内传输)，避免网络往返，是测试和嵌入式使用中最快的选项。
+
+```python
+import asyncio
+import random
+from fastmcp import FastMCP
+from pydantic_ai import Agent
+from pydantic_ai.toolsets.fastmcp import FastMCPToolset
+
+mcp = FastMCP(name="Dice Roller")
+
+@mcp.tool
+def roll_dice(n_dice: int) -> list[int]:
+    return [random.randint(1, 6) for _ in range(n_dice)]
+
+toolset = FastMCPToolset(mcp)
+agent = Agent("openai:gpt-4.1", toolsets=[toolset])
+
+async def main():
+    result = await agent.run("Roll 3 dice!")
+    print(result.output)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Streamable HTTP
+
+对于可通过 HTTP 访问的远程 FastMCP 服务端，请将 URL 作为字符串传入。该 toolset 会从 URL 推断出 [Streamable HTTP 传输](/zh/clients/transports#http-传输)。
+
+```python
+from pydantic_ai import Agent
+from pydantic_ai.toolsets.fastmcp import FastMCPToolset
+
+toolset = FastMCPToolset("https://your-server-url.com/mcp")
+agent = Agent("openai:gpt-4.1", toolsets=[toolset])
+```
+
+对于 [SSE](/zh/clients/transports#sse-传输)，请改用 `/sse` URL。
+
+## STDIO
+
+要将 FastMCP 服务端作为子进程启动，请传入脚本路径，该 toolset 会使用 [STDIO 传输](/zh/clients/transports#stdio-传输)。
+
+```python
+from pydantic_ai import Agent
+from pydantic_ai.toolsets.fastmcp import FastMCPToolset
+
+toolset = FastMCPToolset("server.py")
+agent = Agent("openai:gpt-4.1", toolsets=[toolset])
+```
+
+当你需要控制命令、参数或环境时，也可以直接传入 [`StdioTransport`](/zh/clients/transports#stdio-传输)。
+
+## MCP 配置
+
+要一次连接多个服务端，请传入 [MCP 配置](/zh/integrations/mcp-json-configuration)字典。该 toolset 会为每个服务端打开一个客户端，并将它们的所有工具暴露给 agent。
+
+```python
+from pydantic_ai import Agent
+from pydantic_ai.toolsets.fastmcp import FastMCPToolset
+
+mcp_config = {
+    "mcpServers": {
+        "dice": {"command": "python", "args": ["server.py"]},
+        "weather": {"url": "https://weather.example.com/mcp"},
+    }
+}
+
+toolset = FastMCPToolset(mcp_config)
+agent = Agent("openai:gpt-4.1", toolsets=[toolset])
+```
+
+## 身份认证
+
+由于 `FastMCPToolset` 包装了 [FastMCP `Client`](/zh/clients/client)，它继承了客户端完整的[身份认证](/zh/clients/auth/bearer)能力。要向远程服务端传递 bearer token 等凭据，请自行构建 `Client`（或 `StreamableHttpTransport`），再交给该 toolset。
+
+```python
+from fastmcp import Client
+from fastmcp.client.transports import StreamableHttpTransport
+from pydantic_ai import Agent
+from pydantic_ai.toolsets.fastmcp import FastMCPToolset
+
+transport = StreamableHttpTransport(
+    url="https://your-server-url.com/mcp",
+    headers={"Authorization": "Bearer your-access-token"},
+)
+
+toolset = FastMCPToolset(Client(transport))
+agent = Agent("openai:gpt-4.1", toolsets=[toolset])
+```
+
+对于 OAuth 流程，在构建 `Client` 时请使用 FastMCP 的 [`OAuth` 辅助类](/zh/clients/auth/oauth)。关于服务端侧令牌验证，请参阅 [Token Verification](/zh/servers/auth/token-verification)。

@@ -1,0 +1,32 @@
+---
+title: mime
+sidebarTitle: mime
+---
+
+# `fastmcp.utilities.mime`
+
+
+MCP Apps UI 资源的 MIME 类型常量和辅助函数。
+
+此模块不依赖服务端或资源包，因此可以从任何位置安全导入。
+
+
+## 函数
+
+### `resolve_ui_mime_type` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mime.py#L10" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+resolve_ui_mime_type(uri: str, explicit_mime_type: str | None) -> str | None
+```
+
+
+返回资源 URI 对应的 MIME 类型。
+
+对于 ``ui://`` scheme 的资源，如果未提供显式 MIME 类型，则默认使用 ``UI_MIME_TYPE``。
+
+**参数：**
+- `uri`: 资源 URI 字符串
+- `explicit_mime_type`: 用户显式提供的 MIME 类型
+
+**返回：**
+- 解析后的 MIME 类型（显式值、UI 默认值或 None）

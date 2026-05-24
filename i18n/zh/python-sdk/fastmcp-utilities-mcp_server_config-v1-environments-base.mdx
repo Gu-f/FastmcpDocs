@@ -7,7 +7,7 @@ sidebarTitle: base
 
 ## 类
 
-### `Environment` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/base.py#L7" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `Environment` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/environments/base.py#L7" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 环境配置的基类。
@@ -15,29 +15,28 @@ sidebarTitle: base
 
 **方法：**
 
-#### `build_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/base.py#L13" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `build_command` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/environments/base.py#L13" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 build_command(self, command: list[str]) -> list[str]
 ```
 
-构建包含环境设置的完整命令。
+构建带环境设置的完整命令。
 
 **参数：**
-- `command`: 用环境设置包装的基础命令
+- `command`: 要用环境设置包装的基础命令
 
-**返回值：**
-- 准备好用于子进程执行的完整命令
+**返回：**
+- 可供 subprocess 执行的完整命令
 
 
-#### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/base.py#L24" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `prepare` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/environments/base.py#L23" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 prepare(self, output_dir: Path | None = None) -> None
 ```
 
-准备环境（可选，可以是空操作）。
+准备环境（可选，也可以不执行任何操作）。
 
 **参数：**
-- `output_dir`: 用于持久化环境设置的目录
-
+- `output_dir`: 持久化环境设置所用的目录

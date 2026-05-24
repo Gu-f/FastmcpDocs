@@ -1,0 +1,92 @@
+---
+title: 示例
+sidebarTitle: 示例
+description: 可以立即运行的示例应用。
+icon: images
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.2.0" />
+
+下面每个卡片都是一个可工作的 FastMCP 服务端，你可以用 `fastmcp dev apps` 运行，也可以从任意 MCP 宿主连接。源码位于仓库的 `examples/apps/` 中。
+
+<Columns cols={2}>
+  <Tile href="#销售仪表盘" title="销售仪表盘" description="指标、图表和交易管道">
+    <div style={{overflow: "hidden", width: "100%"}}>
+      <img src="/apps/images/app-example-sales-dashboard.png" />
+    </div>
+  </Tile>
+  <Tile href="#系统监控器" title="系统监控器" description="实时 CPU、内存、磁盘，并自动刷新">
+    <img src="/apps/images/app-example-system-dashboard.png" />
+  </Tile>
+  <Tile href="#测验" title="测验" description="LLM 生成的问答题，带计分功能">
+    <img src="/apps/images/app-example-quiz.png" />
+  </Tile>
+  <Tile href="#交互式地图" title="交互式地图" description="在 Leaflet 上展示地理编码后的地址">
+    <img src="/apps/images/app-example-map.png" />
+  </Tile>
+  <Tile href="/apps/providers/file-upload" title="文件上传" description="拖放上传 provider">
+    <img src="/apps/images/app-file-upload.png" />
+  </Tile>
+  <Tile href="/apps/providers/approval" title="审批" description="人在回路的确认流程">
+    <img src="/apps/images/app-approval.png" />
+  </Tile>
+  <Tile href="/apps/providers/choice" title="选择" description="可点击的选项选择">
+    <img src="/apps/images/app-choice.png" />
+  </Tile>
+  <Tile href="/apps/providers/form" title="表单输入" description="Pydantic 模型表单">
+    <img src="/apps/images/app-form.png" />
+  </Tile>
+  <Tile href="/apps/generative" title="生成式 UI" description="LLM 在运行时编写 UI">
+    <img src="/apps/images/app-showcase.png" />
+  </Tile>
+</Columns>
+
+## 运行示例
+
+使用开发服务端在浏览器中预览任意示例：
+
+```bash
+pip install "fastmcp[apps]"
+fastmcp dev apps examples/apps/sales_dashboard/sales_dashboard_server.py
+```
+
+开发 UI 可以让你选择工具并填写参数。在真实部署中，LLM 会根据对话上下文提供这些参数。测验示例在连接到 Goose 或 Claude Desktop 这类宿主时尤其亮眼，因为问题由 LLM 自己生成。
+
+## 独立应用
+
+### 销售仪表盘
+
+一个完整的仪表盘，包含 KPI 指标、收入趋势、分段拆解和交易管道表。它展示了只用一个 `app=True` 工具以及 Prefab 的图表和数据组件可以构建什么。
+
+```bash
+fastmcp dev apps examples/apps/sales_dashboard/sales_dashboard_server.py
+```
+
+### 系统监控器
+
+使用 `psutil` 从你的机器读取实时 CPU、内存和磁盘统计信息。通过 `SetInterval` 调用后端工具实现自动刷新，并提供下拉菜单控制刷新频率。图表会随时间最多累积 100 个数据点。
+
+```bash
+pip install psutil
+fastmcp dev apps examples/apps/system_monitor/system_monitor_server.py
+```
+
+### 测验
+
+LLM 生成问答题并将它们传给工具。用户通过按钮回答，查看正确/错误反馈，并在多个问题之间跟踪分数。该示例演示了使用 FastMCPApp 管理多轮客户端状态。
+
+```bash
+fastmcp dev apps examples/apps/quiz/quiz_server.py
+```
+
+### 交互式地图
+
+接受地址或地点名称，通过 OpenStreetMap Nominatim（免费，无需 API key）进行地理编码，并使用 Prefab 的 `Embed` 组件和内联 HTML 渲染交互式 Leaflet 地图。这也提醒我们：Prefab 应用在需要时可以跳出内置组件的范围。
+
+```bash
+fastmcp dev apps examples/apps/map/map_server.py
+```
+
+如需审批、选择器、文件上传和 Pydantic 表单等现成构建块，请参阅 [Providers](/zh/apps/providers/approval) 分组。

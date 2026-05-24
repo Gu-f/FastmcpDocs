@@ -1,0 +1,470 @@
+---
+title: FastMCPApp
+sidebarTitle: FastMCPApp
+description: 将交互式 UI 接入后端工具，并获得受管理的可见性和组合安全性。
+icon: puzzle-piece
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+import PrefabPinWarning from '/zh/snippets/prefab-pin-warning.mdx'
+import { PrefabDemoFrame } from '/zh/snippets/prefab-demo-frame.mdx'
+
+<VersionBadge version="3.2.0" />
+
+<PrefabPinWarning />
+
+<PrefabDemoFrame demo="contacts" height="650px" title="联系人应用演示" />
+
+搜索列表、填写表单、点击保存，然后列表更新。这种模式，也就是会在服务端读取和写入数据的 UI，需要两样东西：真正执行工作的后端工具，以及从 UI 调用它们的方式。`FastMCPApp` 会处理这些接线工作。
+
+读完本页后，你会逐步构建出上面的联系人应用。我们先从更小的东西开始。
+
+## 最小交互式应用
+
+最小的交互式应用：一个保存笔记的表单，以及一个在用户提交后更新的列表。
+
+```python
+from prefab_ui.actions import SetState, ShowToast
+from prefab_ui.actions.mcp import CallTool
+from prefab_ui.app import PrefabApp
+from prefab_ui.components import (
+    Badge, Button, Column, ForEach, Form, Heading,
+    Input, Row, Separator, Text,
+)
+from prefab_ui.rx import RESULT
+from fastmcp import FastMCP, FastMCPApp
+
+app = FastMCPApp("Notes")
+notes_db: list[dict] = []
+
+
+@app.tool()
+def add_note(title: str, body: str) -> list[dict]:
+    """保存笔记并返回所有笔记。"""
+    notes_db.append({"title": title, "body": body})
+    return list(notes_db)
+
+
+@app.ui()
+def notes_app() -> PrefabApp:
+    """打开笔记应用。"""
+    with Column(gap=6, css_class="p-6") as view:
+        Heading("Notes")
+
+        with ForEach("notes") as note:
+            with Row(gap=2, align="center"):
+                Text(note.title, css_class="font-semibold")
+                Badge(note.body)
+
+        Separator()
+
+        with Form(
+            on_submit=CallTool(
+                "add_note",
+                on_success=[
+                    SetState("notes", RESULT),
+                    ShowToast("笔记已保存！", variant="success"),
+                ],
+                on_error=ShowToast("保存失败", variant="error"),
+            )
+        ):
+            Input(name="title", label="Title", required=True)
+            Input(name="body", label="Body", required=True)
+            Button("Add Note")
+
+    return PrefabApp(view=view, state={"notes": list(notes_db)})
+
+
+mcp = FastMCP("Notes Server", providers=[app])
+```
+
+模型会看到一个工具：`notes_app`。调用它会打开 UI。当用户提交表单时，`CallTool("add_note")` 会触发，服务端保存笔记、返回更新后的列表，然后 `SetState("notes", RESULT)` 将该列表写回 state。`ForEach("notes")` 随即重新渲染。模型永远看不到 `add_note`，它仅供 UI 使用。
+
+## Why not just `@mcp.tool(app=True)`?
+
+这是个合理的问题。任何[交互式工具](/zh/apps/prefab)都可以调用服务端工具；你完全可以把 `CallTool("add_note")` 放进普通的 `@mcp.tool(app=True)` 中。一两个工具时这样可行。但应用变大后，事情会变难：
+
+- 哪些工具应该让模型看到，哪些只供 UI 使用？
+- 当你把这个服务端挂载到命名空间下，工具变成 `notes_add_note` 时，`CallTool("add_note")` 会发生什么？
+- 当你组合服务端时，如何确保所有连接始终正确？
+
+`FastMCPApp` 负责这些问题。入口点会注册为模型可见。后端工具默认注册为仅 UI 可见。后端工具会获得全局稳定标识符，能够跨命名空间保持有效；`CallTool` 也接受函数引用，因此在组合服务端时引用仍然有效。
+
+本页剩余部分会依次介绍每个部分。
+
+## `@app.ui()` — entry points
+
+入口点是模型看到的内容。它们返回 `PrefabApp`，并默认使用 `visibility=["model"]`，会出现在 LLM 工具列表中，但不能从 UI 内部调用。
+
+```python
+@app.ui()
+def dashboard() -> PrefabApp:
+    """模型调用此函数来打开仪表盘。"""
+    with Column(gap=4, css_class="p-6") as view:
+        Heading("Dashboard")
+        ...
+    return PrefabApp(view=view)
+```
+
+`@app.ui()` 支持与 `@mcp.tool` 相同的选项：`name`、`description`、`title`、`tags`、`icons`、`auth` 和 `timeout`。
+
+## `@app.tool()` — backend tools
+
+后端工具负责执行工作。默认情况下，它们只对 UI 可见（`visibility=["app"]`），不对模型可见。
+
+```python
+@app.tool()
+def save_contact(name: str, email: str) -> list[dict]:
+    """保存联系人并返回更新后的列表。"""
+    db.append({"name": name, "email": email})
+    return list(db)
+```
+
+如果希望某个工具同时可由模型和 UI 调用，请传入 `model=True`：
+
+```python
+@app.tool(model=True)
+def list_contacts() -> list[dict]:
+    """模型和 UI 都可以调用此函数。"""
+    return list(db)
+```
+
+后端工具支持 `name`、`description`、`auth` 和 `timeout`。
+
+## `CallTool` — UI → backend
+
+`CallTool` 是 UI 调用后端工具的方式。传入工具名称（或直接的函数引用）：
+
+```python
+from prefab_ui.actions.mcp import CallTool
+
+CallTool("save_contact", arguments={"name": "Alice", "email": "alice@example.com"})
+
+# 或函数引用：会解析为稳定的全局键
+CallTool(save_contact, arguments={...})
+```
+
+参数可以用 `Rx` 引用 state：
+
+```python
+from prefab_ui.rx import STATE
+
+CallTool("search", arguments={"query": STATE.search_term})
+```
+
+### 处理结果
+
+服务端调用是异步的。请使用 `on_success` 和 `on_error` 回调：
+
+```python
+from prefab_ui.actions import SetState, ShowToast
+from prefab_ui.rx import RESULT
+
+CallTool(
+    "save_contact",
+    on_success=[
+        SetState("contacts", RESULT),
+        ShowToast("已保存！", variant="success"),
+    ],
+    on_error=ShowToast("出错了", variant="error"),
+)
+```
+
+`RESULT` 是对工具返回值的响应式引用，可在 `on_success` 内使用。`ERROR`（来自 `prefab_ui.rx`）则是在 `on_error` 内使用的对应引用。回调可以是单个动作或动作列表；它们会按顺序执行，并在出错时短路。
+
+### `result_key` shorthand
+
+当工具返回值应替换某个 state 键时，请使用 `result_key`：
+
+```python
+CallTool("list_contacts", result_key="contacts")
+
+# 等同于：
+CallTool("list_contacts", on_success=SetState("contacts", RESULT))
+```
+
+## Actions
+
+`CallTool` 是多种动作之一。动作会附加到 `on_click`、`on_submit` 和 `on_change` 这类处理器上。
+
+客户端动作会立即在浏览器中运行，无需服务端往返：
+
+```python
+from prefab_ui.actions import SetState, ToggleState, AppendState, PopState, ShowToast
+
+SetState("count", 42)
+ToggleState("expanded")
+AppendState("items", {"name": "New Item"})
+PopState("items", 0)
+ShowToast("Done!", variant="success")
+```
+
+传入列表可以串联多个动作：
+
+```python
+Button(
+    "Reset",
+    on_click=[
+        SetState("query", ""),
+        SetState("results", []),
+        ShowToast("Cleared"),
+    ],
+)
+```
+
+### Loading states
+
+A common pattern: disable a button and show a spinner while a call is in flight.
+
+```python
+from prefab_ui.rx import Rx
+
+saving = Rx("saving")
+
+Button(
+    saving.then("Saving...", "Save"),
+    disabled=saving,
+    on_click=[
+        SetState("saving", True),
+        CallTool(
+            "save_data",
+            on_success=[
+                SetState("saving", False),
+                SetState("result", RESULT),
+                ShowToast("Saved!", variant="success"),
+            ],
+            on_error=[
+                SetState("saving", False),
+                ShowToast("Failed", variant="error"),
+            ],
+        ),
+    ],
+)
+
+# PrefabApp(view=view, state={"saving": False, ...})
+```
+
+## 表单
+
+表单会收集输入并提交给工具。提交时，带名称的输入值会成为工具参数。
+
+### 手动表单
+
+```python
+from prefab_ui.components import Form, Input, Select, SelectOption, Textarea, Button
+
+with Form(
+    on_submit=CallTool(
+        "create_ticket",
+        on_success=ShowToast("Ticket created!", variant="success"),
+    )
+):
+    Input(name="title", label="Title", required=True)
+    with Select(name="priority", label="Priority"):
+        SelectOption("Low", value="low")
+        SelectOption("Medium", value="medium")
+        SelectOption("High", value="high")
+    Textarea(name="description", label="Description")
+    Button("Create Ticket")
+```
+
+提交时，`CallTool` 会收到 `{"title": ..., "priority": ..., "description": ...}`。
+
+### 来自 Pydantic 模型的表单
+
+对于结构化输入，`Form.from_model()` 会生成整个表单，包括输入、标签和校验：
+
+```python
+from typing import Literal
+from pydantic import BaseModel, Field
+
+class BugReport(BaseModel):
+    title: str = Field(title="Bug Title")
+    severity: Literal["low", "medium", "high", "critical"] = Field(
+        title="Severity", default="medium"
+    )
+    description: str = Field(title="Description")
+
+
+@app.ui()
+def report_bug() -> PrefabApp:
+    with Column(gap=4, css_class="p-6") as view:
+        Heading("Report a Bug")
+        Form.from_model(
+            BugReport,
+            on_submit=CallTool(
+                "create_bug",
+                on_success=ShowToast("Bug filed!", variant="success"),
+            ),
+        )
+    return PrefabApp(view=view)
+
+
+@app.tool()
+def create_bug(data: BugReport) -> str:
+    return f"Created: {data.title}"
+```
+
+`str` 会变成文本输入，`Literal` 会变成选择框，`bool` 会变成复选框。字段标题和默认值会被保留。
+
+## 组合与命名空间
+
+`FastMCPApp` 存在的原因，也是你会选择它而不是普通 `@mcp.tool(app=True)` 加字符串式 `CallTool` 的原因，就是组合安全性。
+
+当你把服务端挂载到命名空间下时，工具名称会获得前缀：
+
+```python
+platform = FastMCP("Platform")
+platform.mount("contacts", contacts_server)
+
+# "save_contact" 会变成 "contacts_save_contact"
+```
+
+此时 `CallTool("save_contact")` 会失效。但带函数引用的 `CallTool(save_contact)` 会解析为绕过命名空间的全局稳定标识符。无论应用独立运行还是被挂载，它都以相同方式工作。
+
+### 挂载
+
+`FastMCPApp` 是一个 Provider。可以用 `providers=` 或 `add_provider` 将它添加到服务端：
+
+```python
+mcp = FastMCP("Platform", providers=[app])
+
+# 或者
+mcp = FastMCP("Platform")
+mcp.add_provider(app)
+```
+
+多个应用可以共存；每个应用都有自己的全局键，因此即使两个应用都有名为 `save` 的工具，也不会冲突。
+
+```python
+mcp = FastMCP("Platform", providers=[contacts_app, inventory_app, billing_app])
+```
+
+### 独立运行
+
+对于开发场景，`FastMCPApp` 提供了 `run()` 快捷方法，会将自身包装在一个临时 `FastMCP` 服务端中：
+
+```python
+app = FastMCPApp("Contacts")
+# ... 注册工具 ...
+
+if __name__ == "__main__":
+    app.run()
+```
+
+## 完整示例：联系人管理器
+
+这个示例会把所有内容组合起来：入口点、后端工具、Pydantic 表单、手动表单、state、动作和多可见性。
+
+```python expandable
+from __future__ import annotations
+
+from typing import Literal
+
+from prefab_ui.actions import SetState, ShowToast
+from prefab_ui.actions.mcp import CallTool
+from prefab_ui.app import PrefabApp
+from prefab_ui.components import (
+    Badge, Button, Column, ForEach, Form,
+    Heading, Input, Muted, Row, Separator, Text,
+)
+from prefab_ui.rx import RESULT, Rx
+from pydantic import BaseModel, Field
+from fastmcp import FastMCP, FastMCPApp
+
+contacts_db: list[dict] = [
+    {"name": "Arthur Dent", "email": "arthur@earth.com", "category": "Customer"},
+    {"name": "Ford Prefect", "email": "ford@betelgeuse.org", "category": "Partner"},
+]
+
+
+class ContactModel(BaseModel):
+    name: str = Field(title="Full Name", min_length=1)
+    email: str = Field(title="Email")
+    category: Literal["Customer", "Vendor", "Partner", "Other"] = "Other"
+
+
+app = FastMCPApp("Contacts")
+
+
+@app.tool()
+def save_contact(data: ContactModel) -> list[dict]:
+    """保存新联系人并返回更新后的列表。"""
+    contacts_db.append(data.model_dump())
+    return list(contacts_db)
+
+
+@app.tool()
+def search_contacts(query: str) -> list[dict]:
+    """按姓名或邮箱筛选联系人。"""
+    q = query.lower()
+    return [
+        c for c in contacts_db
+        if q in c["name"].lower() or q in c["email"].lower()
+    ]
+
+
+@app.tool(model=True)
+def list_contacts() -> list[dict]:
+    """返回所有联系人。对模型和 UI 都可见。"""
+    return list(contacts_db)
+
+
+@app.ui()
+def contact_manager() -> PrefabApp:
+    """打开联系人管理器。"""
+    with Column(gap=6, css_class="p-6") as view:
+        Heading("Contacts")
+
+        with ForEach("contacts") as contact:
+            with Row(gap=2, align="center"):
+                Text(contact.name, css_class="font-medium")
+                Muted(contact.email)
+                Badge(contact.category)
+
+        Separator()
+
+        Heading("Add Contact", level=3)
+        Form.from_model(
+            ContactModel,
+            on_submit=CallTool(
+                "save_contact",
+                on_success=[
+                    SetState("contacts", RESULT),
+                    ShowToast("联系人已保存！", variant="success"),
+                ],
+                on_error=ShowToast("保存失败", variant="error"),
+            ),
+        )
+
+        Separator()
+
+        Heading("Search", level=3)
+        with Form(
+            on_submit=CallTool(
+                "search_contacts",
+                arguments={"query": Rx("query")},
+                on_success=SetState("contacts", RESULT),
+            )
+        ):
+            Input(name="query", placeholder="Search by name or email...")
+            Button("Search")
+
+    return PrefabApp(view=view, state={"contacts": list(contacts_db)})
+
+
+mcp = FastMCP("Contacts Server", providers=[app])
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+它也以可运行服务端的形式提供，位于 `examples/apps/contacts/contacts_server.py`。
+
+## 接下来
+
+- **[交互式工具](/zh/apps/prefab)**：构建块，包括图表、表格、仪表盘和响应式 state
+- **[示例](/zh/apps/examples)**：完整的可运行服务端
+- **[开发](/zh/apps/development)**：在本地预览和测试应用工具
+- **[Prefab UI 文档](https://prefab.prefect.io)**：完整组件参考

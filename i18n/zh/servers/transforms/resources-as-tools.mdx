@@ -1,0 +1,110 @@
+---
+title: 将资源作为工具
+sidebarTitle: 资源作为工具
+description: 向只支持工具的客户端暴露资源
+icon: toolbox
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+一些 MCP 客户端只支持工具。它们缺少资源协议支持，因此无法直接列出或读取资源。`ResourcesAsTools` transform 会通过生成可访问服务端资源的工具来弥合这一差距。
+
+当你向服务端添加 `ResourcesAsTools` 时，它会创建两个工具，客户端可以调用它们来替代资源协议：
+
+- **`list_resources`** 返回描述所有可用资源和模板的 JSON
+- **`read_resource`** 按 URI 读取特定资源
+
+这意味着任何能调用工具的客户端现在都可以访问资源，即使该客户端没有原生资源支持。
+
+## 基本用法
+
+添加 transform 时，将 FastMCP 服务端传给 `ResourcesAsTools`。生成的工具会在运行时通过服务端路由，这意味着所有服务端中间件（auth、visibility、rate limiting）都会自动应用到资源操作上，就像直接调用 `resources/read` 一样。
+
+<Note>
+`ResourcesAsTools`（以及 `PromptsAsTools`）应应用到 FastMCP 服务端实例，而不是原始 Provider。生成的工具会在运行时回调到服务端的中间件链中，因此它们需要通过服务端路由。如果只想暴露资源的一个子集，请为这些资源创建专用 FastMCP 服务端，并在那里应用 transform。
+</Note>
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.transforms import ResourcesAsTools
+
+mcp = FastMCP("My Server")
+
+@mcp.resource("config://app")
+def app_config() -> str:
+    """应用配置。"""
+    return '{"app_name": "My App", "version": "1.0.0"}'
+
+@mcp.resource("user://{user_id}/profile")
+def user_profile(user_id: str) -> str:
+    """按 ID 获取用户资料。"""
+    return f'{{"user_id": "{user_id}", "name": "User {user_id}"}}'
+
+# 添加 transform：创建 list_resources 和 read_resource 工具
+mcp.add_transform(ResourcesAsTools(mcp))
+```
+
+客户端现在会看到三个工具：你直接定义的工具，以及 `list_resources` 和 `read_resource`。
+
+两个生成的工具都会带有 `readOnlyHint=True` 注解，因为它们只读取数据。遵循工具注解的客户端（如 Cursor）可以据此自动确认这些工具调用，而无需提示用户。
+
+## 静态资源与模板
+
+资源有两种形式，`list_resources` 工具会在其 JSON 输出中区分它们。
+
+静态资源具有固定 URI。它们表示位于已知位置的具体数据。在列表输出中，静态资源包含 `uri` 字段，其中是要请求的精确 URI。
+
+资源模板具有带 `{user_id}` 这类占位符的参数化 URI。它们表示访问动态数据的模式。在列表输出中，模板包含 `uri_template` 字段，显示带占位符的模式。
+
+当客户端调用 `list_resources` 时，会收到类似这样的 JSON：
+
+```json
+[
+  {
+    "uri": "config://app",
+    "name": "app_config",
+    "description": "Application configuration.",
+    "mime_type": "text/plain"
+  },
+  {
+    "uri_template": "user://{user_id}/profile",
+    "name": "user_profile",
+    "description": "Get a user's profile by ID."
+  }
+]
+```
+
+客户端可以通过检查存在的字段来区分资源类型：静态资源使用 `uri`，模板使用 `uri_template`。
+
+## 读取资源
+
+`read_resource` 工具接受单个 `uri` 参数。对于静态资源，传入精确 URI。对于模板，用实际值填充占位符。
+
+```python
+# 读取静态资源
+result = await client.call_tool("read_resource", {"uri": "config://app"})
+print(result.data)  # '{"app_name": "My App", "version": "1.0.0"}'
+
+# 读取模板资源：用实际 ID 填充 {user_id}
+result = await client.call_tool("read_resource", {"uri": "user://42/profile"})
+print(result.data)  # '{"user_id": "42", "name": "User 42"}'
+```
+
+transform 会自动处理模板匹配。当你请求 `user://42/profile` 时，它会匹配 `user://{user_id}/profile` 模板，提取 `user_id=42`，并使用该参数调用你的资源函数。
+
+## 二进制内容
+
+通过 `read_resource` 工具读取返回二进制数据（如图片或文件）的资源时，数据会自动进行 base64 编码。这确保二进制内容可以作为字符串在工具响应中传输。
+
+```python
+@mcp.resource("data://binary", mime_type="application/octet-stream")
+def binary_data() -> bytes:
+    return b"\x00\x01\x02\x03"
+
+# 客户端接收 base64 编码字符串
+result = await client.call_tool("read_resource", {"uri": "data://binary"})
+decoded = base64.b64decode(result.data)  # b'\x00\x01\x02\x03'
+```

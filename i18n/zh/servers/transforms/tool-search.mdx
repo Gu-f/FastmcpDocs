@@ -1,0 +1,173 @@
+---
+title: 工具搜索
+sidebarTitle: 工具搜索
+description: 用按需搜索替代大型工具目录
+icon: magnifying-glass
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.1.0" />
+
+当一个服务端暴露数百甚至数千个工具时，把完整目录发送给 LLM 会浪费 token，并降低工具选择的准确性。搜索转换通过把工具列表替换为搜索接口来解决这个问题：LLM 按需发现工具，而不是一开始就接收所有工具。
+
+## 工作方式
+
+添加搜索转换后，`list_tools()` 不再返回完整目录，而是只返回两个合成工具：
+
+- **`search_tools`** 查找与查询匹配的工具，并返回它们的完整定义
+- **`call_tool`** 按名称执行已发现的工具
+
+原始工具仍然可以调用。它们会从列表中隐藏，但仍保持完整功能；搜索转换控制的是*发现*，不是*访问*。
+
+这两个合成工具都会搜索工具名称、描述、参数名称和参数描述。搜索 `"email"` 会匹配名为 `send_email` 的工具、描述中包含 “email” 的工具，或带有 `email_address` 参数的工具。
+
+搜索结果以与 `list_tools` 相同的 JSON 格式返回，包括完整输入 schema，因此 LLM 可以立即构造有效调用，而无需第二次往返。
+
+## 搜索策略
+
+FastMCP 提供两种搜索转换。它们共享同一接口：两个合成工具和相同配置选项，但查询匹配工具的方式不同。
+
+### Regex 搜索
+
+`RegexSearchTransform` 使用大小写不敏感的 `re.search`，按正则表达式模式匹配工具。它没有额外开销，也不需要构建索引；当 LLM 大致知道自己在找什么时，这是很好的默认选择。
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.transforms.search import RegexSearchTransform
+
+mcp = FastMCP("My Server", transforms=[RegexSearchTransform()])
+
+@mcp.tool
+def search_database(query: str, limit: int = 10) -> list[dict]:
+    """Search the database for records matching the query."""
+    ...
+
+@mcp.tool
+def delete_record(record_id: str) -> bool:
+    """Delete a record from the database by its ID."""
+    ...
+
+@mcp.tool
+def send_email(to: str, subject: str, body: str) -> bool:
+    """Send an email to the given recipient."""
+    ...
+```
+
+LLM 调用 `search_tools` 时传入 `pattern` 参数，也就是一个正则字符串：
+
+```python
+# 精确子串匹配
+result = await client.call_tool("search_tools", {"pattern": "database"})
+# 返回：search_database、delete_record
+
+# 正则模式
+result = await client.call_tool("search_tools", {"pattern": "send.*email|notify"})
+# 返回：send_email
+```
+
+结果按目录顺序返回。如果模式不是有效正则，搜索会返回空列表，而不是抛出错误。
+
+### BM25 搜索
+
+`BM25SearchTransform` 使用 [BM25 Okapi](https://en.wikipedia.org/wiki/Okapi_BM25) 算法按相关性对工具排序。它更适合自然语言查询，因为它会基于词频和词项稀有度给每个工具打分，并按相关性排序返回，而不是简单地按“匹配/不匹配”过滤。
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.transforms.search import BM25SearchTransform
+
+mcp = FastMCP("My Server", transforms=[BM25SearchTransform()])
+
+# ... define tools ...
+```
+
+LLM 调用 `search_tools` 时传入 `query` 参数，也就是自然语言：
+
+```python
+result = await client.call_tool("search_tools", {
+    "query": "tools for deleting things from the database"
+})
+# 返回：delete_record 排第一，search_database 排第二
+```
+
+BM25 会根据所有工具中的可搜索文本构建内存索引。索引会在第一次搜索时惰性创建，并在工具目录变化时自动重建，例如工具被添加、移除，或描述被更新。过期检查基于所有可搜索文本的哈希，因此即使工具名称不变，也能检测到描述变化。
+
+### 如何选择
+
+当你的 LLM 擅长构造有针对性的模式，并且你希望结果确定、可预测时，使用 **regex**。Regex 也更容易调试，因为你可以直接看到发送了什么模式。
+
+当你的 LLM 倾向于用自然语言描述需求，或工具目录中有细致描述、相关性排序能带来价值时，使用 **BM25**。BM25 基于单个词项打分，不要求单一模式完整匹配，因此更擅长处理部分匹配和近义表达。
+
+## 配置
+
+两种搜索转换接受相同的配置选项。
+
+### 限制结果数量
+
+默认情况下，搜索最多返回 5 个工具。可以根据目录大小以及希望 LLM 每次搜索接收多少上下文来调整 `max_results`：
+
+```python
+mcp.add_transform(RegexSearchTransform(max_results=10))
+mcp.add_transform(BM25SearchTransform(max_results=3))
+```
+
+使用 regex 时，一旦达到限制就停止返回结果（按目录顺序取前 N 个匹配项）。使用 BM25 时，会给所有工具打分，然后返回相关性最高的前 N 个。
+
+### 固定显示工具
+
+有些工具无论搜索如何都应该始终可见。使用 `always_visible` 可以把它们固定在列表中，与合成工具一起显示：
+
+```python
+mcp.add_transform(RegexSearchTransform(
+    always_visible=["help", "status"],
+))
+
+# list_tools 返回：help、status、search_tools、call_tool
+```
+
+固定工具会直接出现在 `list_tools` 中，因此 LLM 不必搜索就能调用。它们会从搜索结果中排除，以避免重复。
+
+### 自定义工具名称
+
+默认名称 `search_tools` 和 `call_tool` 可以修改，以避免与真实工具冲突：
+
+```python
+mcp.add_transform(RegexSearchTransform(
+    search_tool_name="find_tools",
+    call_tool_name="run_tool",
+))
+```
+
+## `call_tool` 代理
+
+`call_tool` 代理会把调用转发给真实工具。当客户端调用 `call_tool(name="search_database", arguments={...})` 时，代理会通过服务端的常规工具管线解析 `search_database`，包括转换和中间件，然后执行它。
+
+代理会拒绝调用合成工具本身。`call_tool(name="call_tool")` 会抛出错误，而不是递归调用。
+
+<Note>
+通过搜索发现的工具也可以直接用 `client.call_tool("search_database", {...})` 调用，不必经过代理。代理是为只知道 `list_tools` 返回工具的 LLM 准备的，让它们能通过自己可见的工具来调用已发现工具。
+</Note>
+
+## 认证和可见性
+
+搜索结果会遵守完整的授权管线。被中间件、可见性转换或组件级认证检查过滤掉的工具，不会出现在搜索结果中。
+
+搜索工具会在搜索时通过完整管线查询 `list_tools()`，因此控制客户端在列表中能看到什么的同一套过滤规则，也会控制它们能通过搜索发现什么。
+
+```python
+from fastmcp.server.transforms import Visibility
+from fastmcp.server.transforms.search import RegexSearchTransform
+
+mcp = FastMCP("My Server")
+
+# ... define tools ...
+
+# 全局禁用 admin 工具
+mcp.add_transform(Visibility(False, tags={"admin"}))
+
+# 添加搜索；admin 工具不会出现在结果中
+mcp.add_transform(RegexSearchTransform())
+```
+
+会话级可见性变更（通过 `ctx.disable_components()`）也会立即反映到搜索结果中。

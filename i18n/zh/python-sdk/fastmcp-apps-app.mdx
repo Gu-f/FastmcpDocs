@@ -1,0 +1,134 @@
+---
+title: app
+sidebarTitle: app
+---
+
+# `fastmcp.apps.app`
+
+
+FastMCPApp 是表示可组合 MCP 应用的 Provider。
+
+FastMCPApp 将入口点工具（模型调用这些工具）与后端工具（UI 通过 CallTool 调用这些工具）绑定在一起。后端工具会带上 ``meta["fastmcp"]["app"]`` 标记，因此即使转换（命名空间、可见性等）重命名或隐藏了它们，也仍能通过 provider 链找到。服务端会设置一个上下文变量，告诉 ``Provider.get_tool`` 对 app 可见工具回退到直接查找。
+
+Usage::
+
+    from fastmcp import FastMCP, FastMCPApp
+
+    app = FastMCPApp("Dashboard")
+
+    @app.ui()
+    def show_dashboard() -> Component:
+        return Column(...)
+
+    @app.tool()
+    def save_contact(name: str, email: str) -> str:
+        return name
+
+    server = FastMCP("Platform")
+    server.add_provider(app)
+
+
+## Classes
+
+### `FastMCPApp` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/app.py#L144" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+表示 MCP 应用的 Provider。
+
+将入口点工具（``@app.ui``）、后端工具（``@app.tool``）和 Prefab 渲染器资源绑定在一起。后端工具会带上 ``meta["fastmcp"]["app"]`` 标记，因此即使已应用转换，``Provider.get_tool`` 也能通过原始名称找到它们。
+
+
+**Methods:**
+
+#### `tool` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/app.py#L168" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+tool(self, name_or_fn: F) -> F
+```
+
+#### `tool` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/app.py#L180" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+tool(self, name_or_fn: str | None = None) -> Callable[[F], F]
+```
+
+#### `tool` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/app.py#L191" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+tool(self, name_or_fn: str | AnyFunction | None = None) -> Any
+```
+
+注册 UI 通过 CallTool 调用的后端工具。
+
+后端工具默认使用 ``visibility=["app"]``。传入 ``model=True`` 也会将该工具暴露给模型（``visibility=["app", "model"]``）。
+
+支持多种调用模式::
+
+    @app.tool
+    def save(name: str): ...
+
+    @app.tool()
+    def save(name: str): ...
+
+    @app.tool("custom_name")
+    def save(name: str): ...
+
+
+#### `ui` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/app.py#L258" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+ui(self, name_or_fn: F) -> F
+```
+
+#### `ui` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/app.py#L273" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+ui(self, name_or_fn: str | None = None) -> Callable[[F], F]
+```
+
+#### `ui` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/app.py#L287" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+ui(self, name_or_fn: str | AnyFunction | None = None) -> Any
+```
+
+注册模型调用的 UI 入口点工具。
+
+入口点工具默认使用 ``visibility=["model"]``，并会自动连接 Prefab 渲染器资源和 CSP。它们会带上应用名称标记，因此结构化内容会包含 ``_meta.fastmcp.app``。
+
+支持多种调用模式::
+
+    @app.ui
+    def dashboard() -> Component: ...
+
+    @app.ui()
+    def dashboard() -> Component: ...
+
+    @app.ui("my_dashboard")
+    def dashboard() -> Component: ...
+
+
+#### `add_tool` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/app.py#L362" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+add_tool(self, tool: Tool | Callable[..., Any]) -> Tool
+```
+
+以编程方式向此应用添加工具。
+
+该工具会带上此应用名称标记以便路由。
+
+
+#### `lifespan` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/app.py#L418" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+lifespan(self) -> AsyncIterator[None]
+```
+
+#### `run` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/app.py#L426" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+run(self, transport: Literal['stdio', 'http', 'sse', 'streamable-http'] | None = None, **kwargs: Any) -> None
+```
+
+创建临时 FastMCP 服务端，并独立运行此应用。

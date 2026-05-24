@@ -3,7 +3,6 @@ title: OAuth Proxy
 sidebarTitle: OAuth Proxy
 description: Bridge traditional OAuth providers to work seamlessly with MCP's authentication flow.
 icon: share
-tag: NEW
 ---
 
 import { VersionBadge } from "/snippets/version-badge.mdx";
@@ -100,8 +99,11 @@ mcp = FastMCP(name="My Server", auth=auth)
   Client ID from your registered OAuth application
 </ParamField>
 
-<ParamField body="upstream_client_secret" type="str" required>
-  Client secret from your registered OAuth application
+<ParamField body="upstream_client_secret" type="str | None">
+  Client secret from your registered OAuth application. Optional for PKCE public
+  clients or when using alternative credentials (e.g., managed identity client
+  assertions via a subclass). When omitted, `jwt_signing_key` must be provided
+  explicitly since it cannot be derived from the secret.
 </ParamField>
 
 <ParamField body="token_verifier" type="TokenVerifier" required>
@@ -113,6 +115,12 @@ mcp = FastMCP(name="My Server", auth=auth)
   Public URL where OAuth endpoints will be accessible, **including any mount path** (e.g., `https://your-server.com/api`).
 
   This URL is used to construct OAuth callback URLs and operational endpoints. When mounting under a path prefix, include that prefix in `base_url`. Use `issuer_url` separately to specify where auth server metadata is located (typically at root level).
+</ParamField>
+
+<ParamField body="resource_base_url" type="AnyHttpUrl | str | None">
+  Optional public base URL for the protected resource metadata and token audience.
+
+  Use this when your OAuth callbacks and operational endpoints need to live under one public URL, but the protected MCP resource should be advertised under another. FastMCP will still append the MCP mount path (for example, `/mcp`) to this base URL.
 </ParamField>
 
 <ParamField body="redirect_path" type="str" default="/auth/callback">
@@ -127,21 +135,24 @@ mcp = FastMCP(name="My Server", auth=auth)
 <ParamField body="issuer_url" type="AnyHttpUrl | str | None">
   Issuer URL for OAuth authorization server metadata (defaults to `base_url`).
 
-  When mounting your MCP server under a path prefix (e.g., `/api`), set this to your root-level URL to avoid 404 logs during OAuth discovery. MCP clients try path-scoped discovery first per RFC 8414, which will fail if your auth server metadata is at the root level.
+  When `issuer_url` has a path component (either explicitly or by defaulting from `base_url`), FastMCP creates path-aware discovery routes per RFC 8414. For example, if `base_url` is `http://localhost:8000/api`, the authorization server metadata will be at `/.well-known/oauth-authorization-server/api`.
 
-  **Example with mounting:**
+  **Default behavior (recommended for most cases):**
   ```python
   auth = GitHubProvider(
       base_url="http://localhost:8000/api",  # OAuth endpoints under /api
-      issuer_url="http://localhost:8000"     # Auth server metadata at root
+      # issuer_url defaults to base_url - path-aware discovery works automatically
   )
   ```
 
-  Without `issuer_url`, clients will attempt `/.well-known/oauth-authorization-server/api` (404) before falling back to `/.well-known/oauth-authorization-server` (success). Setting `issuer_url` to the root eliminates the 404 attempt.
-
-  **When to use:**
-  - **Default (`None`)**: Use `base_url` as issuer - simple deployments at root path
-  - **Root-level URL**: Mounting under a path prefix - avoids 404 logs
+  **When to set explicitly:**
+  Set `issuer_url` to root level only if you want multiple MCP servers to share a single discovery endpoint:
+  ```python
+  auth = GitHubProvider(
+      base_url="http://localhost:8000/api",
+      issuer_url="http://localhost:8000"  # Shared root-level discovery
+  )
+  ```
 
   See the [HTTP Deployment guide](/deployment/http#mounting-authenticated-servers) for complete mounting examples.
 </ParamField>
@@ -158,6 +169,14 @@ mcp = FastMCP(name="My Server", auth=auth)
   and proxy-to-upstream). - `True` (default): Forward PKCE for providers that
   support it (Google, Azure, AWS, GitHub, etc.) - `False`: Disable only if upstream
   provider doesn't support PKCE
+</ParamField>
+
+<ParamField body="forward_resource" type="bool" default="True">
+  Whether to forward RFC 8707 `resource` parameters from MCP clients to the
+  upstream OAuth provider. When enabled, the proxy includes the resource indicator
+  in authorization requests, allowing providers that support RFC 8707 to scope
+  tokens to specific resources. Disable for providers that reject unknown
+  parameters.
 </ParamField>
 
 <ParamField body="token_endpoint_auth_method" type="str | None">
@@ -278,14 +297,20 @@ auth = OAuthProxy(..., client_storage=MemoryStore())
 </ParamField>
 
 
-<ParamField body="require_authorization_consent" type="bool" default="True">
-  Whether to require user consent before authorizing MCP clients. When enabled (default), users see a consent screen that displays which client is requesting access, preventing [confused deputy attacks](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices#confused-deputy-problem) by ensuring users explicitly approve new clients.
+<ParamField body="require_authorization_consent" type='bool | Literal["remember", "external"]' default="True">
+  Consent screen behavior for authorization requests. The consent page displays which client is requesting access, defending against [confused deputy and AS-in-the-middle attacks](#confused-deputy-attacks) by requiring explicit user approval.
 
-  **Default behavior (True):**
-  Users see a consent screen on first authorization. Consent choices are remembered via signed cookies, so users only need to approve each client once. This protects against malicious clients impersonating the user.
+  **`True` (default) — always prompt:**
+  Users see the consent screen on every authorization. Strongest protection against AS-in-the-middle attacks where a malicious MCP server redirects the victim's browser into a legitimate proxy and relies on a previously-remembered approval to silently complete the flow.
 
-  **Disabling consent (False):**
-  Authorization proceeds directly to the upstream provider without user confirmation. Only use this for local development or testing environments where the security trade-off is acceptable.
+  **`"remember"` — silent consent on return:**
+  Users see the consent screen on first authorization; subsequent flows from the same browser for the same `(client_id, redirect_uri)` are silently approved via a signed cookie. Cross-site navigations (detected via `Sec-Fetch-Site`) fall back to the prompt. `Sec-Fetch-Site` is a browser-level heuristic rather than a protocol guarantee: an attacker who finds a way to initiate a non-cross-site navigation (XSS on a sibling origin, a same-site redirect chain, etc.) can reach the silent-consent path. `True` does not depend on this signal. See [Confused Deputy Attacks](#confused-deputy-attacks) for the underlying attack class.
+
+  **`"external"` — delegate to upstream:**
+  Skip the built-in consent page; consent is collected by the upstream IdP or a custom login page referenced via `upstream_authorization_endpoint`. No security warning is logged.
+
+  **`False` — disable entirely:**
+  Authorization proceeds directly to the upstream provider without any consent UI. Logs a security warning. Only for local development or testing.
 
   ```python
   # Development/testing only - skip consent screen
@@ -293,11 +318,35 @@ auth = OAuthProxy(..., client_storage=MemoryStore())
       ...,
       require_authorization_consent=False  # ⚠️ Security warning: only for local/testing
   )
+
+  # Convenience mode - silent consent on return visits (less safe than True)
+  auth = OAuthProxy(
+      ...,
+      require_authorization_consent="remember",
+  )
   ```
 
   <Warning>
     Disabling consent removes an important security layer. Only disable for local development or testing environments where you fully control all connecting clients.
   </Warning>
+</ParamField>
+
+<ParamField body="consent_csp_policy" type="str | None" default="None">
+  Content Security Policy for the consent page.
+
+  - `None` (default): Uses the built-in CSP policy with appropriate directives for form submission
+  - Empty string `""`: Disables CSP entirely (no meta tag rendered)
+  - Custom string: Uses the provided value as the CSP policy
+
+  This is useful for organizations that have their own CSP policies and need to override or disable FastMCP's built-in CSP directives.
+
+  ```python
+  # Disable CSP entirely (let org CSP policies apply)
+  auth = OAuthProxy(..., consent_csp_policy="")
+
+  # Use custom CSP policy
+  auth = OAuthProxy(..., consent_csp_policy="default-src 'self'; style-src 'unsafe-inline'")
+  ```
 </ParamField>
 </Card>
 
@@ -363,7 +412,7 @@ auth = OAuthProxy(
 )
 ```
 
-The proxy also automatically forwards RFC 8707 `resource` parameters from MCP clients to upstream providers that support them.
+The proxy also forwards RFC 8707 `resource` parameters from MCP clients to upstream providers that support them. This is enabled by default via the `forward_resource` parameter. Disable it for providers that reject unknown parameters.
 
 ## OAuth Flow
 
@@ -383,10 +432,12 @@ sequenceDiagram
     Note over Proxy: Store transaction with client PKCE<br/>Generate proxy PKCE pair
     Proxy->>User: 4. Show consent page<br/>(client details, redirect URI, scopes)
     User->>Proxy: 5. Approve/deny consent
+    Note over Proxy: Set consent binding cookie<br/>(binds browser to this flow)
     Proxy->>Provider: 6. Redirect to provider<br/>redirect_uri=server:8000/auth/callback<br/>code_challenge=PROXY_CHALLENGE
 
     Note over Provider, Proxy: Provider Callback
     Provider->>Proxy: 7. GET /auth/callback<br/>with authorization code
+    Note over Proxy: Verify consent binding cookie<br/>(reject if missing or mismatched)
     Proxy->>Provider: 8. Exchange code for tokens<br/>code_verifier=PROXY_VERIFIER
     Provider-->>Proxy: 9. Access & refresh tokens
 
@@ -395,7 +446,7 @@ sequenceDiagram
 
     Note over Client, Proxy: Token Exchange
     Client->>Proxy: 11. POST /token with code<br/>code_verifier=CLIENT_VERIFIER
-    Proxy-->>Client: 12. Returns stored provider tokens
+    Proxy-->>Client: 12. Returns FastMCP JWT tokens
 ```
 
 The flow diagram above illustrates the complete OAuth proxy pattern. Let's understand each phase:
@@ -411,22 +462,23 @@ The client initiates OAuth by redirecting to the proxy's `/authorize` endpoint. 
 1. Stores the client's transaction with its PKCE challenge
 2. Generates its own PKCE parameters for upstream security
 3. Shows the user a consent page with the client's details, redirect URI, and requested scopes
-4. If the user approves (or the client was previously approved), redirects to the upstream provider using the fixed callback URL
+4. If the user approves (or the client was previously approved), sets a consent binding cookie and redirects to the upstream provider using the fixed callback URL
 
-This dual-PKCE approach maintains end-to-end security at both the client-to-proxy and proxy-to-provider layers. The consent step protects against confused deputy attacks by ensuring you explicitly approve each client before it can complete authorization.
+This dual-PKCE approach maintains end-to-end security at both the client-to-proxy and proxy-to-provider layers. The consent step protects against confused deputy attacks by ensuring you explicitly approve each client before it can complete authorization, and the consent binding cookie ensures that only the browser that approved consent can complete the callback.
 
 ### Callback Phase
 
 After user authorization, the provider redirects back to the proxy's fixed callback URL. The proxy:
 
-1. Exchanges the authorization code for tokens with the provider
-2. Stores these tokens temporarily
-3. Generates a new authorization code for the client
-4. Redirects to the client's original dynamic callback URL
+1. Verifies the consent binding cookie matches the transaction (rejecting requests from a different browser)
+2. Exchanges the authorization code for tokens with the provider
+3. Stores these tokens temporarily
+4. Generates a new authorization code for the client
+5. Redirects to the client's original dynamic callback URL
 
 ### Token Exchange Phase
 
-Finally, the client exchanges its authorization code with the proxy to receive the provider's tokens. The proxy validates the client's PKCE verifier before returning the stored tokens.
+Finally, the client exchanges its authorization code with the proxy. The proxy validates the client's PKCE verifier, then issues its own FastMCP JWT tokens (rather than forwarding the upstream provider's tokens). See [Token Architecture](#token-architecture) for details on this design.
 
 This entire flow is transparent to the MCP client—it experiences a standard OAuth flow with dynamic registration, unaware that a proxy is managing the complexity behind the scenes.
 
@@ -453,6 +505,8 @@ When a client makes an MCP request with its FastMCP token:
 3. **Decrypts and validates** the upstream token with the provider
 
 This two-tier validation ensures that FastMCP tokens can only be used with this server (via audience validation) while maintaining full upstream token security.
+
+This architecture also prevents [token passthrough](#token-passthrough) — see the [Security](#security) section for details.
 
 **Token expiry alignment:**
 
@@ -503,6 +557,74 @@ auth = OAuthProxy(
 
 Check your server logs for "Client registered with redirect_uri" messages to identify what URLs your clients use.
 
+## CIMD Support
+
+<VersionBadge version="3.0.0" />
+
+The OAuth proxy supports **Client ID Metadata Documents (CIMD)**, an alternative to Dynamic Client Registration where clients host a static JSON document at an HTTPS URL. Instead of registering dynamically, clients simply provide their CIMD URL as their `client_id`, and the server fetches and validates the metadata.
+
+CIMD clients appear in the consent screen with a verified domain badge, giving users confidence about which application is requesting access. This provides stronger identity verification than DCR, where any client can claim any name.
+
+### How CIMD Works
+
+When a client presents an HTTPS URL as its `client_id` (for example, `https://myapp.example.com/oauth/client.json`), the OAuth proxy recognizes it as a CIMD client and:
+
+1. Fetches the JSON document from that URL
+2. Validates that the document's `client_id` field matches the URL
+3. Extracts client metadata (name, redirect URIs, scopes, etc.)
+4. Stores the client persistently alongside DCR clients
+5. Shows the verified domain in the consent screen
+
+This flow happens transparently. MCP clients that support CIMD simply provide their metadata URL instead of registering, and the OAuth proxy handles the rest.
+
+### CIMD Configuration
+
+CIMD support is enabled by default for `OAuthProxy`.
+
+<Card icon="code" title="CIMD Parameters">
+<ParamField body="enable_cimd" type="bool" default="True">
+  Whether to accept CIMD URLs as client identifiers. When enabled, clients can use HTTPS URLs pointing to metadata documents as their `client_id` instead of registering via DCR.
+</ParamField>
+</Card>
+
+### Private Key JWT Authentication
+
+CIMD clients can authenticate using `private_key_jwt` instead of the default `none` authentication method. This provides cryptographic proof of client identity by signing JWT assertions with a private key, while the server verifies using the client's public key from their CIMD document.
+
+To use `private_key_jwt`, the CIMD document must include either a `jwks_uri` (URL to fetch the public key set) or inline `jwks` (the key set directly in the document):
+
+```json
+{
+  "client_id": "https://myapp.example.com/oauth/client.json",
+  "client_name": "My Secure App",
+  "redirect_uris": ["http://localhost:*/callback"],
+  "token_endpoint_auth_method": "private_key_jwt",
+  "jwks_uri": "https://myapp.example.com/.well-known/jwks.json"
+}
+```
+
+The OAuth proxy validates JWT assertions according to RFC 7523, checking the signature, issuer, audience, subject claims, and preventing replay attacks via JTI tracking.
+
+### Security Considerations
+
+CIMD provides several security advantages over DCR:
+
+- **Verified identity**: The domain in the `client_id` URL is verified by HTTPS, so users know which organization is requesting access
+- **No registration required**: Clients don't need to store or manage dynamically-issued credentials
+- **Redirect URI enforcement**: CIMD documents must declare `redirect_uris`, which are enforced by the proxy (wildcard patterns supported)
+- **SSRF protection**: The OAuth proxy blocks fetches to localhost, private IPs, and reserved addresses
+- **Replay prevention**: For `private_key_jwt` clients, JTI claims are tracked to prevent assertion replay
+- **Cache-aware fetching**: CIMD documents are cached according to HTTP cache headers and revalidated when required
+
+CIMD is enabled by default. To disable it entirely (for example, to require all clients to register via DCR), set `enable_cimd=False` explicitly:
+
+```python
+auth = OAuthProxy(
+    ...,
+    enable_cimd=False,
+)
+```
+
 ## Security
 
 ### Key and Storage Management
@@ -527,41 +649,57 @@ The OAuth proxy works by bridging DCR clients to traditional auth providers, whi
 
 #### Mitigation
 
-FastMCP's OAuth proxy requires you to explicitly consent whenever any new or unrecognized client attempts to connect to your server. Before any authorization happens, you see a consent page showing the client's details, redirect URI, and requested scopes. This gives you the opportunity to review and deny suspicious requests. Once you approve a client, it's remembered so you don't see the consent page again for that client. The consent mechanism is implemented with CSRF tokens and cryptographically signed cookies to prevent tampering.
+FastMCP's OAuth proxy defends against confused deputy attacks with two layers of protection:
+
+**Consent screen.** Before any authorization happens, you see a consent page showing the client's details, redirect URI, and requested scopes. This gives you the opportunity to review and deny suspicious requests. By default (`require_authorization_consent=True`), the page is shown on every flow, which is the strongest protection. Setting `require_authorization_consent="remember"` approves previously-approved `(client_id, redirect_uri)` pairs silently on return visits, trading some protection for UX (see below). The consent mechanism is implemented with CSRF tokens and cryptographically signed cookies to prevent tampering.
 
 ![](/assets/images/oauth-proxy-consent-screen.png)
 
 The consent page automatically displays your server's name, icon, and website URL, if available. These visual identifiers help users confirm they're authorizing the correct server.
 
+**Browser-session binding.** When you approve consent (or when a previously-approved client auto-approves), the proxy sets a cryptographically signed cookie that binds your browser session to the authorization flow. When the identity provider redirects back to the proxy's callback, the proxy verifies that this cookie is present and matches the expected transaction. A different browser — such as a victim who was sent the authorization URL by an attacker — won't have this cookie, and the callback will be rejected with a 403 error. This prevents the attack even when the identity provider skips the consent page for previously-authorized applications.
 
+#### AS-in-the-middle variant
+
+A related attack works even with browser-session binding in place: a malicious MCP server advertises its own authorization server, which redirects the victim's browser into the legitimate proxy's `/authorize` endpoint. Because the victim's browser carries both the prior-approval cookie and the newly-issued session-binding cookie throughout, both layers pass. The defense is the consent prompt itself: if consent is shown (`require_authorization_consent=True`), the victim sees the benign MCP server's name on the consent page — which doesn't match the malicious server they thought they were connecting to — and can deny.
+
+`require_authorization_consent="remember"` adds a `Sec-Fetch-Site` check to keep this path safe for legitimate return flows (the attack navigation lands as `cross-site` and falls back to the prompt), but this is a browser-level heuristic. For the strongest defense, leave `require_authorization_consent=True`.
 
 **Learn more:**
 - [MCP Security Best Practices](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices#confused-deputy-problem) - Official specification guidance
 - [Confused Deputy Attacks Explained](https://den.dev/blog/mcp-confused-deputy-api-management/) - Detailed walkthrough by Den Delimarsky
 
-## Environment Configuration
+### Token Passthrough
 
-<VersionBadge version="2.12.1" />
+[Token passthrough](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices#token-passthrough) occurs when an intermediary exposes upstream tokens to downstream clients, allowing those clients to impersonate the intermediary or access services they shouldn't reach.
 
-For production deployments, configure the OAuth proxy through environment variables instead of hardcoding credentials:
+#### Client-facing mitigation
 
-```bash
-# Specify the provider implementation
-export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.github.GitHubProvider
+The OAuth proxy's [token factory architecture](#token-architecture) prevents this by design. MCP clients only ever receive FastMCP-issued JWTs — the upstream provider token is never sent to the client. A FastMCP JWT is scoped to your server and cannot be used to access the upstream provider directly, even if intercepted.
 
-# Provider-specific credentials
-export FASTMCP_SERVER_AUTH_GITHUB_CLIENT_ID="Ov23li..."
-export FASTMCP_SERVER_AUTH_GITHUB_CLIENT_SECRET="abc123..."
-export FASTMCP_SERVER_AUTH_GITHUB_BASE_URL="https://your-production-server.com"
-```
+#### Calling downstream services
 
-With environment configuration, your server code simplifies to:
+When your MCP server needs to call other APIs on behalf of the authenticated user, avoid forwarding the upstream token directly — this reintroduces the token passthrough problem in the other direction. Instead, use a token exchange flow like [OAuth 2.0 Token Exchange (RFC 8693)](https://datatracker.ietf.org/doc/html/rfc8693) or your provider's equivalent (such as Azure's [On-Behalf-Of flow](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-on-behalf-of-flow)) to obtain a new token scoped to the downstream service.
+
+The upstream token is available in your tool functions via `get_access_token()` or the `CurrentAccessToken` dependency, which you can use as the assertion for a token exchange. The exchanged token will be scoped to the specific downstream service and identify your MCP server as the authorized intermediary, maintaining proper audience boundaries throughout the chain.
+
+## Production Configuration
+
+For production deployments, load sensitive credentials from environment variables:
 
 ```python
+import os
 from fastmcp import FastMCP
+from fastmcp.server.auth.providers.github import GitHubProvider
 
-# Authentication automatically configured from environment
-mcp = FastMCP(name="My Server")
+# Load secrets from environment variables
+auth = GitHubProvider(
+    client_id=os.environ.get("GITHUB_CLIENT_ID"),
+    client_secret=os.environ.get("GITHUB_CLIENT_SECRET"),
+    base_url=os.environ.get("BASE_URL", "https://your-production-server.com")
+)
+
+mcp = FastMCP(name="My Server", auth=auth)
 
 @mcp.tool
 def protected_tool(data: str) -> str:
@@ -571,3 +709,5 @@ def protected_tool(data: str) -> str:
 if __name__ == "__main__":
     mcp.run(transport="http", port=8000)
 ```
+
+This keeps secrets out of your codebase while maintaining explicit configuration.
