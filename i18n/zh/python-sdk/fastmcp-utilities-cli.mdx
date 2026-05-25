@@ -7,49 +7,40 @@ sidebarTitle: cli
 
 ## 函数
 
-### `is_already_in_uv_subprocess` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/cli.py#L27" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `is_already_in_uv_subprocess` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/cli.py#L28" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 is_already_in_uv_subprocess() -> bool
 ```
 
 
-检查我们是否已经在 FastMCP uv 子进程中运行。
+检查当前是否已经在 FastMCP uv 子进程中运行。
 
 
-### `load_and_merge_config` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/cli.py#L32" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `load_and_merge_config` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/cli.py#L33" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 load_and_merge_config(server_spec: str | None, **cli_overrides) -> tuple[MCPServerConfig, str]
 ```
 
 
-从 server_spec 加载配置并应用 CLI 覆盖。
+从 server_spec 加载配置，并应用 CLI 覆盖项。
 
-这合并了在 run、inspect 和 dev 命令中重复的配置解析逻辑。
-
+这会整合 run、inspect 和 dev 命令中重复的配置解析逻辑。
 
 **参数：**
-- `server_spec`: Python 文件、配置文件、URL，或 None 以自动检测
+- `server_spec`: Python 文件、配置文件、URL，或用于自动检测的 None
 - `cli_overrides`: 覆盖配置值的 CLI 参数
 
-**返回值：**
-- (MCPServerConfig, resolved_server_spec) 的元组
+**返回：**
+- (MCPServerConfig, resolved_server_spec) 元组
 
 
-### `log_server_banner` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/cli.py#L200" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `log_server_banner` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/cli.py#L201" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
-log_server_banner(server: FastMCP[Any], transport: Literal['stdio', 'http', 'sse', 'streamable-http']) -> None
+log_server_banner(server: FastMCP[Any]) -> None
 ```
 
 
-创建并记录包含服务器信息和标志的格式化横幅。
-
-**参数：**
-- `transport`: 正在使用的传输协议
-- `server_name`: 要显示的可选服务器名称
-- `host`: 主机地址（用于 HTTP 传输）
-- `port`: 端口号（用于 HTTP 传输）
-- `path`: 服务器路径（用于 HTTP 传输）
-
+创建并记录包含服务端信息和 logo 的格式化横幅。

@@ -1,0 +1,39 @@
+---
+title: version_check
+sidebarTitle: version_check
+---
+
+# `fastmcp.utilities.version_check`
+
+
+FastMCP 的版本检查实用工具。
+
+## 函数
+
+### `get_latest_version` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/version_check.py#L98" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_latest_version(include_prereleases: bool = False) -> str | None
+```
+
+
+从 PyPI 获取 FastMCP 最新版本，并在可用时使用缓存。
+
+**参数：**
+- `include_prereleases`: 如果为 True，则包含预发布版本。
+
+**返回：**
+- 最新版本字符串；如果不可用，则返回 None。
+
+
+### `check_for_newer_version` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/version_check.py#L124" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+check_for_newer_version() -> str | None
+```
+
+
+检查是否有更新版本的 FastMCP 可用。
+
+**返回：**
+- 如果有比当前版本更新的版本，则返回最新版本字符串；否则返回 None。

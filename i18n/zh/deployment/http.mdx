@@ -6,7 +6,7 @@ icon: server
 tag: NEW
 ---
 
-import { VersionBadge } from "/snippets/version-badge.mdx";
+import { VersionBadge } from "/zh/snippets/version-badge.mdx";
 
 <Tip>
 STDIO 传输非常适合本地开发和桌面应用。但想要释放 MCP 的全部潜力——集中式服务、多客户端访问以及网络可达性——就需要远程 HTTP 部署。
@@ -585,7 +585,7 @@ auth = GitHubProvider(
 
 这两个参数在生产环境中缺一不可。如果没有显式签名密钥，令牌会使用基于 client_secret 派生的密钥签名，一旦轮换 client_secret 就会导致令牌失效。如果没有持久化存储，令牌将局限于本地服务器，无法在多主机之间互信。**请为存储后端添加 `FernetEncryptionWrapper`，以加密静态保存的敏感 OAuth 令牌**——否则这些令牌将以明文形式存储。
 
-关于令牌体系结构与密钥管理的更多信息，请参阅[OAuth 代理密钥与存储管理](/zh/servers/auth/oauth-proxy#key-and-storage-management)。
+关于令牌体系结构与密钥管理的更多信息，请参阅[OAuth 代理密钥与存储管理](/zh/servers/auth/oauth-proxy#密钥和存储管理)。
 
 ## 测试部署
 

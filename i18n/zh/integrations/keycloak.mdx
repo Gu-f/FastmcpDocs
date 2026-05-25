@@ -1,0 +1,141 @@
+---
+title: Keycloak OAuth 🤝 FastMCP
+sidebarTitle: Keycloak
+description: 使用 Keycloak OAuth 保护你的 FastMCP 服务端
+icon: shield-check
+tag: NEW
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="3.2.4" />
+
+本指南展示如何使用 **Keycloak OAuth** 保护你的 FastMCP 服务端。该集成使用带 Dynamic Client Registration（DCR）的 [**Remote OAuth**](/zh/servers/auth/remote-oauth) 模式，由 Keycloak 处理用户登录，而你的 FastMCP 服务端负责验证令牌。
+
+<Note>
+**需要 Keycloak 26.6.0 或更高版本。** 更早版本存在与 MCP 客户端不兼容的 DCR 问题（[PR #45309](https://github.com/keycloak/keycloak/pull/45309)），该问题已在 26.6.0 中修复。
+</Note>
+
+## 配置
+
+### 前置条件
+
+开始之前，你需要：
+1. 一个正在运行的 **[Keycloak](https://keycloak.org/)** 实例（例如 `http://localhost:8080`）
+2. 一个已启用 **Dynamic Client Registration** 的 Keycloak realm，并配置允许你的服务端 URL（例如 `http://localhost:8000/*`）的可信主机策略
+3. 你的 FastMCP 服务端公共 URL（例如 `http://localhost:8000`）
+
+### FastMCP 配置
+
+创建 FastMCP 服务端，并使用 `KeycloakAuthProvider` 处理 OAuth：
+
+```python server.py
+import os
+
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.keycloak import KeycloakAuthProvider
+from fastmcp.server.dependencies import get_access_token
+
+auth = KeycloakAuthProvider(
+    realm_url=os.getenv("KEYCLOAK_REALM_URL") or "http://localhost:8080/realms/myrealm",
+    base_url="http://localhost:8000",
+    # audience="http://localhost:8000",  # 生产环境推荐设置
+)
+
+mcp = FastMCP("Keycloak Example Server", auth=auth)
+
+
+@mcp.tool
+async def get_access_token_claims() -> dict:
+    """获取已认证用户的访问令牌 claims。"""
+    token = get_access_token()
+    return {
+        "sub": token.claims.get("sub"),
+        "scope": token.claims.get("scope"),
+        "azp": token.claims.get("azp"),
+    }
+```
+
+<Warning>
+**生产安全性**：生产环境中请始终配置 `audience` 参数。没有它时，服务端会接受为任何 audience 签发的令牌。请配置 Keycloak audience mapper，并将 `audience` 设置为服务端的基础 URL，以确保令牌确实是发给你的服务端的。
+</Warning>
+
+## 本地开发
+
+为保持身份认证集成精简，并尽可能降低相关维护负担，本地基础设施工具有意没有放入 FastMCP 核心库。不过，Keycloak 是本地开发和测试中常用的身份提供商，因此配套项目 [**fastmcp-keycloak-local**](https://github.com/stephaneberle9/fastmcp-keycloak-local) 提供了一套专门兼容 FastMCP 的设置蓝图。
+
+它提供了在本地使用 Keycloak OAuth 开发和测试 FastMCP 服务端所需的一切：基于 Docker 的 Keycloak 设置，带预配置的 `fastmcp` realm（已启用 Dynamic Client Registration，并包含测试用户）、跨平台启动脚本，以及面向 MCP Inspector、Claude Desktop 和 Claude Code CLI 的集成指南。
+
+## 测试
+
+### 运行服务端
+
+```bash
+fastmcp run server.py --transport http --port 8000
+```
+
+### 使用客户端测试
+
+```python client.py
+import asyncio
+from fastmcp import Client
+
+async def main():
+    async with Client("http://localhost:8000/mcp", auth="oauth") as client:
+        print("✓ Authenticated with Keycloak!")
+        result = await client.call_tool("get_access_token_claims")
+        print(f"sub: {result.data.get('sub', 'N/A')}")
+
+asyncio.run(main())
+```
+
+首次运行时，浏览器会打开 Keycloak 的授权页面。登录后，客户端会收到令牌，并将其缓存以供后续运行使用。
+
+## 特性
+
+### JWT 令牌验证
+
+- **签名验证**：根据 Keycloak 的 JWKS 端点验证令牌
+- **过期检查**：自动拒绝已过期令牌
+- **签发者验证**：确保令牌来自你的特定 Keycloak realm
+- **Scope 强制检查**：验证是否存在所需 OAuth scope
+- **Audience 验证**：可选验证令牌是否面向你的服务端（配置 `audience`）
+
+### 用户 Claims
+
+从 Keycloak JWT 令牌访问用户信息：
+
+```python
+from fastmcp.server.dependencies import get_access_token
+
+@mcp.tool
+async def admin_only_tool() -> str:
+    """仅管理员用户可用的工具。"""
+    token = get_access_token()
+    roles = token.claims.get("realm_access", {}).get("roles", [])
+    if "admin" not in roles:
+        raise ValueError("This tool requires admin access")
+    return "Admin access granted!"
+```
+
+## 高级配置
+
+### 自定义令牌验证器
+
+```python
+from fastmcp.server.auth.providers.jwt import JWTVerifier
+from fastmcp.server.auth.providers.keycloak import KeycloakAuthProvider
+
+custom_verifier = JWTVerifier(
+    jwks_uri="http://localhost:8080/realms/myrealm/protocol/openid-connect/certs",
+    issuer="http://localhost:8080/realms/myrealm",
+    audience="my-resource-server",
+    required_scopes=["api:read", "api:write"],
+)
+
+auth = KeycloakAuthProvider(
+    realm_url="http://localhost:8080/realms/myrealm",
+    base_url="http://localhost:8000",
+    token_verifier=custom_verifier,
+)
+```

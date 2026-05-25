@@ -1,0 +1,298 @@
+---
+title: Claude Desktop 🤝 FastMCP
+sidebarTitle: Claude Desktop
+description: 将 FastMCP 服务器连接到 Claude Desktop
+icon: message-smile
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+import { LocalFocusTip } from "/zh/snippets/local-focus.mdx"
+
+<LocalFocusTip />
+
+Claude Desktop 通过本地 STDIO 连接和远程服务器（beta）支持 MCP 服务器，允许您使用 FastMCP 服务器的自定义工具、资源和提示来扩展 Claude 的功能。
+
+<Note>
+远程 MCP 服务器支持目前处于 beta 阶段，适用于 Claude Pro、Max、Team 和 Enterprise 计划的用户（截至 2025 年 6 月）。大多数用户仍然需要使用本地 STDIO 连接。
+</Note>
+
+<Note>
+本指南专门介绍在 Claude Desktop 中使用 FastMCP 服务器。有关一般的 Claude Desktop MCP 设置和官方示例，请参阅[官方 Claude Desktop 快速入门指南](https://modelcontextprotocol.io/quickstart/user)。
+</Note>
+
+
+## 要求
+
+Claude Desktop 传统上要求 MCP 服务器使用 STDIO 传输在本地运行，其中您的服务器通过标准输入/输出而不是 HTTP 与 Claude 通信。但是，某些计划的用户现在也可以访问远程服务器支持。
+
+<Tip>
+如果你没有远程服务器支持或不需要连接远程服务器, 你可以创建一个通过**STDIO**在本地运行的**代理服务器**，并将请求转发到远程的HTTP服务器。 请参见下方的 [代理服务器](#远程服务器) 部分。
+</Tip>
+
+## 创建服务器
+
+本指南中的示例将使用以下简单的掷骰子服务器，保存为 `server.py`。
+
+```python server.py
+import random
+from fastmcp import FastMCP
+
+mcp = FastMCP(name="骰子投掷器")
+
+@mcp.tool
+def roll_dice(n_dice: int) -> list[int]:
+    """掷 `n_dice` 个六面骰子，并返回结果。"""
+    return [random.randint(1, 6) for _ in range(n_dice)]
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+## 安装服务器
+
+### FastMCP CLI
+<VersionBadge version="2.10.3" />
+
+在 Claude Desktop 中安装 FastMCP 服务器的最简单方法是使用 `fastmcp install claude-desktop` 命令。这会自动处理配置和依赖管理。
+
+<Tip>
+在版本 2.10.3 之前，可以通过运行 `fastmcp install <path>` 而不指定客户端来管理 Claude Desktop。
+</Tip>
+
+```bash
+fastmcp install claude-desktop server.py
+```
+
+安装命令支持与 `run` 命令相同的 `file.py:object` 表示法。如果未指定对象，它将自动在您的文件中查找名为 `mcp`、`server` 或 `app` 的 FastMCP 服务器对象：
+
+```bash
+# 如果您的服务器对象名为 'mcp'，这些是等效的
+fastmcp install claude-desktop server.py
+fastmcp install claude-desktop server.py:mcp
+
+# 如果您的服务器有不同的名称，请使用显式对象名
+fastmcp install claude-desktop server.py:my_custom_server
+```
+
+安装后，完全重启 Claude Desktop。您应该在输入框的左下角看到一个锤子图标（🔨），表示 MCP 工具可用。
+
+#### 依赖
+
+FastMCP 在 Claude Desktop 中安装时提供了几种管理服务器依赖的方法：
+
+**单个包**：使用 `--with` 标志指定您的服务器需要的包。您可以多次使用此标志：
+
+```bash
+fastmcp install claude-desktop server.py --with pandas --with requests
+```
+
+**要求文件**：如果您有一个列出所有依赖的 `requirements.txt` 文件，请使用 `--with-requirements` 一次性安装它们：
+
+```bash
+fastmcp install claude-desktop server.py --with-requirements requirements.txt
+```
+
+**可编辑包**：对于正在开发的本地包，使用 `--with-editable` 以可编辑模式安装它们：
+
+```bash
+fastmcp install claude-desktop server.py --with-editable ./my-local-package
+```
+
+或者，您也可以使用一个名为 `fastmcp.json` 的配置文件（推荐使用）：
+
+```json fastmcp.json
+{
+  "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
+  "source": {
+    "path": "server.py",
+    "entrypoint": "mcp"
+  },
+  "environment": {
+    "dependencies": ["pandas", "requests"]
+  }
+}
+```
+
+
+#### Python 版本和项目目录
+
+FastMCP 允许您控制服务器的 Python 环境：
+
+**Python 版本**：使用 `--python` 指定您的服务器应该使用的 Python 版本。当您的服务器需要特定 Python 版本时，这特别有用：
+
+```bash
+fastmcp install claude-desktop server.py --python 3.11
+```
+
+**项目目录**：使用 `--project` 在特定项目目录中运行您的服务器。这确保 `uv` 将从该项目中发现所有 `pyproject.toml`、`uv.toml` 和 `.python-version` 文件：
+
+```bash
+fastmcp install claude-desktop server.py --project /path/to/my-project
+```
+
+当您指定项目目录时，服务器中的所有相对路径将从该目录解析，并使用项目的虚拟环境。
+
+#### 环境变量
+
+<Warning>
+Claude Desktop 在完全隔离的环境中运行服务器，无法访问您的 shell 环境或本地安装的应用程序。您必须显式传递服务器需要的任何环境变量。
+</Warning>
+
+如果您的服务器需要环境变量（如 API 密钥），您必须包含它们：
+
+```bash
+fastmcp install claude-desktop server.py --server-name "Weather Server" \
+  --env API_KEY=your-api-key \
+  --env DEBUG=true
+```
+
+或者从 `.env` 文件中加载它们：
+
+```bash
+fastmcp install claude-desktop server.py --server-name "Weather Server" --env-file .env
+```
+<Warning>
+- **必须在系统PATH中安装并可用`uv`**. Claude Desktop 运行在其独立的隔离环境中，需要`uv`来管理依赖.
+- **在macOS上，推荐使用Homebrew全局安装`uv`** 这样Claude Desktop才能检测到它: `brew install uv`。 使用其他方式安装 `uv` 可能导致Claude Desktop无法访问它。
+</Warning>
+
+
+### 手动配置
+
+为了更好地控制配置，您可以手动编辑 Claude Desktop 的配置文件。您可以从 Claude 的开发者设置中打开配置文件，或在以下位置找到它：
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+配置文件是一个包含 `mcpServers` 键的 JSON 对象，其中包含每个 MCP 服务器的配置。
+
+```json
+{
+  "mcpServers": {
+    "dice-roller": {
+      "command": "python",
+      "args": ["path/to/your/server.py"]
+    }
+  }
+}
+```
+
+更新配置文件后，完全重启 Claude Desktop。查找锤子图标（🔨）以确认您的服务器已加载。
+
+#### 依赖项
+
+如果你的服务器有依赖项，你可以使用 `uv` 或其他包管理器来配置环境。
+
+
+手动配置依赖时，建议的方法是将 `uv` 与 FastMCP 一起使用。配置使用 `uv run` 来创建一个包含您指定包的隔离环境：
+
+```json
+{
+  "mcpServers": {
+    "dice-roller": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with", "fastmcp",
+        "--with", "pandas",
+        "--with", "requests", 
+        "fastmcp",
+        "run",
+        "path/to/your/server.py"
+      ]
+    }
+  }
+}
+```
+
+您也可以在配置中手动指定 Python 版本和项目目录。添加 `--python` 来使用特定的 Python 版本，或者 `--project` 在项目目录中运行：
+
+```json
+{
+  "mcpServers": {
+    "dice-roller": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--python", "3.11",
+        "--project", "/path/to/project",
+        "--with", "fastmcp",
+        "fastmcp",
+        "run",
+        "path/to/your/server.py"
+      ]
+    }
+  }
+}
+```
+
+参数的顺序很重要：Python 版本和项目设置在包规格之前，而包规格在实际要运行的命令之前。
+
+<Warning>
+- **必须在系统PATH中安装并可用`uv`**. Claude Desktop 运行在其独立的隔离环境中，需要`uv`来管理依赖.
+- **在macOS上，推荐使用Homebrew全局安装`uv`** 这样Claude Desktop才能检测到它: `brew install uv`。 使用其他方式安装 `uv` 可能导致Claude Desktop无法访问它。
+</Warning>
+
+#### 环境变量
+
+您也可以在配置中指定环境变量：
+
+```json
+{
+  "mcpServers": {
+    "weather-server": {
+      "command": "python",
+      "args": ["path/to/weather_server.py"],
+      "env": {
+        "API_KEY": "your-api-key",
+        "DEBUG": "true"
+      }
+    }
+  }
+}
+```
+<Warning>
+Claude Desktop 在一个完全隔离的环境中运行服务器，无法访问你的 shell 环境或本地已安装的应用程序。你必须显式传递服务器所需的任何环境变量。
+</Warning>
+
+
+## 远程服务器
+
+
+Claude Pro、Max、Team 和 Enterprise 计划的用户可以通过集成获得一流的远程服务器支持。对于其他用户，或作为替代方法，FastMCP 可以创建一个代理服务器，将请求转发到远程 HTTP 服务器。您可以在 Claude Desktop 中安装代理服务器。
+
+创建一个连接到远程 HTTP 服务器的代理服务器：
+
+```python proxy_server.py
+from fastmcp import FastMCP
+
+# 创建一个到远程服务器的代理
+proxy = FastMCP.as_proxy(
+    "https://example.com/mcp/sse", 
+    name="Remote Server Proxy"
+)
+
+if __name__ == "__main__":
+    proxy.run()  # 通过 STDIO 为 Claude Desktop 运行
+```
+
+### 身份验证
+
+对于经过身份验证的远程服务器，请按照[客户端身份验证文档](/zh/v2/clients/auth/bearer)中的指导创建经过身份验证的客户端，并将其传递给代理：
+
+```python auth_proxy_server.py {7}
+from fastmcp import FastMCP, Client
+from fastmcp.client.auth import BearerAuth
+
+# 创建经过身份验证的客户端
+client = Client(
+    "https://api.example.com/mcp/sse",
+    auth=BearerAuth(token="your-access-token")
+)
+
+# 使用经过身份验证的客户端创建代理
+proxy = FastMCP.as_proxy(client, name="Authenticated Proxy")
+
+if __name__ == "__main__":
+    proxy.run()
+```
+

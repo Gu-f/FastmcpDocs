@@ -1,0 +1,105 @@
+---
+title: 表单输入
+sidebarTitle: 表单输入
+description: 通过 Pydantic 模型向用户收集结构化数据
+icon: rectangle-list
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.2.0" />
+
+`FormInput` 会根据 Pydantic 模型生成带校验的表单。用户填写表单后，提交内容会先按模型校验，然后再返回。这是一种不会被幻觉伪造的结构化用户征询。
+
+<Frame>
+  <img src="/apps/images/app-form.png" alt="Goose 中显示的 FormInput provider，包含一个 bug 报告表单" />
+</Frame>
+
+```python
+from typing import Literal
+
+from pydantic import BaseModel, Field
+from fastmcp import FastMCP
+from fastmcp.apps.form import FormInput
+
+class BugReport(BaseModel):
+    title: str = Field(description="Brief summary")
+    severity: Literal["low", "medium", "high", "critical"]
+    description: str = Field(
+        description="Detailed description",
+        json_schema_extra={"ui": {"type": "textarea"}},
+    )
+
+mcp = FastMCP("My Server")
+mcp.add_provider(FormInput(model=BugReport))
+```
+
+这会注册两个工具：
+
+| 工具 | 可见性 | 用途 |
+|------|-----------|---------|
+| `collect_bugreport` | 模型 | 打开表单 UI |
+| `submit_form` | 仅应用 | 校验并处理提交内容 |
+
+工具名称由模型类名的小写形式派生：`collect_{modelname}`。因此 `BugReport` 会变成 `collect_bugreport`，`ShippingAddress` 会变成 `collect_shippingaddress`。如有需要，可以使用 `tool_name` 覆盖。LLM 会调用它并传入说明所需信息的提示词，用户则会得到一个字段与模型匹配的表单。
+
+## 字段映射
+
+`FormInput` 使用 Prefab 的 `Form.from_model()`，它会将 Pydantic 类型映射到表单组件：
+
+| Python 类型 | 表单组件 |
+|------------|---------------|
+| `str` | 文本输入 |
+| `int`, `float` | 数字输入 |
+| `bool` | 复选框 |
+| `datetime.date` | 日期选择器 |
+| `Literal[...]` | 选择下拉菜单 |
+| `SecretStr` | 密码输入 |
+
+使用 `Field()` 元数据控制标签（`title`）、占位符（`description`）和校验（`min_length`、`max_length`、`ge`、`le`）。对于多行文本，请使用 `json_schema_extra={"ui": {"type": "textarea"}}`。
+
+## 回调
+
+默认情况下，校验后的模型会作为 JSON 返回。提供 `on_submit` 回调即可在服务端处理数据：
+
+```python
+def save_report(report: BugReport) -> str:
+    db.insert(report.model_dump())
+    return f"Bug #{db.last_id} filed: {report.title}"
+
+mcp.add_provider(FormInput(model=BugReport, on_submit=save_report))
+```
+
+回调接收一个校验后的模型实例，并返回一个字符串作为工具结果。
+
+## 配置
+
+```python
+FormInput(
+    model=BugReport,             # 必填：Pydantic 模型
+    name="BugTracker",           # 应用名称（默认：模型名称）
+    title="File a Bug",          # 卡片标题（默认：模型名称）
+    tool_name="file_bug",        # 工具名称（默认：collect_{model}）
+    submit_text="Submit Report", # 按钮标签（默认："Submit"）
+    on_submit=save_report,       # 可选回调
+    send_message=True,           # 将结果作为聊天消息推送
+)
+```
+
+设置 `send_message=True` 会通过 `SendMessage` 将结果推回对话，从而触发 LLM 的下一轮。没有它时，结果只是工具返回值。
+
+## 多个表单
+
+为不同模型添加多个 provider，每个模型都会获得自己的工具：
+
+```python
+mcp = FastMCP(
+    "My Server",
+    providers=[
+        FormInput(model=ShippingAddress),
+        FormInput(model=BugReport),
+        FormInput(model=ContactInfo),
+    ],
+)
+```

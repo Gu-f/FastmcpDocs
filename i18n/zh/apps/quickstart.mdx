@@ -1,0 +1,197 @@
+---
+title: 快速开始
+sidebarTitle: 快速开始
+description: 在一分钟内构建你的第一个 FastMCP 应用。
+icon: rocket
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+import { PrefabDemoFrame } from '/zh/snippets/prefab-demo-frame.mdx'
+
+<VersionBadge version="3.2.0" />
+
+读完本页后，你会拥有一个可工作的工具，它会返回这样的界面：
+
+<PrefabDemoFrame demo="team-directory" height="545px" title="团队目录演示" />
+
+一个用户可以悬停查看的饼图，一个可以排序和搜索的表格，而背后只有一个 Python 工具。
+
+## 安装
+
+```bash
+pip install "fastmcp[apps]"
+```
+
+`apps` extra 会引入 [Prefab](https://prefab.prefect.io)，这是用于构建应用 UI 的 Python 组件库。
+
+## 编写工具
+
+创建 `server.py`。这里的关键点是：`app=True` 告诉 FastMCP 这个工具会渲染 UI，而 `with PrefabApp() as app:` 是组合 UI 的标准模式。
+
+```python server.py expandable
+from collections import Counter
+
+from prefab_ui.app import PrefabApp
+from prefab_ui.components import Column, DataTable, DataTableColumn, Grid
+from prefab_ui.components.charts import PieChart
+from fastmcp import FastMCP
+
+mcp = FastMCP("My First App")
+
+
+@mcp.tool(app=True)
+def team_directory() -> PrefabApp:
+    """浏览团队目录。"""
+    members = [
+        {"name": "Alice Chen", "role": "Staff Engineer", "office": "San Francisco"},
+        {"name": "Bob Martinez", "role": "Lead Designer", "office": "New York"},
+        {"name": "Carol Johnson", "role": "Senior Engineer", "office": "London"},
+        {"name": "David Kim", "role": "Product Manager", "office": "San Francisco"},
+        {"name": "Eva Mueller", "role": "Engineer", "office": "Berlin"},
+        {"name": "Frank Lee", "role": "Data Scientist", "office": "San Francisco"},
+        {"name": "Grace Park", "role": "Engineering Manager", "office": "New York"},
+    ]
+
+    office_counts = [
+        {"office": office, "count": count}
+        for office, count in Counter(m["office"] for m in members).items()
+    ]
+
+    with PrefabApp() as app:
+        with Column(gap=4, css_class="p-6"):
+            with Grid(columns=[1, 2], gap=4):
+                PieChart(
+                    data=office_counts,
+                    data_key="count",
+                    name_key="office",
+                    show_legend=True,
+                )
+                DataTable(
+                    columns=[
+                        DataTableColumn(key="name", header="Name", sortable=True),
+                        DataTableColumn(key="role", header="Role", sortable=True),
+                        DataTableColumn(key="office", header="Office", sortable=True),
+                    ],
+                    rows=members,
+                    search=True,
+                )
+
+    return app
+```
+
+Prefab 代码可以从上到下阅读。`PrefabApp()` 是根；它的 `with` 块内的所有内容都会成为 UI。`Column` 会垂直堆叠子项，`Grid` 会按列布局。`DataTable` 接收行和列定义，并免费提供排序和搜索能力。
+
+`app=True` 会完成其余工作：设置渲染器资源、内容安全策略，以及告诉宿主“这个工具返回 UI”的元数据。宿主会在沙盒 iframe 中加载结果，用户可以在其中交互。一切都在客户端完成，不需要往返服务端。
+
+## 预览
+
+FastMCP 自带一个开发服务端，可以在浏览器中渲染应用工具，不需要 MCP 宿主：
+
+```bash
+fastmcp dev apps server.py
+```
+
+打开 `http://localhost:8080`，选择 `team_directory`，试试排序列和搜索。
+
+<Frame>
+  <img src="/apps/images/app-quickstart-dev-2.png" alt="在 fastmcp dev apps 预览中渲染的团队目录，显示了饼图、可搜索表格，以及点击一行后出现的详情卡片" />
+</Frame>
+
+## 让它响应交互
+
+上面的 UI 由你的 Python 渲染一次。Prefab 应用也可以实时响应用户输入，而且不需要任何服务端往返。关键概念是 **state**：一个客户端键值存储，组件可以从中读取并写入。
+
+点击下面演示中的某一行，可以看到详情卡片出现：
+
+<PrefabDemoFrame demo="team-directory-reactive" height="675px" title="响应式团队目录演示" />
+
+添加几个 import，给每个成员增加一些字段，接上点击处理器，并在选中内容时渲染详情卡片：
+
+```python expandable server.py
+from collections import Counter
+
+from prefab_ui.actions import SetState
+from prefab_ui.app import PrefabApp
+from prefab_ui.components import (
+    Badge, Card, CardContent, CardHeader, Column, DataTable, DataTableColumn,
+    Grid, H3, Row, Small, Text,
+)
+from prefab_ui.components.charts import PieChart
+from prefab_ui.components.control_flow import If
+from prefab_ui.rx import Rx, STATE
+from fastmcp import FastMCP
+
+mcp = FastMCP("My First App")
+
+MEMBERS = [
+    {"name": "Alice Chen", "role": "Staff Engineer", "office": "San Francisco", "email": "alice@company.com", "projects": 3},
+    {"name": "Bob Martinez", "role": "Lead Designer", "office": "New York", "email": "bob@company.com", "projects": 5},
+    # ... more members ...
+]
+
+OFFICE_COUNTS = [
+    {"office": o, "count": c}
+    for o, c in Counter(m["office"] for m in MEMBERS).items()
+]
+
+
+@mcp.tool(app=True)
+def team_directory() -> PrefabApp:
+    """浏览团队目录。"""
+    with PrefabApp(state={"selected": None}) as app:
+        with Column(gap=4, css_class="p-6"):
+            with Grid(columns=[1, 2], gap=4):
+                PieChart(
+                    data=OFFICE_COUNTS,
+                    data_key="count",
+                    name_key="office",
+                    show_legend=True,
+                )
+                DataTable(
+                    columns=[
+                        DataTableColumn(key="name", header="Name", sortable=True),
+                        DataTableColumn(key="role", header="Role", sortable=True),
+                        DataTableColumn(key="office", header="Office", sortable=True),
+                    ],
+                    rows=MEMBERS,
+                    search=True,
+                    on_row_click=SetState("selected", Rx("$event")),
+                )
+
+            with If(STATE.selected):
+                with Card():
+                    with CardHeader():
+                        with Row(gap=2, align="center"):
+                            H3(Rx("selected.name"))
+                            Badge(Rx("selected.office"))
+                    with CardContent():
+                        with Grid(columns=3, gap=4):
+                            with Column(gap=0):
+                                Small("Role")
+                                Text(Rx("selected.role"))
+                            with Column(gap=0):
+                                Small("Email")
+                                Text(Rx("selected.email"))
+                            with Column(gap=0):
+                                Small("Active Projects")
+                                Text(Rx("selected.projects"))
+
+    return app
+```
+
+三个新概念完成了全部工作：
+
+- **`on_row_click=SetState("selected", Rx("$event"))`**：点击一行会把该行数据写入 `selected` 状态键。`$event` 是被点击行的 dict。
+- **`Rx("selected.name")`**：响应式引用。它并不持有 Python 值，而是编译成浏览器端表达式，并在 `selected` 变化时重新求值，因此 `Text(Rx("selected.name"))` 总会显示最近点击的名称。
+- **`If(STATE.selected)`**：条件渲染其主体。点击之前，`selected` 为 `None`，卡片保持隐藏。
+
+`PrefabApp` 上的 `state={"selected": None}` dict 设置初始值。其余所有事情都发生在浏览器中；用户点击时不会往返你的服务端。
+
+## 接下来
+
+你已经构建了一个返回交互式、响应式 UI 的工具。这种模式覆盖非常广泛的用例：构建一个可视化，返回它，然后用户就在对话中看到渲染结果。
+
+- **[交互式工具](/zh/apps/prefab)**：图表、表格、仪表盘、响应式状态，以及实时演示
+- **[FastMCPApp](/zh/apps/fastmcp-app)**：当 UI 需要回调你的服务端时使用（表单、搜索、CRUD）
+- **[示例](/zh/apps/examples)**：可以今天就运行的完整服务端

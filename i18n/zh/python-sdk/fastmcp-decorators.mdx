@@ -1,0 +1,38 @@
+---
+title: decorators
+sidebarTitle: decorators
+---
+
+# `fastmcp.decorators`
+
+
+FastMCP 的共享装饰器实用工具。
+
+## 函数
+
+### `resolve_task_config` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/decorators.py#L17" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+resolve_task_config(task: bool | TaskConfig | None) -> bool | TaskConfig
+```
+
+
+解析任务配置，并将 None 默认视为 False。
+
+
+### `get_fastmcp_meta` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/decorators.py#L29" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_fastmcp_meta(fn: Any) -> Any | None
+```
+
+
+从函数中提取 FastMCP 元数据，同时处理绑定方法和包装器。
+
+
+## 类
+
+### `HasFastMCPMeta` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/decorators.py#L23" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+带有 FastMCP 元数据装饰的可调用对象协议。

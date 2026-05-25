@@ -7,7 +7,7 @@ sidebarTitle: uv
 
 ## 类
 
-### `UVEnvironment` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L14" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `UVEnvironment` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L14" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
 Python 环境设置的配置。
@@ -15,53 +15,23 @@ Python 环境设置的配置。
 
 **方法：**
 
-#### `build_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L49" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `build_command` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L49" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 build_command(self, command: list[str]) -> list[str]
 ```
 
-构建包含环境参数和要执行命令的完整 uv run 命令。
+构建完整的 uv run 命令，包含环境参数和要执行的命令。
 
 **参数：**
-- `command`: 要执行的命令（例如，["fastmcp", "run", "server.py"]）
+- `command`: 要执行的命令（例如 ["fastmcp", "run", "server.py"]）
 
-**返回值：**
-- 准备好用于 subprocess.run 的完整命令，如需要则包含 "uv" 前缀。
-- 如果未设置环境配置，则返回不变的命令。
-
-
-#### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L109" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-run_with_uv(self, command: list[str]) -> None
-```
-
-使用此环境配置通过 uv run 执行命令。
-
-**参数：**
-- `command`: 要执行的命令和参数（例如，["fastmcp", "run", "server.py"]）
+**返回：**
+- 可直接传给 subprocess.run 的完整命令，必要时包含 "uv" 前缀。
+- 如果未设置环境配置，则原样返回命令。
 
 
-#### `needs_uv` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L136" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-needs_uv(self) -> bool
-```
-
-已弃用：在内部使用 _needs_setup() 或检查 build_command 是否修改命令。
-
-
-#### `build_uv_run_command` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L140" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
-
-```python
-build_uv_run_command(self, command: list[str]) -> list[str]
-```
-
-已弃用：请使用 build_command() 代替。
-
-
-#### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L144" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `prepare` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/environments/uv.py#L109" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 prepare(self, output_dir: Path | None = None) -> None
@@ -70,6 +40,4 @@ prepare(self, output_dir: Path | None = None) -> None
 使用 uv 准备 Python 环境。
 
 **参数：**
-- `output_dir`: 创建持久化 uv 项目的目录。
-       如果为 None，则为临时使用创建临时目录。
-
+- `output_dir`: 创建持久化 uv 项目的目录。如果为 None，则创建临时目录供一次性使用。

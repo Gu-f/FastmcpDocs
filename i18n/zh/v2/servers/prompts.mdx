@@ -1,0 +1,353 @@
+---
+title: 提示(Prompts)
+sidebarTitle: 提示(Prompts)
+description: 为 MCP 客户端创建可重用的参数化提示模板。
+icon: message-lines
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+提示是可重用的消息模板，帮助 LLM 生成结构化、有目的的响应。FastMCP 简化了这些模板的定义，主要使用 `@mcp.prompt` 装饰器。
+
+## 什么是提示？
+
+提示为 LLM 提供参数化的消息模板。当客户端请求提示时：
+
+1.  FastMCP 找到相应的提示定义。
+2.  如果它有参数，则根据您的函数签名验证这些参数。
+3.  您的函数使用验证过的输入执行。
+4.  生成的消息返回给 LLM 以指导其响应。
+
+这允许您定义一致的、可重用的模板，LLM 可以在不同的客户端和上下文中使用。
+
+## 提示
+
+### `@prompt` 装饰器
+
+定义提示最常见的方法是装饰 Python 函数。装饰器使用函数名称作为提示的标识符。
+
+```python
+from fastmcp import FastMCP
+from fastmcp.prompts.prompt import Message, PromptMessage, TextContent
+
+mcp = FastMCP(name="PromptServer")
+
+# 返回字符串的基本提示（自动转换为用户消息）
+@mcp.prompt
+def ask_about_topic(topic: str) -> str:
+    """生成询问主题解释的用户消息。"""
+    return f"Can you please explain the concept of '{topic}'?"
+
+# 返回特定消息类型的提示
+@mcp.prompt
+def generate_code_request(language: str, task_description: str) -> PromptMessage:
+    """生成请求代码生成的用户消息。"""
+    content = f"Write a {language} function that performs the following task: {task_description}"
+    return PromptMessage(role="user", content=TextContent(type="text", text=content))
+```
+
+**核心概念：**
+
+*   **名称：** 默认情况下，提示名称取自函数名称。
+*   **参数：** 函数参数定义生成提示所需的输入。
+*   **推断的元数据：** 默认情况下：
+    *   提示名称：取自函数名称（`ask_about_topic`）。
+    *   提示描述：取自函数的文档字符串。
+<Tip>
+不支持具有 `*args` 或 `**kwargs` 的函数作为提示。此限制存在是因为 FastMCP 需要为 MCP 协议生成完整的参数架构，这对于可变参数列表是不可能的。
+</Tip>
+
+#### 装饰器参数
+
+虽然 FastMCP 从您的函数推断名称和描述，但您可以使用 `@mcp.prompt` 装饰器的参数来覆盖这些并添加额外的元数据：
+
+```python
+@mcp.prompt(
+    name="analyze_data_request",          # 自定义提示名称
+    description="Creates a request to analyze data with specific parameters",  # 自定义描述
+    tags={"analysis", "data"},            # 可选的分类标签
+    meta={"version": "1.1", "author": "data-team"}  # 自定义元数据
+)
+def data_analysis_prompt(
+    data_uri: str = Field(description="包含数据的资源的 URI。"),
+    analysis_type: str = Field(default="summary", description="分析类型。")
+) -> str:
+    """当提供描述时，此文档字符串被忽略。"""
+    return f"Please perform a '{analysis_type}' analysis on the data found at {data_uri}."
+```
+
+<Card icon="code" title="@prompt 装饰器参数">
+<ParamField body="name" type="str | None">
+  设置通过 MCP 暴露的显式提示名称。如果未提供，则使用函数名称
+</ParamField>
+
+<ParamField body="title" type="str | None">
+  提示的人类可读标题
+</ParamField>
+
+<ParamField body="description" type="str | None">
+  提供通过 MCP 暴露的描述。如果设置，则为此目的忽略函数的文档字符串
+</ParamField>
+
+<ParamField body="tags" type="set[str] | None">
+  用于对提示进行分类的字符串集合。服务器和在某些情况下客户端可以使用这些来过滤或分组可用的提示。
+</ParamField>
+
+<ParamField body="enabled" type="bool" default="True">
+  启用或禁用提示的布尔值。更多信息请参阅[禁用提示](#禁用提示)
+</ParamField>
+
+<ParamField body="icons" type="list[Icon] | None">
+  <VersionBadge version="2.14.0" />
+
+  此提示的可选图标表示列表。详细示例请参阅[图标](/zh/v2/servers/icons)
+</ParamField>
+
+<ParamField body="meta" type="dict[str, Any] | None">
+  <VersionBadge version="2.11.0" />
+
+  关于提示的可选元信息。此数据作为客户端提示对象的 `_meta` 字段传递给 MCP 客户端，可用于自定义元数据、版本控制或其他应用程序特定目的。
+</ParamField>
+</Card>
+
+### 参数类型
+
+<VersionBadge version="2.9.0" />
+
+MCP 规范要求所有提示参数都以字符串传递，但 FastMCP 允许您使用类型注解以获得更好的开发体验。当您使用复杂类型如 `list[int]` 或 `dict[str, str]` 时，FastMCP：
+
+1. **自动转换** 来自 MCP 客户端的字符串参数为预期类型
+2. **生成有用的描述** 显示所需的确切 JSON 字符串格式
+3. **保留直接使用** - 您仍可以使用正确类型的参数调用提示
+
+由于 MCP 规范仅允许字符串参数，客户端需要知道复杂类型使用什么字符串格式。FastMCP 通过自动增强带有 JSON 架构信息的参数描述来解决这个问题，使人类和 LLM 都清楚如何格式化它们的参数。
+
+<CodeGroup>
+
+```python Python 代码
+@mcp.prompt
+def analyze_data(
+    numbers: list[int],
+    metadata: dict[str, str], 
+    threshold: float
+) -> str:
+    """分析数值数据。"""
+    avg = sum(numbers) / len(numbers)
+    return f"Average: {avg}, above threshold: {avg > threshold}"
+```
+
+```json 生成的 MCP 提示
+{
+  "name": "analyze_data",
+  "description": "分析数值数据。",
+  "arguments": [
+    {
+      "name": "numbers",
+      "description": "Provide as a JSON string matching the following schema: {\"items\":{\"type\":\"integer\"},\"type\":\"array\"}",
+      "required": true
+    },
+    {
+      "name": "metadata", 
+      "description": "Provide as a JSON string matching the following schema: {\"additionalProperties\":{\"type\":\"string\"},\"type\":\"object\"}",
+      "required": true
+    },
+    {
+      "name": "threshold",
+      "description": "Provide as a JSON string matching the following schema: {\"type\":\"number\"}",
+      "required": true
+    }
+  ]
+}
+```
+
+</CodeGroup>
+
+**MCP 客户端将使用字符串参数调用此提示：**
+```json
+{
+  "numbers": "[1, 2, 3, 4, 5]",
+  "metadata": "{\"source\": \"api\", \"version\": \"1.0\"}",
+  "threshold": "2.5"
+}
+```
+
+**但您仍可以使用适当的类型直接调用它：**
+```python
+# 这也适用于直接调用
+result = await prompt.render({
+    "numbers": [1, 2, 3, 4, 5],
+    "metadata": {"source": "api", "version": "1.0"}, 
+    "threshold": 2.5
+})
+```
+
+<Warning>
+使用此功能时，请保持您的类型注解简单。复杂的嵌套类型或自定义类可能无法从 JSON 字符串可靠地转换。自动生成的字段结构描述是用户获得的关于预期格式的唯一指导。
+
+好的选择：`list[int]`、`dict[str, str]`、`float`、`bool`
+避免：复杂的 Pydantic 模型、深度嵌套结构、自定义类
+</Warning>
+
+### 返回值
+
+FastMCP 智能地处理您提示函数的不同返回类型：
+
+-   **`str`**：自动转换为单个 `PromptMessage`。
+-   **`PromptMessage`**：按提供的方式直接使用。（注意可以使用更用户友好的 `Message` 构造函数，它可以接受原始字符串而不是 `TextContent` 对象。）
+-   **`list[PromptMessage | str]`**：用作消息序列（对话）。
+-   **`Any`**：如果返回类型不是上述之一，则尝试将返回值转换为字符串并用作 `PromptMessage`。
+
+```python
+from fastmcp.prompts.prompt import Message, PromptResult
+
+@mcp.prompt
+def roleplay_scenario(character: str, situation: str) -> PromptResult:
+    """设置带有初始消息的角色扮演场景。"""
+    return [
+        Message(f"Let's roleplay. You are {character}. The situation is: {situation}"),
+        Message("Okay, I understand. I am ready. What happens next?", role="assistant")
+    ]
+```
+
+
+### 必需 vs. 可选参数
+
+函数签名中的参数被视为**必需的**，除非它们有默认值。
+
+```python
+@mcp.prompt
+def data_analysis_prompt(
+    data_uri: str,                        # 必需 - 没有默认值
+    analysis_type: str = "summary",       # 可选 - 有默认值
+    include_charts: bool = False          # 可选 - 有默认值
+) -> str:
+    """创建使用特定参数分析数据的请求。"""
+    prompt = f"Please perform a '{analysis_type}' analysis on the data found at {data_uri}."
+    if include_charts:
+        prompt += " Include relevant charts and visualizations."
+    return prompt
+```
+
+在此示例中，客户端*必须*提供 `data_uri`。如果省略 `analysis_type` 或 `include_charts`，将使用它们的默认值。
+
+### 禁用提示
+
+<VersionBadge version="2.8.0" />
+
+您可以通过启用或禁用提示来控制它们的可见性和可用性。禁用的提示不会出现在可用提示列表中，尝试调用禁用的提示将导致“未知提示”错误。
+
+默认情况下，所有提示都是启用的。您可以在创建时使用装饰器中的 `enabled` 参数禁用提示：
+
+```python
+@mcp.prompt(enabled=False)
+def experimental_prompt():
+    """此提示尚未准备好使用。"""
+    return "This is an experimental prompt."
+```
+
+您也可以在创建提示后以编程方式切换提示的状态：
+
+```python
+@mcp.prompt
+def seasonal_prompt(): return "Happy Holidays!"
+
+# 禁用和重新启用提示
+seasonal_prompt.disable()
+seasonal_prompt.enable()
+```
+
+### 异步提示
+
+FastMCP 无缝支持标准（`def`）和异步（`async def`）函数作为提示。
+
+```python
+# 同步提示
+@mcp.prompt
+def simple_question(question: str) -> str:
+    """生成向 LLM 提问的简单问题。"""
+    return f"Question: {question}"
+
+# 异步提示
+@mcp.prompt
+async def data_based_prompt(data_id: str) -> str:
+    """基于需要获取的数据生成提示。"""
+    # 在实际场景中，您可能从数据库或 API 获取数据
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://api.example.com/data/{data_id}") as response:
+            data = await response.json()
+            return f"Analyze this data: {data['content']}"
+```
+
+当您的提示函数执行网络请求、数据库查询、文件 I/O 或外部服务调用等 I/O 操作时，请使用 `async def`。
+
+### 访问 MCP 上下文
+
+<VersionBadge version="2.2.5" />
+
+提示可以通过 `Context` 对象访问额外的 MCP 信息和功能。要访问它，请在提示函数中添加一个类型注解为 `Context` 的参数：
+
+```python {6}
+from fastmcp import FastMCP, Context
+
+mcp = FastMCP(name="PromptServer")
+
+@mcp.prompt
+async def generate_report_request(report_type: str, ctx: Context) -> str:
+    """生成报告请求。"""
+    return f"Please create a {report_type} report. Request ID: {ctx.request_id}"
+```
+
+有关 Context 对象及其所有功能的完整文档，请参阅[上下文文档](/zh/v2/servers/context)。
+
+### 通知
+
+<VersionBadge version="2.9.1" />
+
+当提示被添加、启用或禁用时，FastMCP 会自动向连接的客户端发送 `notifications/prompts/list_changed` 通知。这允许客户端保持最新的提示集，而无需手动轮询更改。
+
+```python
+@mcp.prompt
+def example_prompt() -> str:
+    return "Hello!"
+
+# 这些操作会触发通知：
+mcp.add_prompt(example_prompt)  # 发送 prompts/list_changed 通知
+example_prompt.disable()        # 发送 prompts/list_changed 通知  
+example_prompt.enable()         # 发送 prompts/list_changed 通知
+```
+
+仅在这些操作在活动的 MCP 请求上下文中发生时（例如，从工具内或其他 MCP 操作中调用时）才会发送通知。在服务器初始化期间执行的操作不会触发通知。
+
+客户端可以使用[消息处理程序](/zh/v2/clients/messages)处理这些通知，以自动刷新其提示列表或更新其界面。
+
+## 服务器行为
+
+### 重复提示
+
+<VersionBadge version="2.1.0" />
+
+您可以配置 FastMCP 服务器如何处理尝试注册具有相同名称的多个提示。在 `FastMCP` 初始化期间使用 `on_duplicate_prompts` 设置。
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP(
+    name="PromptServer",
+    on_duplicate_prompts="error"  # 如果提示名称重复则引发错误
+)
+
+@mcp.prompt
+def greeting(): return "Hello, how can I help you today?"
+
+# 此注册尝试将引发 ValueError，因为
+# "greeting" 已经注册且行为是 "error"。
+# @mcp.prompt
+# def greeting(): return "Hi there! What can I do for you?"
+```
+
+重复行为选项包括：
+
+-   `"warn"`（默认）：记录警告，新提示替换旧的。
+-   `"error"`：引发 `ValueError`，阻止重复注册。
+-   `"replace"`：静默地用新提示替换现有提示。
+-   `"ignore"`：保留原始提示并忽略新的注册尝试。

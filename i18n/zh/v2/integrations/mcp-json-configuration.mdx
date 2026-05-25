@@ -1,0 +1,422 @@
+---
+title: MCP JSON 配置文件 🤝 FastMCP
+sidebarTitle: MCP.json
+description: 为任何兼容的客户端生成标准 MCP 配置文件
+icon: brackets-curly
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.10.3" />
+
+FastMCP 可以生成标准的 MCP JSON 配置文件，适用于任何兼容 MCP 的客户端，包括 Claude Desktop、VS Code、Cursor 以及其他支持模型上下文协议的应用程序。
+
+## MCP JSON 配置标准
+
+MCP JSON 配置格式是在 MCP 生态系统中发展起来的**新兴标准**。此格式定义了 MCP 客户端应如何配置和启动 MCP 服务器，提供了指定服务器命令、参数和环境变量的一致方式。
+
+### 配置结构
+
+标准使用 `mcpServers` 对象，其中每个键代表服务器名称，值包含服务器的配置：
+
+```json
+{
+  "mcpServers": {
+    "server-name": {
+      "command": "executable",
+      "args": ["arg1", "arg2"],
+      "env": {
+        "VAR": "value"
+      }
+    }
+  }
+}
+```
+
+### 服务器配置字段
+
+#### `command`（必需）
+运行 MCP 服务器的可执行命令。这应该是绝对路径或系统 PATH 中可用的命令。
+
+```json
+{
+  "command": "python"
+}
+```
+
+#### `args`（可选）
+传递给服务器可执行文件的命令行参数数组。参数按顺序传递。
+
+```json
+{
+  "args": ["server.py", "--verbose", "--port", "8080"]
+}
+```
+
+#### `env`（可选）
+包含启动服务器时要设置的环境变量的对象。所有值必须是字符串。
+
+```json
+{
+  "env": {
+    "API_KEY": "secret-key",
+    "DEBUG": "true",
+    "PORT": "8080"
+  }
+}
+```
+
+### 客户端采用
+
+此格式在 MCP 生态系统中被广泛采用：
+
+- **Claude Desktop**：使用 `~/.claude/claude_desktop_config.json`
+- **Cursor**：使用 `~/.cursor/mcp.json`
+- **VS Code**：使用工作区 `.vscode/mcp.json`
+- **其他客户端**：许多兼容 MCP 的应用程序都遵循此标准
+
+## 概述
+
+<Note>
+**为了获得最佳体验，请使用 FastMCP 的一流集成：** [`fastmcp install claude-code`](/zh/v2/integrations/claude-code)、[`fastmcp install claude-desktop`](/zh/v2/integrations/claude-desktop) 或 [`fastmcp install cursor`](/zh/v2/integrations/cursor)。对于高级用例和不支持的客户端，请使用 MCP JSON 生成。
+</Note>
+
+`fastmcp install mcp-json` 命令生成 MCP 生态系统中使用的标准 `mcpServers` 格式的配置。这在以下情况下很有用：
+
+- **使用不支持的客户端** - 任何未直接与 FastMCP 集成的 MCP 客户端
+- **CI/CD 环境** - 为部署自动生成配置
+- **配置共享** - 轻松向团队成员分发服务器设置
+- **自定义工具** - 与您自己的 MCP 管理工具集成
+- **手动设置** - 当您希望手动配置 MCP 客户端时
+
+## 基本用法
+
+生成配置并输出到标准输出（适用于管道操作）：
+
+```bash
+fastmcp install mcp-json server.py
+```
+
+这将输出以服务器名称作为根键的服务器配置 JSON：
+
+```json
+{
+  "My Server": {
+    "command": "uv",
+    "args": [
+      "run",
+      "--with",
+      "fastmcp", 
+      "fastmcp",
+      "run",
+      "/absolute/path/to/server.py"
+    ]
+  }
+}
+```
+
+要在客户端配置文件中使用此配置，请将其添加到客户端配置中的 `mcpServers` 对象：
+
+```json
+{
+  "mcpServers": {
+    "My Server": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "fastmcp", 
+        "fastmcp",
+        "run",
+        "/absolute/path/to/server.py"
+      ]
+    }
+  }
+}
+```
+
+<Note>
+使用 `--python`、`--project` 或 `--with-requirements` 时，生成的配置将在 `uv run` 命令中包含这些选项，确保您的服务器使用正确的 Python 版本和依赖。
+</Note>
+
+<Note>
+不同的 MCP 客户端可能有特定的配置要求或格式需求。始终查阅您客户端的文档以确保正确集成。
+</Note>
+
+## 配置选项
+
+### 服务器命名
+
+```bash
+# 使用服务器的内置名称（来自 FastMCP 构造函数）
+fastmcp install mcp-json server.py
+
+# 使用自定义名称覆盖
+fastmcp install mcp-json server.py --name "自定义服务器名称"
+```
+
+### 依赖
+
+添加您的服务器需要的 Python 包：
+
+```bash
+# 单个包
+fastmcp install mcp-json server.py --with pandas
+
+# 多个包
+fastmcp install mcp-json server.py --with pandas --with requests --with httpx
+
+# 可编辑的本地包
+fastmcp install mcp-json server.py --with-editable ./my-package
+
+# 从需求文件
+fastmcp install mcp-json server.py --with-requirements requirements.txt
+```
+
+您还可以使用一个名为 `fastmcp.json` 的配置文件（推荐使用）：
+
+```json fastmcp.json
+{
+  "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
+  "source": {
+    "path": "server.py",
+    "entrypoint": "mcp"
+  },
+  "environment": {
+    "dependencies": ["pandas", "matplotlib", "seaborn"]
+  }
+}
+```
+
+Then simply install with:
+```bash
+fastmcp install mcp-json fastmcp.json
+```
+
+
+### 环境变量
+
+```bash
+# 单个环境变量
+fastmcp install mcp-json server.py \
+  --env API_KEY=your-secret-key \
+  --env DEBUG=true
+
+# 从 .env 文件加载
+fastmcp install mcp-json server.py --env-file .env
+```
+
+### Python 版本和项目目录
+
+指定 Python 版本或在特定项目中运行：
+
+```bash
+# 使用特定的 Python 版本
+fastmcp install mcp-json server.py --python 3.11
+
+# 在项目目录中运行
+fastmcp install mcp-json server.py --project /path/to/project
+```
+
+### 服务器对象选择
+
+使用与其他 FastMCP 命令相同的 `file.py:object` 表示法：
+
+```bash
+# 自动检测服务器对象（查找 'mcp'、'server' 或 'app'）
+fastmcp install mcp-json server.py
+
+# 明确的服务器对象
+fastmcp install mcp-json server.py:my_custom_server
+```
+
+## 剪贴板集成
+
+将配置直接复制到剪贴板以便轻松粘贴：
+
+```bash
+fastmcp install mcp-json server.py --copy
+```
+
+<Note>
+`--copy` 标志需要安装 `pyperclip` 这个 Python 包。如果没有安装该包，您将会看到一条包含安装说明的错误消息。
+</Note>
+
+## 使用样例
+
+### 基础服务
+
+```bash
+fastmcp install mcp-json dice_server.py
+```
+
+输出：
+```json
+{
+  "Dice Server": {
+    "command": "uv",
+    "args": [
+      "run",
+      "--with",
+      "fastmcp",
+      "fastmcp", 
+      "run",
+      "/home/user/dice_server.py"
+    ]
+  }
+}
+```
+
+### 包含依赖项的生产服务器
+
+```bash
+fastmcp install mcp-json api_server.py \
+  --name "Production API Server" \
+  --with requests \
+  --with python-dotenv \
+  --env API_BASE_URL=https://api.example.com \
+  --env TIMEOUT=30
+```
+
+### 高级配置
+
+```bash
+fastmcp install mcp-json ml_server.py \
+  --name "ML Analysis Server" \
+  --python 3.11 \
+  --with-requirements requirements.txt \
+  --project /home/user/ml-project \
+  --env GPU_DEVICE=0
+```
+
+输出：
+```json
+{
+  "Production API Server": {
+    "command": "uv",
+    "args": [
+      "run",
+      "--with",
+      "fastmcp",
+      "--with",
+      "python-dotenv", 
+      "--with",
+      "requests",
+      "fastmcp",
+      "run", 
+      "/home/user/api_server.py"
+    ],
+    "env": {
+      "API_BASE_URL": "https://api.example.com",
+      "TIMEOUT": "30"
+    }
+  }
+}
+```
+
+高级配置示例生成：
+```json
+{
+  "ML Analysis Server": {
+    "command": "uv",
+    "args": [
+      "run",
+      "--python",
+      "3.11",
+      "--project",
+      "/home/user/ml-project",
+      "--with",
+      "fastmcp",
+      "--with-requirements",
+      "requirements.txt",
+      "fastmcp",
+      "run",
+      "/home/user/ml_server.py"
+    ],
+    "env": {
+      "GPU_DEVICE": "0"
+    }
+  }
+}
+```
+
+### 管道用法
+
+将配置保存到文件：
+
+```bash
+fastmcp install mcp-json server.py > mcp-config.json
+```
+
+在 shell 脚本中使用：
+
+```bash
+#!/bin/bash
+CONFIG=$(fastmcp install mcp-json server.py --name "CI 服务器")
+echo "$CONFIG" | jq '."CI 服务器".command'
+# 输出： "uv"
+```
+
+## 与 MCP 客户端集成
+
+生成的配置适用于任何兼容 MCP 的应用程序：
+
+### Claude Desktop
+<Note>
+**首选 [`fastmcp install claude-desktop`](/zh/v2/integrations/claude-desktop)** 进行自动安装。对于高级配置需求，请使用 MCP JSON。
+</Note>
+将 `mcpServers` 对象复制到 `~/.claude/claude_desktop_config.json`
+
+### Cursor
+<Note>
+**首选 [`fastmcp install cursor`](/zh/v2/integrations/cursor)** 进行自动安装。对于高级配置需求，请使用 MCP JSON。
+</Note>
+添加到 `~/.cursor/mcp.json`
+
+### VS Code
+添加到您工作区的 `.vscode/mcp.json` 文件
+
+### 自定义应用程序
+将 JSON 配置与任何支持 MCP 协议的应用程序一起使用
+
+## 配置格式
+
+生成的配置输出一个以服务器名称作为根键的服务器对象：
+
+```json
+{
+  "<server-name>": {
+    "command": "<executable>",
+    "args": ["<arg1>", "<arg2>", "..."],
+    "env": {
+      "<ENV_VAR>": "<value>"
+    }
+  }
+}
+```
+
+要在 MCP 客户端中使用此配置，请将其添加到客户端的 `mcpServers` 配置对象。
+
+**字段：**
+- `command`：要运行的可执行文件（对于 FastMCP 服务器始终为 `uv`）
+- `args`：包括依赖和服务器路径的命令行参数
+- `env`：环境变量（仅在指定时包含）
+
+<Warning>
+**生成的配置中的所有文件路径都是绝对路径**。这确保配置不管 MCP 客户端启动服务器时的工作目录如何都能正常工作。
+</Warning>
+
+## 要求
+
+- **uv**：必须安装并在系统 PATH 中可用
+- **pyperclip**（可选）：仅对 `--copy` 功能必需
+
+如果尚未安装 uv，请安装：
+
+```bash
+# macOS
+brew install uv
+
+# Linux/Windows
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```

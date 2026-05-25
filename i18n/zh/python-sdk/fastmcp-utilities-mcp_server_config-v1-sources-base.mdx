@@ -7,36 +7,31 @@ sidebarTitle: base
 
 ## 类
 
-### `Source` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/base.py#L7" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `Source` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/sources/base.py#L7" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 
-所有源类型的抽象基类。
+所有来源类型的抽象基类。
 
 
 **方法：**
 
-#### `prepare` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/base.py#L12" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `prepare` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/sources/base.py#L12" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 prepare(self) -> None
 ```
 
-准备源（下载、克隆、安装等）。
+准备来源（下载、克隆、安装等）。
 
-对于需要准备的源（例如，git clone、下载），
-此方法执行该准备。对于不需要
-准备的源（例如，本地文件），这是一个空操作。
+对于需要准备的来源（例如 git clone、下载），此方法会执行相应准备。对于不需要准备的来源（例如本地文件），此方法不执行任何操作。
 
 
-#### `load_server` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/mcp_server_config/v1/sources/base.py#L23" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+#### `load_server` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/mcp_server_config/v1/sources/base.py#L22" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 load_server(self) -> Any
 ```
 
-加载并返回 FastMCP 服务器实例。
+加载并返回 FastMCP 服务端实例。
 
-如果源需要准备，必须在 prepare() 之后调用。
-加载服务器所需的所有信息应作为
-源实例的属性可用。
-
+如果来源需要准备，则必须在 prepare() 之后调用。加载服务端所需的所有信息都应作为来源实例上的属性可用。

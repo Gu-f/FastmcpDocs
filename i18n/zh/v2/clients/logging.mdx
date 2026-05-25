@@ -1,0 +1,110 @@
+---
+title: 服务端日志
+sidebarTitle: 日志
+description: 接收并处理来自 MCP 服务端的日志消息。
+icon: receipt
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="2.0.0" />
+
+MCP 服务端可以向客户端发出日志消息。客户端可以通过日志处理器回调处理这些日志。
+
+## 日志处理器
+
+创建客户端时提供一个 `log_handler` 函数。为了获得稳健的日志记录，可以将日志消息集成到 Python 标准 `logging` 模块中。
+
+```python
+import logging
+from fastmcp import Client
+from fastmcp.client.logging import LogMessage
+
+# 在真实应用中，你可能会在主入口点配置它
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# 获取客户端所在模块的 logger
+logger = logging.getLogger(__name__)
+
+# 此映射可用于将 MCP 级别字符串转换为 Python 日志级别
+LOGGING_LEVEL_MAP = logging.getLevelNamesMapping()
+
+async def log_handler(message: LogMessage):
+    """
+    处理来自 MCP 服务端的传入日志，并将其转发到标准 Python 日志系统。
+    """
+    msg = message.data.get('msg')
+    extra = message.data.get('extra')
+
+    # 将 MCP 日志级别转换为 Python 日志级别
+    level = LOGGING_LEVEL_MAP.get(message.level.upper(), logging.INFO)
+
+    # 使用标准日志库记录消息
+    logger.log(level, msg, extra=extra)
+
+
+client = Client(
+    "my_mcp_server.py",
+    log_handler=log_handler,
+)
+```
+
+## 处理结构化日志
+
+`message.data` 属性是一个字典，包含来自服务端的日志 payload。这支持结构化日志，让你能够接收丰富的上下文信息。
+
+该字典包含两个 key：
+- `msg`: 字符串日志消息。
+- `extra`: 包含服务端发送的任何额外数据的字典。
+
+即使日志通过 FastMCP 代理转发，此结构也会被保留，因此它是调试复杂多服务端应用的强大工具。
+
+### 处理器参数
+
+每次收到日志消息时都会调用 `log_handler`。它接收一个 `LogMessage` 对象：
+
+<Card icon="code" title="日志处理器参数">
+<ResponseField name="LogMessage" type="日志消息对象">
+  <Expandable title="属性">
+    <ResponseField name="level" type='Literal["debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"]'>
+      日志级别
+    </ResponseField>
+
+    <ResponseField name="logger" type="str | None">
+      logger 名称（可选，可能为 None）
+    </ResponseField>
+
+    <ResponseField name="data" type="dict">
+      日志 payload，包含 `msg` 和 `extra` key。
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+</Card>
+
+```python
+async def detailed_log_handler(message: LogMessage):
+    msg = message.data.get('msg')
+    extra = message.data.get('extra')
+
+    if message.level == "error":
+        print(f"错误：{msg} | 详情：{extra}")
+    elif message.level == "warning":
+        print(f"警告：{msg} | 详情：{extra}")
+    else:
+        print(f"{message.level.upper()}: {msg}")
+```
+
+## 默认日志处理
+
+如果没有提供自定义 `log_handler`，FastMCP 的默认处理器会将服务端日志路由到对应的 Python 日志级别。MCP 级别映射如下：`notice` → INFO；`alert` 和 `emergency` → CRITICAL。如果服务端包含 logger 名称，它会作为前缀加入消息；任何 `extra` 数据都会通过 logging 的 `extra` 参数转发。
+
+```python
+client = Client("my_mcp_server.py")
+
+async with client:
+    # 服务端日志会按其适当严重级别转发（DEBUG/INFO/WARNING/ERROR/CRITICAL）
+    await client.call_tool("some_tool")
+```

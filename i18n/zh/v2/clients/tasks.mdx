@@ -1,0 +1,138 @@
+---
+title: 后台任务
+sidebarTitle: 后台任务
+description: 异步执行操作并跟踪其进度
+icon: clock
+tag: "NEW"
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.14.0" />
+
+[MCP 任务协议](https://modelcontextprotocol.io/specification/2025-11-25/basic/utilities/tasks)允许你请求异步运行操作。它会立即返回一个 Task 对象，让你可以跟踪进度、取消操作或等待结果。
+
+如需了解如何在服务端侧启用此能力，请参见[服务端后台任务](/zh/v2/servers/tasks)。
+
+## 请求后台执行
+
+传入 `task=True` 可将操作作为后台任务运行。调用会立即返回一个 Task 对象，而实际工作会在服务端执行。
+
+```python
+from fastmcp import Client
+
+async with Client(server) as client:
+    # 启动后台任务
+    task = await client.call_tool("slow_computation", {"duration": 10}, task=True)
+
+    print(f"Task started: {task.task_id}")
+
+    # 在它运行时执行其他工作...
+
+    # 就绪后获取结果
+    result = await task.result()
+```
+
+这适用于工具、资源和提示词：
+
+```python
+tool_task = await client.call_tool("my_tool", args, task=True)
+resource_task = await client.read_resource("file://large.txt", task=True)
+prompt_task = await client.get_prompt("my_prompt", args, task=True)
+```
+
+## 使用 Task 对象
+
+所有任务类型都共享一套通用接口，用于获取结果、检查状态和接收更新。
+
+要获取结果，可以调用 `await task.result()`，或直接 `await task`。这会阻塞直到任务完成并返回结果。你也可以使用 `await task.status()` 以非阻塞方式检查状态；它会返回当前状态（`"working"`、`"completed"`、`"failed"` 或 `"cancelled"`），以及来自服务端的任何进度消息。
+
+```python
+task = await client.call_tool("analyze", {"text": "hello"}, task=True)
+
+# 检查当前状态（非阻塞）
+status = await task.status()
+print(f"{status.status}: {status.statusMessage}")
+
+# 等待结果（阻塞）
+result = await task.result()
+```
+
+如需更精细地控制等待，可使用带有可选超时时间或目标状态的 `task.wait()`：
+
+```python
+# 最多等待 30 秒直到完成
+status = await task.wait(timeout=30.0)
+
+# 等待特定状态
+status = await task.wait(state="completed", timeout=30.0)
+```
+
+要取消正在运行的任务，请调用 `await task.cancel()`。
+
+### 实时状态更新
+
+注册回调，以便在服务端报告进度时接收状态更新。同步和异步回调都受支持。
+
+```python
+def on_status_change(status):
+    print(f"Task {status.taskId}: {status.status} - {status.statusMessage}")
+
+task.on_status_change(on_status_change)
+
+# 异步回调也可以使用
+async def on_status_async(status):
+    await log_status(status)
+
+task.on_status_change(on_status_async)
+```
+
+## 优雅降级
+
+无论服务端是否支持后台任务，你都可以始终传入 `task=True`。根据 MCP 规范，不支持任务的服务端会立即执行操作，并内联返回结果。无论哪种情况，Task API 都会提供一致接口。
+
+```python
+task = await client.call_tool("my_tool", args, task=True)
+
+if task.returned_immediately:
+    print("Server executed immediately (no background support)")
+else:
+    print("Running in background")
+
+# 无论哪种情况，这都可用
+result = await task.result()
+```
+
+这意味着你可以编写感知任务的客户端代码，而无需担心服务端能力。
+
+## 完整示例
+
+```python
+import asyncio
+from fastmcp import Client
+
+async def main():
+    async with Client(server) as client:
+        # 启动后台任务
+        task = await client.call_tool(
+            "slow_computation",
+            {"duration": 10},
+            task=True,
+        )
+
+        # 订阅更新
+        def on_update(status):
+            print(f"Progress: {status.statusMessage}")
+
+        task.on_status_change(on_update)
+
+        # 任务运行时执行其他工作
+        print("Doing other work...")
+        await asyncio.sleep(2)
+
+        # 等待完成并获取结果
+        result = await task.result()
+        print(f"Result: {result.content}")
+
+asyncio.run(main())
+```

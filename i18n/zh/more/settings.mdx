@@ -1,0 +1,96 @@
+---
+title: 设置
+description: 通过环境变量或 .env 文件配置 FastMCP 行为。
+icon: gear
+---
+
+FastMCP 使用 [pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) 进行配置。每个设置都可以作为带 `FASTMCP_` 前缀的环境变量使用。设置会从环境变量和 `.env` 文件加载（关于 `.env` 文件中的嵌套设置注意事项，请参阅 [Tasks（Docket）](#tasks-docket)部分）。
+
+```bash
+# 通过环境变量设置
+export FASTMCP_LOG_LEVEL=DEBUG
+export FASTMCP_PORT=3000
+
+# 或使用 .env 文件（自动加载）
+echo "FASTMCP_LOG_LEVEL=DEBUG" >> .env
+```
+
+你可以通过设置 `FASTMCP_ENV_FILE` 环境变量来改变要加载的 `.env` 文件（默认为 `.env`）。因为它控制要加载哪个文件，所以必须设置为环境变量，不能在 `.env` 文件内部设置。
+
+## 日志
+
+| 环境变量 | 类型 | 默认值 | 描述 |
+|---|---|---|---|
+| `FASTMCP_LOG_LEVEL` | `Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]` | `INFO` | FastMCP 自身日志输出的日志级别。不区分大小写。 |
+| `FASTMCP_LOG_ENABLED` | `bool` | `true` | 完全启用或禁用 FastMCP 日志。 |
+| `FASTMCP_CLIENT_LOG_LEVEL` | `Literal["debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"]` | None | 通过 `context.log()` 发送给 MCP 客户端的消息的默认最低日志级别。设置后，低于此级别的消息会被抑制。单个客户端可以使用 MCP `logging/setLevel` 请求按会话覆盖此设置。 |
+| `FASTMCP_ENABLE_RICH_LOGGING` | `bool` | `true` | 对日志输出使用 rich 格式。设为 `false` 可使用普通 Python 日志。 |
+| `FASTMCP_ENABLE_RICH_TRACEBACKS` | `bool` | `true` | 对错误使用 rich tracebacks。 |
+| `FASTMCP_DEPRECATION_WARNINGS` | `bool` | `true` | 显示弃用警告。 |
+
+## 传输与 HTTP
+
+这些设置控制服务端使用 HTTP 传输运行时如何监听。
+
+| 环境变量 | 类型 | 默认值 | 描述 |
+|---|---|---|---|
+| `FASTMCP_TRANSPORT` | `Literal["stdio", "http", "sse", "streamable-http"]` | `stdio` | 默认传输。 |
+| `FASTMCP_HOST` | `str` | `127.0.0.1` | 要绑定的 host。 |
+| `FASTMCP_PORT` | `int` | `8000` | 要绑定的端口。 |
+| `FASTMCP_SSE_PATH` | `str` | `/sse` | SSE 端点路径。 |
+| `FASTMCP_MESSAGE_PATH` | `str` | `/messages/` | SSE 消息端点路径。 |
+| `FASTMCP_STREAMABLE_HTTP_PATH` | `str` | `/mcp` | Streamable HTTP 端点路径。 |
+| `FASTMCP_STATELESS_HTTP` | `bool` | `false` | 启用无状态 HTTP 模式（每次请求使用新传输）。适用于多 worker 部署。 |
+| `FASTMCP_JSON_RESPONSE` | `bool` | `false` | 对 Streamable HTTP 使用 JSON 响应而不是 SSE。 |
+| `FASTMCP_DEBUG` | `bool` | `false` | 启用 debug 模式。 |
+
+## 错误处理
+
+| 环境变量 | 类型 | 默认值 | 描述 |
+|---|---|---|---|
+| `FASTMCP_MASK_ERROR_DETAILS` | `bool` | `false` | 发送给客户端前屏蔽错误详情。启用后，响应中只会包含显式抛出的 `ToolError`、`ResourceError` 或 `PromptError` 消息。 |
+| `FASTMCP_STRICT_INPUT_VALIDATION` | `bool` | `false` | 根据 JSON schema 严格验证工具输入。禁用时，会强制转换兼容输入（例如字符串 `"10"` 会变成整数 `10`）。 |
+| `FASTMCP_MOUNTED_COMPONENTS_RAISE_ON_LOAD_ERROR` | `bool` | `false` | 加载挂载组件时抛出错误，而不是记录警告。 |
+
+## Client
+
+| 环境变量 | 类型 | 默认值 | 描述 |
+|---|---|---|---|
+| `FASTMCP_CLIENT_INIT_TIMEOUT` | `float \| None` | None | 客户端初始化握手的超时时间，单位为秒。设为 `0` 或留空可禁用。 |
+| `FASTMCP_CLIENT_DISCONNECT_TIMEOUT` | `float` | `5` | 放弃前等待干净断开的最长时间，单位为秒。 |
+| `FASTMCP_CLIENT_RAISE_FIRST_EXCEPTIONGROUP_ERROR` | `bool` | `true` | 抛出 `ExceptionGroup` 时，直接重新抛出第一个错误而不是整个组。这会简化调试，但可能掩盖次要错误。 |
+
+## CLI 与显示
+
+| 环境变量 | 类型 | 默认值 | 描述 |
+|---|---|---|---|
+| `FASTMCP_SHOW_SERVER_BANNER` | `bool` | `true` | 启动时显示服务端横幅。也可以通过 `--no-banner` 或 `server.run(show_banner=False)` 控制。 |
+| `FASTMCP_CHECK_FOR_UPDATES` | `Literal["stable", "prerelease", "off"]` | `stable` | CLI 启动时的更新检查。`stable` 只检查稳定版本，`prerelease` 包含预发布版本，`off` 禁用检查。 |
+
+## Tasks (Docket)
+
+这些设置用于配置[服务端任务](/zh/servers/tasks)使用的 [Docket](https://github.com/prefecthq/docket) 任务队列。它们都使用 `FASTMCP_DOCKET_` 前缀。
+
+<Warning>
+在 `.env` 文件中设置 Docket 值时，请使用**双**下划线：`FASTMCP_DOCKET__URL`（而不是 `FASTMCP_DOCKET_URL`）。这是因为 `.env` 值会通过父级 `Settings` 类解析，而该类使用 `__` 作为嵌套分隔符。作为普通环境变量（例如 `export`）时，单下划线形式 `FASTMCP_DOCKET_URL` 可以正常工作。
+</Warning>
+
+| 环境变量 | 类型 | 默认值 | 描述 |
+|---|---|---|---|
+| `FASTMCP_DOCKET_NAME` | `str` | `fastmcp` | 队列名称。共享相同名称和后端 URL 的服务端与 worker 会共享一个任务队列。 |
+| `FASTMCP_DOCKET_URL` | `str` | `memory://` | 后端 URL。单进程使用 `memory://`，分布式 workers 使用 `redis://host:port/db`。 |
+| `FASTMCP_DOCKET_WORKER_NAME` | `str \| None` | None | Worker 名称。未设置时自动生成。 |
+| `FASTMCP_DOCKET_CONCURRENCY` | `int` | `10` | 每个 worker 的最大并发任务数。 |
+| `FASTMCP_DOCKET_REDELIVERY_TIMEOUT` | `timedelta` | `300s` | 如果 worker 未在此时间内完成任务，任务会重新投递给另一个 worker。 |
+| `FASTMCP_DOCKET_RECONNECTION_DELAY` | `timedelta` | `5s` | worker 失去后端连接时，两次重连尝试之间的延迟。 |
+| `FASTMCP_DOCKET_MINIMUM_CHECK_INTERVAL` | `timedelta` | `50ms` | worker 轮询新任务的频率。较低值会降低延迟，但会增加 CPU 使用。 |
+
+## 高级
+
+| 环境变量 | 类型 | 默认值 | 描述 |
+|---|---|---|---|
+| `FASTMCP_HOME` | `Path` | 平台默认值 | FastMCP 的数据目录。默认为特定平台的用户数据目录。 |
+| `FASTMCP_ENV_FILE` | `str` | `.env` | 要从中加载设置的 `.env` 文件路径。必须作为环境变量设置（见上文）。 |
+| `FASTMCP_SERVER_DEPENDENCIES` | `list[str]` | `[]` | 要安装到服务端环境中的额外依赖。 |
+| `FASTMCP_DECORATOR_MODE` | `Literal["function", "object"]` | `function` | 控制 `@tool`、`@resource` 和 `@prompt` 装饰器返回什么。`function` 返回原始函数（默认）；`object` 返回组件对象（已弃用，将被移除）。 |
+| `FASTMCP_TEST_MODE` | `bool` | `false` | 启用测试模式。 |

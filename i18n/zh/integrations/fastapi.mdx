@@ -5,7 +5,7 @@ description: 将 FastMCP 与 FastAPI 应用程序集成
 icon: bolt
 ---
 
-import { VersionBadge } from '/snippets/version-badge.mdx'
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
 
 <Tip>
 **2.11 中的新功能**：FastMCP 正在引入下一代 OpenAPI 解析器。新解析器在性能和兼容性方面大大改进，也更容易维护。要启用它，请设置环境变量 `FASTMCP_EXPERIMENTAL_ENABLE_NEW_OPENAPI_PARSER=true`。
@@ -15,8 +15,8 @@ import { VersionBadge } from '/snippets/version-badge.mdx'
 
 FastMCP 提供了两种强大的方式来与 FastAPI 应用程序集成：
 
-1. **[从您的 FastAPI 应用程序生成 MCP 服务器](#generating-an-mcp-server)** - 将现有的 API 端点转换为 MCP 工具
-2. **[将 MCP 服务器挂载到您的 FastAPI 应用程序中](#mounting-an-mcp-server)** - 向您的 Web 应用程序添加 MCP 功能
+1. **[从您的 FastAPI 应用程序生成 MCP 服务器](#生成-mcp-服务器)** - 将现有的 API 端点转换为 MCP 工具
+2. **[将 MCP 服务器挂载到您的 FastAPI 应用程序中](#挂载-mcp-服务器)** - 向您的 Web 应用程序添加 MCP 功能
 
 
 <Tip>
@@ -405,7 +405,7 @@ app = FastAPI()
 app.mount("/mcp", mcp.http_app())  # 会话管理器不会初始化
 ```
 
-如果您在路径前缀下挂载启用身份验证的 MCP 服务器，请参阅[挂载已认证服务器](/zh/deployment/http#mounting-authenticated-servers)，了解关键的 OAuth 路由注意事项。
+如果您在路径前缀下挂载启用身份验证的 MCP 服务器，请参阅[挂载已认证服务器](/zh/deployment/http#挂载已认证服务器)，了解关键的 OAuth 路由注意事项。
 
 ### CORS 中间件
 

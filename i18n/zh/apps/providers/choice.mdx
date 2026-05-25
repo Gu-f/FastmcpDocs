@@ -1,0 +1,72 @@
+---
+title: 选择
+sidebarTitle: 选择
+description: 用可点击选项替代自由文本回复
+icon: list-check
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.2.0" />
+
+`Choice` 让 LLM 可以用可点击按钮展示一组选项，而不是要求用户输入文本回复。选择结果会作为消息流回对话，为 LLM 提供干净的结构化输入。
+
+<Frame>
+  <img src="/apps/images/app-choice.png" alt="Goose 中显示的 Choice provider，包含四个可点击的午餐选项按钮" />
+</Frame>
+
+```python
+from fastmcp import FastMCP
+from fastmcp.apps.choice import Choice
+
+mcp = FastMCP("My Server")
+mcp.add_provider(Choice())
+```
+
+这会注册一个工具：
+
+| 工具 | 可见性 | 用途 |
+|------|-----------|---------|
+| `choose` | 模型 | 显示带有可点击选项的卡片，并将选择结果作为消息发回 |
+
+LLM 会调用 `choose` 并传入提示词和选项列表。用户会看到一张卡片，每个选项对应一个按钮。点击某个按钮会向对话发回一条消息：
+
+```
+"Which deployment strategy?" — I selected: Blue-green
+```
+
+<Note>
+这是提示性交互，不是强制执行机制。卡片打开时，对话并不会被阻塞，用户可以继续输入，LLM 也可能不等待结果就继续。工具描述会指示 LLM 停止并等待 "I selected:" 响应；但如需强制执行，请在服务端实现选择逻辑。
+</Note>
+
+## 配置
+
+构造函数会设置默认值；LLM 可以在每次调用时覆盖 `title`。
+
+```python
+Choice(
+    name="Choice",             # 应用名称
+    title="Choose an Option",  # 默认卡片标题
+    variant="outline",         # 所有选项的按钮样式
+)
+```
+
+LLM 会在每次调用时提供选项：
+
+```python
+choose(
+    prompt="What should we have for lunch?",
+    options=["Pizza", "Tacos", "Ramen", "Salad"],
+    title="The Important Questions",
+)
+```
+
+## 工作原理
+
+每个选项都会在垂直堆叠中渲染为全宽按钮。当用户点击其中一个时：
+
+1. `SendMessage` 将选择结果作为用户消息推送到对话中
+2. `SetState("decided", True)` 将按钮替换为 "Response sent."
+
+工具描述会指示 LLM 在继续处理用户选择之前，停止并等待 "I selected:" 消息。

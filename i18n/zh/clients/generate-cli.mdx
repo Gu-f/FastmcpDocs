@@ -1,0 +1,166 @@
+---
+title: 生成 CLI
+sidebarTitle: 生成 CLI
+description: 将任意 MCP 服务端转换为独立的类型化命令行工具。
+icon: wand-magic-sparkles
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+`fastmcp list` 和 `fastmcp call` 让你可以交互式探查服务端，但它们仍是开发者工具：你总是需要写出 server spec、工具名称和参数。`fastmcp generate-cli` 更进一步：它会连接到服务端、读取 schema，并写出一个独立 Python 脚本，其中每个工具都是带类型标志、帮助文本和 tab 补全的正式子命令。最终得到的 CLI 会像是专门为该服务端手写的一样。
+
+关键在于，MCP 工具 schema 已经包含 CLI 框架所需的一切：参数名称、类型、描述、必需/可选状态和默认值。`generate-cli` 会将这些 schema 映射为 [cyclopts](https://cyclopts.readthedocs.io/) 命令，因此 JSON Schema 类型会变成 Python 类型标注，描述会变成 `--help` 文本，必需参数会变成必填标志。
+
+## 生成脚本
+
+将命令指向任意 server spec：URL、Python 文件、已发现的服务端名称、MCPConfig JSON，它就会写出一个 CLI 脚本：
+
+```bash
+fastmcp generate-cli weather
+fastmcp generate-cli http://localhost:8000/mcp
+fastmcp generate-cli server.py my_weather_cli.py
+```
+
+第二个位置参数用于设置输出路径。省略时默认为 `cli.py`。如果 CLI 文件或配套的 `SKILL.md` 已经存在，除非传入 `-f`，否则命令会拒绝覆盖：
+
+```bash
+fastmcp generate-cli weather -f
+fastmcp generate-cli weather my_cli.py -f
+```
+
+这里同样支持基于名称解析，因此如果你在 Claude Desktop、Cursor 或任何其他受支持编辑器中配置了服务端，可以通过名称引用它。运行 [`fastmcp discover`](/zh/clients/cli#发现已配置的服务端) 查看可用项。
+
+```bash
+fastmcp generate-cli claude-code:my-server output.py
+```
+
+`--timeout` 和 `--auth` 标志的行为与 `fastmcp list` 和 `fastmcp call` 中相同。
+
+## 你会得到什么
+
+生成的脚本是普通 Python 文件：可执行、可编辑，并且完全属于你。实际效果类似这样：
+
+```
+$ python cli.py --help
+Usage: weather-cli COMMAND
+
+CLI for weather MCP server
+
+Commands:
+  call-tool       Call a tool on the server
+  list-tools      List available tools.
+  list-resources  List available resources.
+  read-resource   Read a resource by URI.
+  list-prompts    List available prompts.
+  get-prompt      Get a prompt by name. Pass arguments as key=value pairs.
+```
+
+`call-tool` 子命令是生成代码所在的位置。服务端上的每个工具都会变成自己的命令：
+
+```
+$ python cli.py call-tool --help
+Usage: weather-cli call-tool COMMAND
+
+Call a tool on the server
+
+Commands:
+  get_forecast  Get the weather forecast for a city.
+  search_city   Search for a city by name.
+```
+
+每个工具都会拥有带类型的参数，帮助文本直接来自服务端 schema：
+
+```
+$ python cli.py call-tool get_forecast --help
+Usage: weather-cli call-tool get_forecast [OPTIONS]
+
+Get the weather forecast for a city.
+
+Options:
+  --city    [str]  City name (required)
+  --days    [int]  Number of forecast days (default: 3)
+```
+
+工具名称会按服务端定义原样保留，下划线仍然是下划线，因此 `call-tool get_forecast` 会与服务端预期匹配。
+
+## Agent Skill
+
+除了 CLI 脚本，`generate-cli` 还会写入一个 `SKILL.md` 文件，即记录该生成 CLI 的 [Claude Code agent skill](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/skills)。该 skill 包含每个工具的精确调用语法、带类型和描述的参数标志，以及实用命令，因此 agent 无需运行 `--help` 或试探标志名称，就能立即使用该 CLI。
+
+skill 会写入与 CLI 脚本相同的目录。对于天气服务端，它大致如下：
+
+````markdown
+---
+name: "weather-cli"
+description: "CLI for the weather MCP server. Call tools, list resources, and get prompts."
+---
+
+# weather CLI
+
+## Tool Commands
+
+### get_forecast
+
+Get the weather forecast for a city.
+
+```bash
+uv run --with fastmcp python cli.py call-tool get_forecast --city <value> --days <value>
+```
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--city` | string | yes | City name |
+| `--days` | integer | no | Number of forecast days |
+````
+
+如果要跳过 skill 生成，请传入 `--no-skill`：
+
+```bash
+fastmcp generate-cli weather --no-skill
+```
+
+## 工作原理
+
+生成的脚本是客户端，而不是服务端。它不会打包或嵌入 MCP 服务端，而是在每次调用时连接到它。对于基于 URL 的服务端，服务端需要处于运行状态。对于基于 stdio 的服务端，`CLIENT_SPEC` 中指定的命令必须能在系统 `PATH` 中找到。
+
+在生成文件顶部，`CLIENT_SPEC` 变量保存解析后的传输：要么是 URL 字符串，要么是已内置命令和参数的 `StdioTransport`。每次调用都会通过这个 spec 连接，因此脚本无需任何外部配置即可工作。
+
+### 参数处理
+
+参数会根据复杂度智能映射：
+
+**简单类型**（`string`、`integer`、`number`、`boolean`）会变成带清晰标志的类型化 Python 参数：
+```bash
+python cli.py call-tool get_forecast --city London --days 3
+```
+
+**简单类型数组**（元素为 `string`/`integer`/`number`/`boolean` 的 `array`）会变成接受多个标志的 `list[T]` 参数：
+```bash
+python cli.py call-tool tag_items --tags python --tags fastapi --tags mcp
+```
+
+**复杂类型**（对象、嵌套数组或联合类型）接受 JSON 字符串。工具的 `--help` 会显示完整 JSON schema，让你明确知道应传入什么结构：
+```bash
+python cli.py call-tool create_user \
+  --name John \
+  --metadata '{"role": "admin", "dept": "engineering"}'
+```
+
+必需参数会变成必填标志；可选参数默认为其 schema 默认值或 `None`。空值会在调用服务端前被过滤掉。
+
+除了工具命令，脚本还包含与服务端暴露内容无关的通用命令：`list-tools`、`list-resources`、`read-resource`、`list-prompts` 和 `get-prompt`。这些命令会在运行时连接服务端，因此即使工具在生成后发生变化，它们也始终反映服务端当前状态。
+
+## 编辑输出
+
+最常见的编辑是修改 `CLIENT_SPEC`。如果你从本地开发服务端生成，并想指向生产环境，只需修改这个字符串。如果你从已发现名称生成，并想固定传输，请将其替换为显式 URL 或 `StdioTransport`。
+
+除此之外，它就是普通 Python 文件。你可以添加命令、修改输出格式、集成到更大的应用中，或删掉不需要的部分。辅助函数（`_call_tool`、`_print_tool_result`）只是围绕 `fastmcp.Client` 的薄封装，很容易调整。
+
+生成的脚本需要 `fastmcp` 作为依赖。如果脚本位于尚未安装 fastmcp 的项目之外，`uv run` 是无需永久安装即可运行它的最简单方式：
+
+```bash
+uv run --with fastmcp python cli.py call-tool get_forecast --city London
+```

@@ -1,0 +1,130 @@
+---
+title: 将提示词作为工具
+sidebarTitle: 提示词作为工具
+description: 向仅支持工具的客户端暴露提示词
+icon: message-lines
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+某些 MCP 客户端只支持工具。由于缺少提示词协议支持，它们无法直接列出或获取提示词。`PromptsAsTools` 转换会生成可访问服务端提示词的工具，从而弥合这一差距。
+
+向服务端添加 `PromptsAsTools` 后，它会创建两个工具，客户端可以调用这些工具，而不必使用提示词协议：
+
+- **`list_prompts`** 返回描述所有可用提示词及其参数的 JSON
+- **`get_prompt`** 使用提供的参数渲染特定提示词
+
+这意味着任何能够调用工具的客户端现在都可以访问提示词，即使该客户端没有原生提示词支持。
+
+## 基本用法
+
+添加转换时，将 FastMCP 服务端传给 `PromptsAsTools`。生成的工具会在运行时通过服务端路由，这意味着所有服务端中间件，包括身份认证、可见性和速率限制，都会像直接调用 `prompts/get` 一样自动应用于提示词操作。
+
+<Note>
+`PromptsAsTools`（以及 `ResourcesAsTools`）应应用于 FastMCP 服务端实例，而不是原始 Provider。生成的工具会在运行时回调到服务端的中间件链，因此需要通过服务端路由。如果你只想暴露部分提示词，请为这些提示词创建专用 FastMCP 服务端，并在那里应用转换。
+</Note>
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.transforms import PromptsAsTools
+
+mcp = FastMCP("My Server")
+
+@mcp.prompt
+def analyze_code(code: str, language: str = "python") -> str:
+    """分析代码中可能存在的问题。"""
+    return f"Analyze this {language} code:\n{code}"
+
+@mcp.prompt
+def explain_concept(concept: str) -> str:
+    """解释一个编程概念。"""
+    return f"Explain: {concept}"
+
+# 添加转换，创建 list_prompts 和 get_prompt 工具
+mcp.add_transform(PromptsAsTools(mcp))
+```
+
+客户端现在会看到三类项目：你直接定义的任何工具，以及 `list_prompts` 和 `get_prompt`。
+
+## 列出提示词
+
+`list_prompts` 工具会返回包含每个提示词元数据的 JSON，其中包括参数。
+
+```python
+result = await client.call_tool("list_prompts", {})
+prompts = json.loads(result.data)
+# [
+#   {
+#     "name": "analyze_code",
+#     "description": "Analyze code for potential issues.",
+#     "arguments": [
+#       {"name": "code", "description": null, "required": true},
+#       {"name": "language", "description": null, "required": false}
+#     ]
+#   },
+#   {
+#     "name": "explain_concept",
+#     "description": "Explain a programming concept.",
+#     "arguments": [
+#       {"name": "concept", "description": null, "required": true}
+#     ]
+#   }
+#]
+```
+
+每个参数包括：
+- `name`：参数名称
+- `description`：来自类型提示或 docstring 的可选描述
+- `required`：是否必须提供该参数
+
+## 获取提示词
+
+`get_prompt` 工具接受提示词名称和可选的参数字典。它会以包含 messages 数组的 JSON 形式返回渲染后的提示词。
+
+```python
+# 带必需和可选参数的提示词
+result = await client.call_tool(
+    "get_prompt",
+    {
+        "name": "analyze_code",
+        "arguments": {
+            "code": "x = 1\nprint(x)",
+            "language": "python"
+        }
+    }
+)
+
+response = json.loads(result.data)
+# {
+#   "messages": [
+#     {
+#       "role": "user",
+#       "content": "Analyze this python code:\nx = 1\nprint(x)"
+#     }
+#   ]
+# }
+```
+
+如果提示词没有参数，可以省略 `arguments` 字段，或传入空字典：
+
+```python
+result = await client.call_tool(
+    "get_prompt",
+    {"name": "simple_prompt"}
+)
+```
+
+## 消息格式
+
+渲染后的提示词会返回一个遵循标准 MCP 格式的 messages 数组。每条消息包括：
+- `role`：消息角色（"user" 或 "assistant"）
+- `content`：消息文本内容
+
+支持多消息提示词，数组会按顺序包含所有消息。
+
+## 二进制内容
+
+与资源不同，提示词始终返回文本内容。不需要二进制编码。

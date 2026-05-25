@@ -1,0 +1,76 @@
+---
+title: token_cache
+sidebarTitle: token_cache
+---
+
+# `fastmcp.utilities.token_cache`
+
+
+token 验证结果的内存缓存。
+
+为 ``AccessToken`` 对象提供通用的基于 TTL 的缓存，旨在减少 opaque-token 验证期间的重复网络调用。只应缓存*成功*的验证结果；错误和失败必须在每次请求时重试。
+
+示例：
+    ```python
+    from fastmcp.utilities.token_cache import TokenCache
+
+    cache = TokenCache(ttl_seconds=300, max_size=10000)
+
+    # 缓存未命中时，调用上游验证器并存储结果。
+    hit, token = cache.get(raw_token)
+    if not hit:
+        token = await _call_upstream(raw_token)
+        if token is not None:
+            cache.set(raw_token, token)
+    ```
+
+
+## 类
+
+### `TokenCache` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/token_cache.py#L46" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+``AccessToken`` 对象的基于 TTL 的内存缓存。
+
+特性：
+- 使用 SHA-256 哈希的缓存键（固定大小，与 token 长度无关）。
+- 每个条目的 TTL 同时考虑配置的 ``ttl_seconds`` 和 token 自身的 ``expires_at`` claim（取更早者）。
+- 有界大小，缓存满时使用 FIFO 淘汰。
+- 定期清理过期条目，防止无界增长。
+- 存储和读取时都进行防御性深拷贝，防止调用方修改缓存值。
+
+当 ``ttl_seconds`` 为 ``None`` 或 ``0``，或 ``max_size`` 为 ``0`` 时，缓存会被禁用。负值会抛出 ``ValueError``。
+
+
+**方法：**
+
+#### `enabled` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/token_cache.py#L89" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+enabled(self) -> bool
+```
+
+返回缓存是否处于启用状态。
+
+
+#### `get` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/token_cache.py#L95" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get(self, token: str) -> tuple[bool, AccessToken | None]
+```
+
+查找缓存的验证结果。
+
+**返回：**
+- 缓存命中时返回 ``(True, AccessToken)``；未命中或缓存禁用时返回 ``(False, None)``。返回的 ``AccessToken`` 是深拷贝，可以安全修改。
+
+
+#### `set` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/token_cache.py#L118" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+set(self, token: str, result: AccessToken) -> None
+```
+
+存储一次*成功*的验证结果。
+
+只应缓存成功的验证。失败情况（非活跃 token、缺失 scopes、HTTP 错误、超时）**不得**缓存，以避免瞬时问题产生粘性的假阴性结果。

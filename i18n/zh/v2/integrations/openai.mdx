@@ -1,0 +1,227 @@
+---
+title: OpenAI API 🤝 FastMCP
+sidebarTitle: OpenAI API
+description: 将 FastMCP 服务器与 OpenAI API 连接
+icon: message-code
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+
+## Responses API
+
+OpenAI 的 [Responses API](https://platform.openai.com/docs/api-reference/responses) 支持 [MCP 服务器](https://platform.openai.com/docs/guides/tools-remote-mcp)作为远程工具源，允许您使用自定义函数扩展 AI 功能。
+
+<Note>
+Responses API 是与 OpenAI 的 Completions API 或 Assistants API 不同的独立 API。目前，只有 Responses API 支持 MCP。
+</Note>
+
+<Tip>
+目前，Responses API 仅访问 MCP 服务器的**工具**——它查询 `list_tools` 端点并将这些功能暴露给 AI 代理。目前不支持其他 MCP 功能，如资源和提示。
+</Tip>
+
+
+### 创建服务器
+
+首先，创建一个包含您要暴露的工具的 FastMCP 服务器。在此示例中，我们将创建一个带有掷骰子单一工具的服务器。
+
+```python server.py
+import random
+from fastmcp import FastMCP
+
+mcp = FastMCP(name="骰子投掷器")
+
+@mcp.tool
+def roll_dice(n_dice: int) -> list[int]:
+    """掷 `n_dice` 个六面骰子并返回结果。"""
+    return [random.randint(1, 6) for _ in range(n_dice)]
+
+if __name__ == "__main__":
+    mcp.run(transport="http", port=8000)
+```
+
+### 部署服务器
+
+您的服务器必须部署到公共 URL，以便 OpenAI 能够访问它。
+
+对于开发，您可以使用像 `ngrok` 这样的工具临时将本地运行的服务器暴露到互联网。我们将在此示例中这样做（您可能需要安装 `ngrok` 并创建一个免费账户），但您可以使用任何其他方法来部署您的服务器。
+
+假设您将上述代码保存为 `server.py`，您可以在两个独立的终端中运行以下两个命令来部署您的服务器并将其暴露到互联网：
+
+<CodeGroup>
+```bash FastMCP 服务器
+python server.py
+```
+
+```bash ngrok
+ngrok http 8000
+```
+</CodeGroup>
+
+<Warning>
+这会将您的未经身份验证的服务器暴露到互联网。只有在您了解风险的情况下，才在安全环境中运行此命令。
+</Warning>
+
+### 调用服务器
+
+要使用 Responses API，您需要安装 OpenAI Python SDK（FastMCP 中不包含）：
+
+```bash
+pip install openai
+```
+
+您还需要通过 OpenAI 进行身份验证。您可以通过设置 `OPENAI_API_KEY` 环境变量来完成此操作。有关更多信息，请查阅 OpenAI SDK 文档。
+
+```bash
+export OPENAI_API_KEY="your-api-key"
+```
+
+以下是如何从 Python 调用您的服务器的示例。请注意，您需要将 `https://your-server-url.com` 替换为您服务器的实际 URL。此外，我们使用 `/mcp/` 作为端点，因为我们部署了一个使用默认路径的可流式 HTTP 服务器；如果您自定义了服务器的部署，可能需要使用不同的端点。
+
+```python {4, 11-16}
+from openai import OpenAI
+
+# 您的服务器 URL（替换为您的实际 URL）
+url = 'https://your-server-url.com'
+
+client = OpenAI()
+
+resp = client.responses.create(
+    model="gpt-4.1",
+    tools=[
+        {
+            "type": "mcp",
+            "server_label": "dice_server",
+            "server_url": f"{url}/mcp/",
+            "require_approval": "never",
+        },
+    ],
+    input="投几个骰子！",
+)
+
+print(resp.output_text)
+```
+如果您运行此代码，您将看到类似以下的输出：
+
+```text
+您投了 3 个骰子，得到以下结果：6、4 和 2！
+```
+
+### 身份验证
+
+<VersionBadge version="2.6.0" />
+
+Responses API 可以包含用于身份验证请求的请求头，这意味着您不必担心您的服务器被公开访问。
+
+#### 服务器身份验证
+
+向服务器添加身份验证的最简单方法是使用承载令牌方案。
+
+在此示例中，我们将使用 FastMCP 的 `RSAKeyPair` 工具快速生成我们自己的令牌，但这可能不适用于生产使用。有关更多详细信息，请参阅完整的服务器端[令牌验证](/zh/v2/servers/auth/token-verification)文档。
+
+我们将首先创建一个 RSA 密钥对来签名和验证令牌。
+
+```python
+from fastmcp.server.auth.providers.jwt import RSAKeyPair
+
+key_pair = RSAKeyPair.generate()
+access_token = key_pair.create_token(audience="dice-server")
+```
+
+<Warning>
+FastMCP 的 `RSAKeyPair` 工具仅用于开发和测试。
+</Warning>
+
+接下来，我们将创建一个 `JWTVerifier` 来验证服务器。 
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.auth import JWTVerifier
+
+auth = JWTVerifier(
+    public_key=key_pair.public_key,
+    audience="dice-server",
+)
+
+mcp = FastMCP(name="Dice Roller", auth=auth)
+```
+
+以下是一个您可以复制/粘贴的完整示例。为了简单起见并仅为此示例目的，它将把令牌打印到控制台。**在生产中请勿这样做！**
+
+```python server.py [expandable]
+from fastmcp import FastMCP
+from fastmcp.server.auth import JWTVerifier
+from fastmcp.server.auth.providers.jwt import RSAKeyPair
+import random
+
+key_pair = RSAKeyPair.generate()
+access_token = key_pair.create_token(audience="dice-server")
+
+auth = JWTVerifier(
+    public_key=key_pair.public_key,
+    audience="dice-server",
+)
+
+mcp = FastMCP(name="Dice Roller", auth=auth)
+
+@mcp.tool
+def roll_dice(n_dice: int) -> list[int]:
+    """掷 `n_dice` 个六面骰子并返回结果。"""
+    return [random.randint(1, 6) for _ in range(n_dice)]
+
+if __name__ == "__main__":
+    print(f"\n---\n\n🔑 骰子投掷器访问令牌：\n\n{access_token}\n\n---\n")
+    mcp.run(transport="http", port=8000)
+```
+
+#### 客户端身份验证
+
+如果您尝试使用我们之前编写的相同 OpenAI 代码调用经过身份验证的服务器，您将收到类似以下的错误：
+
+```python
+pythonAPIStatusError: Error code: 424 - {
+    "error": {
+        "message": "从 MCP 服务器获取工具列表时出错： 'dice_server'。Http 状态代码：401（未授权）",
+        "type": "external_connector_error",
+        "param": "tools",
+        "code": "http_error"
+    }
+}
+```
+
+如预期的那样，服务器拒绝了请求，因为它未经身份验证。
+
+要验证客户端，您可以在 `Authorization` 请求头中使用 `Bearer` 方案传递令牌：
+
+
+```python {4, 7, 19-21} [expandable]
+from openai import OpenAI
+
+# 您的服务器 URL（替换为您的实际 URL）
+url = 'https://your-server-url.com'
+
+# 您的访问令牌（替换为您的实际令牌）
+access_token = 'your-access-token'
+
+client = OpenAI()
+
+resp = client.responses.create(
+    model="gpt-4.1",
+    tools=[
+        {
+            "type": "mcp",
+            "server_label": "dice_server",
+            "server_url": f"{url}/mcp/",
+            "require_approval": "never",
+            "headers": {
+                "Authorization": f"Bearer {access_token}"
+            }
+        },
+    ],
+    input="投几个骰子！",
+)
+
+print(resp.output_text)
+```
+
+现在您应该在输出中看到骰子投掷结果。

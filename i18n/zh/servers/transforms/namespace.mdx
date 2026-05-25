@@ -1,0 +1,63 @@
+---
+title: 命名空间转换
+sidebarTitle: 命名空间
+description: 为组件名称添加前缀以避免冲突
+icon: tag
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+`Namespace` transform 会为所有组件名称添加前缀，从而在组合多个服务端时避免冲突。
+
+工具和提示词会获得以下划线分隔的前缀。资源和模板则会在其 URI 中获得路径段前缀。
+
+| 组件 | 原始名称 | 使用 `Namespace("api")` 后 |
+|-----------|----------|-------------------------|
+| 工具 | `my_tool` | `api_my_tool` |
+| 提示词 | `my_prompt` | `api_my_prompt` |
+| 资源 | `data://info` | `data://api/info` |
+| 模板 | `data://{id}` | `data://api/{id}` |
+
+最常见的用法是通过 `mount()` 方法的 `namespace` 参数。
+
+```python
+from fastmcp import FastMCP
+
+weather = FastMCP("Weather")
+calendar = FastMCP("Calendar")
+
+@weather.tool
+def get_data() -> str:
+    return "Weather data"
+
+@calendar.tool
+def get_data() -> str:
+    return "Calendar data"
+
+# 如果没有命名空间，它们会发生冲突
+main = FastMCP("Main")
+main.mount(weather, namespace="weather")
+main.mount(calendar, namespace="calendar")
+
+# 客户端会看到：weather_get_data、calendar_get_data
+```
+
+你也可以直接使用 `Namespace` transform 应用命名空间。
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.transforms import Namespace
+
+mcp = FastMCP("Server")
+
+@mcp.tool
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+
+# 为所有组件添加命名空间
+mcp.add_transform(Namespace("api"))
+
+# 工具现在是：api_greet
+```

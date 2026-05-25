@@ -1,0 +1,4 @@
+interface:
+  display_name: "FastMCP 文档翻译"
+  short_description: "同步官方 FastMCP 文档并维护多语言翻译工作流"
+  default_prompt: "Use $translator to sync the official FastMCP docs, rebuild i18n Mintlify config, and translate the Chinese docs."

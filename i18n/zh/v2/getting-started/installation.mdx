@@ -1,0 +1,100 @@
+---
+title: 安装
+icon: arrow-down-to-line
+---
+## 安装 FastMCP
+
+我们推荐使用 [uv](https://docs.astral.sh/uv/getting-started/installation/) 安装和管理 FastMCP。
+
+如果你计划在项目中使用 FastMCP，可以通过以下命令将其添加为依赖：
+
+```bash
+uv add fastmcp
+```
+
+或者，你也可以直接使用 `pip` 或 `uv pip` 安装：
+<CodeGroup>
+    ```bash uv
+    uv pip install fastmcp
+    ```
+
+    ```bash pip
+    pip install fastmcp
+    ```
+</CodeGroup>
+
+<Warning>
+**FastMCP 3.0** 正在开发中，可能包含破坏性变更。为避免意外问题，请将依赖固定到 v2：`fastmcp<3`
+</Warning>
+
+### 验证安装
+
+要验证 FastMCP 是否正确安装，可以运行以下命令：
+
+```bash
+fastmcp version
+```
+
+你应看到类似下面的输出：
+
+```bash
+$ fastmcp version
+
+FastMCP version:                           2.11.3
+MCP version:                               1.12.4
+Python version:                            3.12.2
+Platform:            macOS-15.3.1-arm64-arm-64bit
+FastMCP root path:            ~/Developer/fastmcp
+```
+
+### 依赖许可证
+
+<Info>
+FastMCP 的 CLI 功能依赖 Cyclopts。Cyclopts v4 将 docutils 作为传递依赖，而 docutils 的许可证较复杂，可能会触发某些组织的合规审查。
+
+如果这对你来说是个问题，可以安装移除了该依赖的 Cyclopts v5 alpha：
+
+```bash
+pip install "cyclopts>=5.0.0a1"
+```
+
+或者等待稳定的 v5 发布。详情请参阅[此 issue](https://github.com/BrianPugh/cyclopts/issues/672)。
+</Info>
+## 从官方 MCP SDK 升级
+
+从官方 MCP SDK 的 FastMCP 1.0 升级到 FastMCP 2.0 通常很直接。核心服务端 API 高度兼容，很多情况下，只需将 import 语句从 `from mcp.server.fastmcp import FastMCP` 改为 `from fastmcp import FastMCP` 即可。
+
+
+```python {5}
+# 之前
+# from mcp.server.fastmcp import FastMCP
+
+# 之后
+from fastmcp import FastMCP
+
+mcp = FastMCP("My MCP Server")
+```
+
+<Warning>
+在 `fastmcp==2.3.0` 和 `mcp==1.8.0` 之前，2.x API 始终镜像官方 1.0 API。不过，随着项目分化，这一点无法保证。如果你尝试在 FastMCP 2.x 中使用 1.0 API，可能会看到弃用警告。请参阅本文档了解新能力的详情。
+</Warning>
+
+## 版本策略
+
+FastMCP 遵循语义化版本，并针对快速演进的 MCP 生态做了务实调整。当需要保持与 MCP Protocol 同步时，破坏性变更可能出现在 minor 版本中（例如从 2.3.x 到 2.4.0）。
+
+生产使用时，请始终固定到精确版本：
+```
+fastmcp==2.11.0  # 好
+fastmcp>=2.11.0  # 不好：会安装破坏性变更
+```
+
+关于公共 API、弃用实践和破坏性变更理念的详情，请参阅完整的[版本和发布策略](/zh/v2/development/releases#版本策略)。
+
+## 为 FastMCP 贡献
+
+想为 FastMCP 贡献吗？请参阅[贡献指南](/zh/v2/development/contributing)，了解以下内容：
+- 设置开发环境
+- 运行测试和 pre-commit hooks
+- 提交 issues 和 pull requests
+- 代码标准和审查流程

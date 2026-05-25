@@ -6,7 +6,7 @@ icon: shield-check
 tag: NEW
 ---
 
-import { VersionBadge } from "/snippets/version-badge.mdx"
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
 
 <VersionBadge version="2.12.0" />
 
@@ -165,7 +165,7 @@ mcp = FastMCP(name="Production WorkOS App", auth=auth)
 <Note>
 `jwt_signing_key` 与 `client_storage` 需要配合使用，才能在服务器重启后保留令牌与客户端注册信息。**请使用 `FernetEncryptionWrapper` 加密存储中的敏感 OAuth 令牌**，否则将以明文保存。建议通过环境变量传递密钥，并使用 Redis 等持久化后端以支持分布式部署。
 
-更多参数详情请参阅 [OAuth 代理文档](/zh/servers/auth/oauth-proxy#configuration-parameters)。
+更多参数详情请参阅 [OAuth 代理文档](/zh/servers/auth/oauth-proxy#配置参数)。
 </Note>
 
 ## 环境变量
@@ -206,7 +206,7 @@ OAuth 端点可访问的公共 URL（包含任何挂载路径）
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_WORKOS_ISSUER_URL" default="使用 BASE_URL">
-用于 OAuth 元数据的 Issuer URL（默认等于 `BASE_URL`）。当挂载在路径前缀下时，请设置为根级 URL 以避免 404 日志。详见 [HTTP 部署指南](/zh/deployment/http#mounting-authenticated-servers)。
+用于 OAuth 元数据的 Issuer URL（默认等于 `BASE_URL`）。当挂载在路径前缀下时，请设置为根级 URL 以避免 404 日志。详见 [HTTP 部署指南](/zh/deployment/http#挂载已认证服务器)。
 </ParamField>
 
 <ParamField path="FASTMCP_SERVER_AUTH_WORKOS_REDIRECT_PATH" default="/auth/callback">

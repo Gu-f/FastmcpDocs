@@ -1,0 +1,52 @@
+---
+title: generative
+sidebarTitle: generative
+---
+
+# `fastmcp.apps.generative`
+
+
+GenerativeUI：一个添加 LLM 生成 UI 能力的 Provider。
+
+注册来自 ``prefab_ui.generative`` 的工具和资源，使 LLM 能够编写 Prefab Python 代码，在沙箱中执行，并将结果渲染为流式交互 UI。
+
+需要 ``fastmcp[apps]``（prefab-ui）。
+
+用法::
+
+    from fastmcp import FastMCP
+    from fastmcp.apps.generative import GenerativeUI
+
+    mcp = FastMCP("My Server")
+    mcp.add_provider(GenerativeUI())
+
+
+## 类
+
+### `GenerativeUI` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/generative.py#L53" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+一个为服务端添加生成式 UI 能力的 Provider。
+
+注册：
+
+- 一个 ``generate_ui`` 工具，接受 Prefab Python 代码，在 Pyodide 沙箱中执行，并返回渲染后的 PrefabApp。支持通过 ``ontoolinputpartial`` 流式传输。
+- 一个用于搜索 Prefab 组件库的 ``components`` 工具。
+- 生成式渲染器资源，并附带用于访问 Pyodide CDN 的 CSP。
+
+示例::
+
+    from fastmcp import FastMCP
+    from fastmcp.apps.generative import GenerativeUI
+
+    mcp = FastMCP("My Server")
+    mcp.add_provider(GenerativeUI())
+
+
+**方法：**
+
+#### `lifespan` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/generative.py#L196" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+lifespan(self) -> AsyncIterator[None]
+```

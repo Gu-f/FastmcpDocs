@@ -1,2 +1,7 @@
 .idea/
 node_modules/
+
+temp_*.txt
+.codex/
+.claude/
+.opencode/

@@ -1,0 +1,41 @@
+---
+title: 客户端 Roots
+sidebarTitle: Roots
+description: 向 MCP 服务端提供本地上下文和资源边界。
+icon: folder-tree
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="2.0.0" />
+
+Roots 是客户端告知服务端自己可访问哪些资源的一种方式。服务端可以使用这些信息来调整行为，或提供更相关的响应。
+
+## 设置静态 Roots
+
+创建客户端时提供 roots 列表：
+
+<CodeGroup>
+```python 静态 Roots
+from fastmcp import Client
+
+client = Client(
+    "my_mcp_server.py", 
+    roots=["/path/to/root1", "/path/to/root2"]
+)
+```
+
+```python 动态 Roots 回调
+from fastmcp import Client
+from fastmcp.client.roots import RequestContext
+
+async def roots_callback(context: RequestContext) -> list[str]:
+    print(f"服务端请求了 roots（请求 ID：{context.request_id}）")
+    return ["/path/to/root1", "/path/to/root2"]
+
+client = Client(
+    "my_mcp_server.py", 
+    roots=roots_callback
+)
+```
+</CodeGroup>

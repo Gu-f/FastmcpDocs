@@ -1,0 +1,120 @@
+---
+title: Prefect Horizon
+sidebarTitle: Prefect Horizon
+description: FastMCP 团队打造的 MCP 平台
+icon: cloud
+---
+
+[Prefect Horizon](https://www.prefect.io/horizon) 是一个用于部署和管理 MCP 服务端的平台。Horizon 由 [Prefect](https://www.prefect.io) 的 FastMCP 团队打造，提供托管式部署、身份认证、访问控制，以及 MCP 能力注册表。
+
+Horizon 为 FastMCP 用户提供**免费的个人层级**，是最快获得安全、可投入生产使用且内置 OAuth 身份认证的服务端 URL 的方式。
+
+<Info>
+Horizon 对个人项目免费。面向数千用户部署的团队可以使用企业治理功能。
+</Info>
+
+## 平台
+
+Horizon 由四个集成支柱组成：
+
+- **Deploy**：带有 CI/CD、扩缩容、监控和回滚能力的托管式部署。推送代码后，60 秒内即可获得一个在线且受治理的端点。
+- **Registry**：组织内 MCP 服务端的中央目录，涵盖第一方、第三方，以及由多个来源组合而成的精选混合服务端。
+- **Gateway**：基于角色的访问控制、身份认证和审计日志。在工具级别定义 agent 可以看到什么、执行什么。
+- **Agents**：带权限控制的聊天界面，可与任意 MCP 服务端或精选的服务端组合交互。
+
+本指南聚焦于 **Horizon Deploy**，这是托管部署层，可让你以最快路径把 FastMCP 服务端变成生产 URL。
+
+## 前置条件
+
+要使用 Horizon，你需要一个 [GitHub](https://github.com) 账号，以及一个包含 FastMCP 服务端的 GitHub 仓库。如果你还没有这样的仓库，Horizon 可以在引导流程中为你创建一个起始仓库。
+
+你的仓库可以是公开或私有的，但必须至少包含一个带有 FastMCP 服务端实例的 Python 文件。
+
+<Tip>
+要验证文件是否兼容 Horizon，请运行 `fastmcp inspect <file.py:server_object>`，查看 Horizon 运行你的服务端时会看到什么。
+</Tip>
+
+如果仓库中有 `requirements.txt` 或 `pyproject.toml`，Horizon 会自动检测并安装服务端依赖。你的文件*可以*包含 `if __name__ == "__main__"` 块，但 Horizon 会忽略它。
+
+例如，一个最小服务端文件可能如下：
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP("MyServer")
+
+@mcp.tool
+def hello(name: str) -> str:
+    return f"Hello, {name}!"
+```
+
+## 开始使用
+
+将服务端部署到 Horizon 只需三步：
+
+### 第 1 步：选择仓库
+
+访问 [horizon.prefect.io](https://horizon.prefect.io?utm_source=gofastmcp&utm_medium=docs)，并使用你的 GitHub 账号登录。连接 GitHub 账号以授予 Horizon 访问仓库的权限，然后选择要部署的仓库。
+
+<img src="/assets/images/horizon/select-repo.png" alt="Horizon 仓库选择" />
+
+### 第 2 步：配置你的服务端
+
+接下来，你将配置 Horizon 应如何构建和部署你的服务端。
+
+<img src="/assets/images/horizon/configure-server.png" alt="Horizon 服务端配置" />
+
+配置界面允许你指定：
+- **服务端名称**：服务端的唯一名称。它会决定服务端的 URL。
+- **描述**：简要说明你的服务端做什么。
+- **入口点**：包含 FastMCP 服务端的 Python 文件（例如 `main.py`）。该字段使用与 `fastmcp run` 命令相同的语法，可用 `main.py:mcp` 指定文件中的具体对象。
+- **身份认证**：启用后，只有组织中已认证的用户可以连接。Horizon 会为你处理全部 OAuth 复杂性。
+
+Horizon 会从 `requirements.txt` 或 `pyproject.toml` 文件中自动检测服务端的 Python 依赖。
+
+### 第 3 步：部署并连接
+
+点击 **Deploy Server**，Horizon 会克隆你的仓库、构建服务端，并将其部署到唯一 URL，通常不到 60 秒即可完成。
+
+<img src="/assets/images/horizon/deployment-live.png" alt="显示在线服务端的 Horizon 部署视图" />
+
+部署完成后，你可以通过类似下面的 URL 访问服务端：
+
+```
+https://your-server-name.fastmcp.app/mcp
+```
+
+Horizon 会监控你的仓库，并在你推送到 `main` 时自动重新部署。它还会为每个 PR 构建预览部署，因此你可以在变更上线前进行测试。
+
+## 测试你的服务端
+
+在连接外部客户端之前，Horizon 提供两种方式来验证服务端是否正常工作。
+
+### Inspector
+
+Inspector 会以结构化视图展示服务端暴露的所有内容，包括工具、资源和提示词。你可以点击任意工具，填写输入、执行它并查看输出。这对于系统性验证每项能力和调试特定行为非常有用。
+
+### ChatMCP
+
+对于快速端到端测试，ChatMCP 允许你以对话方式与服务端交互。它使用针对快速迭代优化的高速模型，你可以验证服务端是否工作、在上下文中测试工具调用，并在分享给他人之前确认整体行为。
+
+<img src="/assets/images/horizon/chat.png" alt="Horizon ChatMCP 界面" />
+
+ChatMCP 是为测试而设计的，并非日常工作环境。确认服务端正常后，你可以复制 Claude Desktop、Cursor、Claude Code 和其他 MCP 客户端的连接片段，也可以使用 FastMCP 客户端库以编程方式连接。
+
+## Horizon Agents
+
+除了测试单个服务端，Horizon 还允许你创建 **Agents**，即由一个或多个 MCP 服务端支撑的聊天界面。ChatMCP 用于测试单个服务端，而 Agents 允许你把多个服务端的能力组合成统一体验。
+
+<img src="/assets/images/horizon/agent-detail.png" alt="Horizon Agent 配置" />
+
+要创建 agent：
+1. 在侧边栏中进入 **Agents**
+2. 点击 **Create Agent**，并为其填写名称和描述
+3. 向该 agent 添加 MCP 服务端，这些服务端可以是你部署到 Horizon 的服务端，也可以是注册表中的外部服务端
+
+配置完成后，你可以直接在 Horizon 中与 agent 对话：
+
+<img src="/assets/images/horizon/agent-chat.png" alt="与 Horizon Agent 对话" />
+
+Agents 适合创建面向特定用途的界面，用来组合不同服务端中的工具。例如，你可以创建一个 agent，让它同时访问公司内部数据服务端和通用工具服务端。

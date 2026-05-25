@@ -1,0 +1,61 @@
+---
+title: tasks
+sidebarTitle: tasks
+---
+
+# `fastmcp.utilities.tasks`
+
+
+FastMCP 组件的任务配置基础类型。
+
+## 类
+
+### `TaskMeta` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/tasks.py#L22" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+任务增强执行请求的元数据。
+
+**属性：**
+- `ttl`: 客户端请求的 TTL，单位为毫秒。如果为 None，则使用服务端默认值。
+- `fn_key`: Docket 路由键。如果为 None，则从组件名称自动派生。
+
+
+### `TaskConfig` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/tasks.py#L35" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+MCP 后台任务执行的配置。
+
+控制组件如何处理任务增强请求：
+
+- ``forbidden``：组件不支持任务执行。
+- ``optional``：组件同时支持同步执行和任务执行。
+- ``required``：组件要求使用任务执行。
+
+
+**方法：**
+
+#### `from_bool` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/tasks.py#L49" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+from_bool(cls, value: bool) -> TaskConfig
+```
+
+将布尔任务标志转换为 TaskConfig。
+
+
+#### `supports_tasks` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/tasks.py#L53" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+supports_tasks(self) -> bool
+```
+
+检查此组件是否支持任务执行。
+
+
+#### `validate_function` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/tasks.py#L57" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+validate_function(self, fn: Callable[..., Any], name: str) -> None
+```
+
+验证函数是否与此任务配置兼容。

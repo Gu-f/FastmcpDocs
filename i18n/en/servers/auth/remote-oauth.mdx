@@ -3,10 +3,9 @@ title: Remote OAuth
 sidebarTitle: Remote OAuth
 description: Integrate your FastMCP server with external identity providers like Descope, WorkOS, Auth0, and corporate SSO systems.
 icon: camera-cctv
-tag: NEW
 ---
 
-import { VersionBadge } from "/snippets/version-badge.mdx"
+import { VersionBadge } from "/en/snippets/version-badge.mdx"
 
 <VersionBadge version="2.11.0" />
 
@@ -30,9 +29,9 @@ RemoteAuthProvider works with identity providers that support **Dynamic Client R
 | **Credentials** | Dynamic per client | Fixed app credentials |
 | **Configuration** | Zero client config | Pre-shared credentials |
 | **Examples** | Descope, WorkOS AuthKit, modern OIDC | GitHub, Google, Azure |
-| **FastMCP Class** | `RemoteAuthProvider` | [`OAuthProxy`](/servers/auth/oauth-proxy) |
+| **FastMCP Class** | `RemoteAuthProvider` | [`OAuthProxy`](/en/servers/auth/oauth-proxy) |
 
-If your provider doesn't support DCR (most traditional OAuth providers), you'll need to use [`OAuth Proxy`](/servers/auth/oauth-proxy) instead, which bridges the gap between MCP's DCR expectations and fixed OAuth credentials.
+If your provider doesn't support DCR (most traditional OAuth providers), you'll need to use [`OAuth Proxy`](/en/servers/auth/oauth-proxy) instead, which bridges the gap between MCP's DCR expectations and fixed OAuth credentials.
 
 ## The Remote OAuth Challenge
 
@@ -84,7 +83,7 @@ FastMCP provides `RemoteAuthProvider` to handle the complexities of remote OAuth
 
 ### RemoteAuthProvider
 
-`RemoteAuthProvider` works by composing a [`TokenVerifier`](/servers/auth/token-verification) with authorization server information. A `TokenVerifier` is another FastMCP authentication class that focuses solely on token validation - signature verification, expiration checking, and claim extraction. The `RemoteAuthProvider` takes that token validation capability and adds the OAuth discovery endpoints that enable MCP clients to automatically find and authenticate with your identity provider.
+`RemoteAuthProvider` works by composing a [`TokenVerifier`](/en/servers/auth/token-verification) with authorization server information. A `TokenVerifier` is another FastMCP authentication class that focuses solely on token validation - signature verification, expiration checking, and claim extraction. The `RemoteAuthProvider` takes that token validation capability and adds the OAuth discovery endpoints that enable MCP clients to automatically find and authenticate with your identity provider.
 
 This composition pattern means you can use any token validation strategy while maintaining consistent OAuth discovery behavior:
 - **JWT tokens**: Use `JWTVerifier` for self-contained tokens
@@ -117,7 +116,7 @@ auth = RemoteAuthProvider(
     token_verifier=token_verifier,
     authorization_servers=[AnyHttpUrl("https://auth.yourcompany.com")],
     base_url="https://api.yourcompany.com",  # Your server base URL
-    # Optional: customize allowed client redirect URIs (defaults to localhost only)
+    # Optional: restrict allowed client redirect URIs (defaults to all for DCR compatibility)
     allowed_client_redirect_uris=["http://localhost:*", "http://127.0.0.1:*"]
 )
 
@@ -127,6 +126,21 @@ mcp = FastMCP(name="Company API", auth=auth)
 This configuration creates a server that accepts tokens issued by `auth.yourcompany.com` and provides the OAuth discovery metadata that MCP clients need. The `JWTVerifier` handles token validation using your identity provider's public keys, while the `RemoteAuthProvider` generates the required OAuth endpoints.
 
 The `authorization_servers` list tells MCP clients which identity providers you trust. The `base_url` identifies your server in OAuth metadata, enabling proper token audience validation. **Important**: The `base_url` should point to your server base URL - for example, if your MCP server is accessible at `https://api.yourcompany.com/mcp`, use `https://api.yourcompany.com` as the base URL.
+
+### Overriding Advertised Scopes
+
+Some identity providers use different scope formats for authorization requests versus token claims. For example, Azure AD requires clients to request full URI scopes like `api://client-id/read`, but the token's `scp` claim contains just `read`. The `scopes_supported` parameter lets you advertise the full-form scopes in metadata while validating against the short form:
+
+```python
+auth = RemoteAuthProvider(
+    token_verifier=token_verifier,
+    authorization_servers=[AnyHttpUrl("https://auth.example.com")],
+    base_url="https://api.example.com",
+    scopes_supported=["api://my-api/read", "api://my-api/write"],
+)
+```
+
+When not set, `scopes_supported` defaults to the token verifier's `required_scopes`. For Azure AD specifically, see the [AzureJWTVerifier](/en/integrations/azure#token-verification-only-managed-identity) which handles this automatically.
 
 ### Custom Endpoints
 
@@ -197,16 +211,16 @@ The `AuthKitProvider` automatically configures JWT validation against WorkOS's p
 
 WorkOS's support for Dynamic Client Registration makes it particularly well-suited for MCP applications. Clients can automatically register themselves with your WorkOS project and obtain the credentials needed for authentication without manual intervention.
 
-→ **Complete WorkOS tutorial**: [AuthKit Integration Guide](/integrations/authkit)
+→ **Complete WorkOS tutorial**: [AuthKit Integration Guide](/en/integrations/authkit)
 
 ## Client Redirect URI Security
 
 <Note>
 `RemoteAuthProvider` also supports the `allowed_client_redirect_uris` parameter for controlling which redirect URIs are accepted from MCP clients during DCR:
 
-- `None` (default): Only localhost patterns allowed
+- `None` (default): All redirect URIs allowed (for DCR compatibility)
 - Custom list: Specify allowed patterns with wildcard support
-- Empty list `[]`: Allow all (not recommended)
+- Empty list `[]`: No redirect URIs allowed
 
 This provides defense-in-depth even though DCR providers typically validate redirect URIs themselves.
 </Note>

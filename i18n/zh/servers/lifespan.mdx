@@ -1,0 +1,148 @@
+---
+title: 生命周期
+sidebarTitle: 生命周期
+description: 使用可组合生命周期进行服务端级别的设置和清理
+icon: heart-pulse
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+生命周期允许你在服务端启动时运行一次代码，并在服务端停止时执行清理。与按会话运行的处理器不同，无论有多少客户端连接，生命周期都只会运行一次。
+
+## 基本用法
+
+使用 `@lifespan` 装饰器定义生命周期：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.lifespan import lifespan
+
+@lifespan
+async def app_lifespan(server):
+    # 设置：服务端启动时运行一次
+    print("Starting up...")
+    try:
+        yield {"started_at": "2024-01-01"}
+    finally:
+        # 清理：服务端停止时运行
+        print("Shutting down...")
+
+mcp = FastMCP("MyServer", lifespan=app_lifespan)
+```
+
+你 yield 的字典会成为**生命周期上下文**，可从工具中访问。
+
+<Note>
+清理代码请始终使用 `try/finally`，以确保即使服务端被取消也会运行。
+</Note>
+
+## 访问生命周期上下文
+
+在工具中通过 `ctx.lifespan_context` 访问生命周期上下文：
+
+```python
+from fastmcp import FastMCP, Context
+from fastmcp.server.lifespan import lifespan
+
+@lifespan
+async def app_lifespan(server):
+    # 初始化共享状态
+    data = {"users": ["alice", "bob"]}
+    yield {"data": data}
+
+mcp = FastMCP("MyServer", lifespan=app_lifespan)
+
+@mcp.tool
+def list_users(ctx: Context) -> list[str]:
+    data = ctx.lifespan_context["data"]
+    return data["users"]
+```
+
+## 组合生命周期
+
+使用 `|` 运算符组合多个生命周期：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.lifespan import lifespan
+
+@lifespan
+async def config_lifespan(server):
+    config = {"debug": True, "version": "1.0"}
+    yield {"config": config}
+
+@lifespan
+async def data_lifespan(server):
+    data = {"items": []}
+    yield {"data": data}
+
+# 使用 | 组合
+mcp = FastMCP("MyServer", lifespan=config_lifespan | data_lifespan)
+```
+
+组合后的生命周期：
+- 按顺序进入（从左到右）
+- 按相反顺序退出（从右到左）
+- 合并它们的上下文字典（冲突时后面的值覆盖前面的值）
+
+## 向后兼容
+
+现有 `@asynccontextmanager` 生命周期在直接传给 FastMCP 时仍然可用：
+
+```python
+from contextlib import asynccontextmanager
+from fastmcp import FastMCP
+
+@asynccontextmanager
+async def legacy_lifespan(server):
+    yield {"key": "value"}
+
+mcp = FastMCP("MyServer", lifespan=legacy_lifespan)
+```
+
+要将 `@asynccontextmanager` 函数与 `@lifespan` 函数组合，请使用 `ContextManagerLifespan` 包装它：
+
+```python
+from contextlib import asynccontextmanager
+from fastmcp.server.lifespan import lifespan, ContextManagerLifespan
+
+@asynccontextmanager
+async def legacy_lifespan(server):
+    yield {"legacy": True}
+
+@lifespan
+async def new_lifespan(server):
+    yield {"new": True}
+
+# 显式包装旧生命周期以便组合
+combined = ContextManagerLifespan(legacy_lifespan) | new_lifespan
+```
+
+## 与 FastAPI 配合使用
+
+将 FastMCP 挂载到 FastAPI 时，使用 `combine_lifespans` 同时运行应用生命周期和 MCP 服务端生命周期：
+
+```python
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastmcp import FastMCP
+from fastmcp.utilities.lifespan import combine_lifespans
+
+@asynccontextmanager
+async def app_lifespan(app):
+    print("FastAPI starting...")
+    yield
+    print("FastAPI shutting down...")
+
+mcp = FastMCP("Tools")
+mcp_app = mcp.http_app()
+
+app = FastAPI(lifespan=combine_lifespans(app_lifespan, mcp_app.lifespan))
+app.mount("/mcp", mcp_app)
+```
+
+完整详情请参阅 [FastAPI 集成指南](/zh/integrations/fastapi#合并生命周期)。

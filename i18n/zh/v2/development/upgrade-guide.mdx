@@ -1,0 +1,153 @@
+---
+title: 升级指南
+sidebarTitle: 升级指南
+description: 在 FastMCP 版本之间升级时的迁移说明
+icon: up
+tag: NEW
+---
+
+本指南提供在 FastMCP 版本之间升级时，针对破坏性变更和重要更新的迁移说明。
+
+## v2.14.0
+
+### OpenAPI 解析器转正
+
+实验性的 OpenAPI 解析器现在已经成为标准实现。旧版解析器已被移除。
+
+**如果你之前使用的是旧版解析器：** 不需要修改代码。新解析器是直接替换版，同时架构更完善。
+
+**如果你之前使用的是实验性解析器：** 请把导入从实验性模块更新到标准位置：
+
+<CodeGroup>
+```python test="skip" Before
+from fastmcp.experimental.server.openapi import FastMCPOpenAPI, RouteMap, MCPType
+```
+
+```python test="skip" After
+from fastmcp.server.openapi import FastMCPOpenAPI, RouteMap, MCPType
+```
+</CodeGroup>
+
+实验性导入暂时仍可工作，但会显示弃用警告。`FASTMCP_EXPERIMENTAL_ENABLE_NEW_OPENAPI_PARSER` 环境变量不再需要，可以移除。
+
+### 已移除的弃用功能
+
+以下弃用功能已在 v2.14.0 中移除：
+
+**BearerAuthProvider**（在 v2.11 中弃用）：
+<CodeGroup>
+```python test="skip" Before
+from fastmcp.server.auth.providers.bearer import BearerAuthProvider
+```
+
+```python After
+from fastmcp.server.auth.providers.jwt import JWTVerifier
+```
+</CodeGroup>
+
+**Context.get_http_request()**（在 v2.2.11 中弃用）：
+<CodeGroup>
+```python test="skip" Before
+request = context.get_http_request()
+```
+
+```python After
+from fastmcp.server.dependencies import get_http_request
+request = get_http_request()
+```
+</CodeGroup>
+
+**顶层 Image 导入**（在 v2.8.1 中弃用）：
+<CodeGroup>
+```python test="skip" Before
+from fastmcp import Image
+```
+
+```python After
+from fastmcp.utilities.types import Image
+```
+</CodeGroup>
+
+**FastMCP dependencies 参数**（在 v2.11.4 中弃用）：
+<CodeGroup>
+```python Before
+mcp = FastMCP("server", dependencies=["requests", "pandas"])
+```
+
+```json After
+{
+  "environment": {
+    "dependencies": ["requests", "pandas"]
+  }
+}
+```
+</CodeGroup>
+
+**旧版资源前缀格式**：`resource_prefix_format` 参数和 `"protocol"` 格式已被移除。现在只支持 `"path"` 格式（这本来已经是默认值）。
+
+**FastMCPProxy client 参数**：
+<CodeGroup>
+```python Before
+proxy = FastMCPProxy(client=my_client)
+```
+
+```python After
+proxy = FastMCPProxy(client_factory=lambda: my_client)
+```
+</CodeGroup>
+
+**output_schema=False**：
+<CodeGroup>
+```python Before
+@mcp.tool(output_schema=False)
+def my_tool() -> str:
+    return "result"
+```
+
+```python After
+@mcp.tool(output_schema=None)
+def my_tool() -> str:
+    return "result"
+```
+</CodeGroup>
+
+## v2.13.0
+
+### OAuth 令牌密钥管理
+
+OAuth 代理现在会向客户端签发自己的 JWT 令牌，而不是转发上游提供商的令牌。这通过维持正确的令牌受众边界提升了安全性。
+
+**发生了什么变化：**
+
+OAuth 代理现在实现了令牌工厂模式：它从你的 OAuth 提供商（GitHub、Google 等）接收令牌，对其进行加密并存储，然后向客户端签发自己的 FastMCP JWT 令牌。这需要用于 JWT 签名和令牌加密的加密密钥。
+
+**默认行为（开发）：**
+
+默认情况下，FastMCP 会根据你的平台自动管理密钥：
+- **Mac/Windows**：密钥通过系统 keyring 自动管理，服务端重启后仍会保留，且无需配置。**仅**适合开发和本地测试。
+- **Linux**：密钥是临时的（启动时生成随机 salt，每次重启都会重新生成）。
+
+对于开发和测试来说，这种行为通常没问题，因为重启后重新认证是可以接受的。
+
+**用于生产：**
+
+生产部署必须提供显式密钥，并使用持久化存储。请添加以下三项：
+
+```python
+auth = GitHubProvider(
+    client_id=os.environ["GITHUB_CLIENT_ID"],
+    client_secret=os.environ["GITHUB_CLIENT_SECRET"],
+    base_url="https://your-server.com",
+
+    # 显式密钥（生产必需）
+    jwt_signing_key=os.environ["JWT_SIGNING_KEY"],
+
+    # 持久化网络存储（生产必需）
+    client_storage=RedisStore(host="redis.example.com", port=6379)
+)
+```
+
+**更多信息：**
+- [OAuth 令牌安全](/zh/v2/deployment/http#oauth-令牌安全性) - 完整的生产设置指南
+- [密钥和存储管理](/zh/v2/servers/auth/oauth-proxy#密钥和存储管理) - 默认行为和生产要求的详细说明
+- [OAuth 代理参数](/zh/v2/servers/auth/oauth-proxy#配置参数) - 参数文档

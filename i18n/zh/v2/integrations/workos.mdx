@@ -1,0 +1,288 @@
+---
+title: WorkOS 🤝 FastMCP
+sidebarTitle: WorkOS
+description: 使用 WorkOS Connect 对 FastMCP 服务器进行身份验证
+icon: shield-check
+tag: NEW
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.12.0" />
+
+使用 WorkOS Connect 身份验证保护您的 FastMCP 服务器。此集成使用 OAuth 代理模式通过 WorkOS Connect 处理身份验证，同时保持与 MCP 客户端的兼容性。
+
+<Note>
+本指南涵盖 WorkOS Connect 应用程序。对于使用 AuthKit 的动态客户端注册 (DCR)，请参阅 [AuthKit 集成](/zh/v2/integrations/authkit)。
+</Note>
+
+## 配置
+
+### 先决条件
+
+开始之前，您需要：
+1. 一个有权创建 OAuth 应用的 **[WorkOS 账户](https://workos.com/)**
+2. 您的 FastMCP 服务器 URL（开发时可以是 localhost，例如 `http://localhost:8000`）
+
+### 步骤 1：创建 WorkOS OAuth 应用
+
+在您的 WorkOS 仪表板中创建 OAuth 应用以获取身份验证所需的凭据：
+
+<Steps>
+<Step title="创建 OAuth 应用程序">
+在您的 WorkOS 仪表板中：
+1. 导航到 **Applications**
+2. 点击 **Create Application** 
+3. 选择 **OAuth Application**
+4. 为您的应用程序命名
+</Step>
+
+<Step title="获取凭据">
+在您的 OAuth 应用程序设置中：
+1. 复制您的 **Client ID**（以 `client_` 开头）
+2. 点击 **Generate Client Secret** 并安全保存
+3. 复制您的 **AuthKit Domain**（例如，`https://your-app.authkit.app`）
+</Step>
+
+<Step title="配置重定向 URI">
+在 **Redirect URIs** 部分：
+- 添加：`http://localhost:8000/auth/callback`（用于开发）
+- 对于生产环境，添加您服务器的公共 URL + `/auth/callback`
+
+<Warning>
+回调 URL 必须完全匹配。默认路径是 `/auth/callback`，但您可以使用 `redirect_path` 参数自定义它。
+</Warning>
+</Step>
+</Steps>
+
+### 步骤 2：FastMCP 配置
+
+使用 `WorkOSProvider` 创建您的 FastMCP 服务器：
+
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.workos import WorkOSProvider
+
+# 配置 WorkOS OAuth
+auth = WorkOSProvider(
+    client_id="client_YOUR_CLIENT_ID",
+    client_secret="YOUR_CLIENT_SECRET",
+    authkit_domain="https://your-app.authkit.app",
+    base_url="http://localhost:8000",
+    required_scopes=["openid", "profile", "email"]
+)
+
+mcp = FastMCP("WorkOS 受保护服务器", auth=auth)
+
+@mcp.tool
+def protected_tool(message: str) -> str:
+    """此工具需要身份验证。"""
+    return f"已认证用户说：{message}"
+
+if __name__ == "__main__":
+    mcp.run(transport="http", port=8000)
+```
+
+## 测试
+
+### 运行服务器
+
+使用 HTTP 传输启动您的 FastMCP 服务器以启用 OAuth 流程：
+
+```bash
+fastmcp run server.py --transport http --port 8000
+```
+
+您的服务器现在正在运行并受到 WorkOS OAuth 身份验证的保护。
+
+### 使用客户端测试
+
+创建一个测试客户端，与您的 WorkOS 保护的服务器进行身份验证：
+
+```python client.py
+from fastmcp import Client
+import asyncio
+
+async def main():    
+    # 客户端将自动处理 WorkOS OAuth
+    async with Client("http://localhost:8000/mcp", auth="oauth") as client:
+        # 首次连接将在您的浏览器中打开 WorkOS 登录页面
+        print("✓ 已通过 WorkOS 身份验证！")
+        
+        # 测试受保护的工具
+        result = await client.call_tool("protected_tool", {"message": "Hello!"})
+        print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+当您第一次运行客户端时：
+1. 您的浏览器将打开到 WorkOS 的授权页面
+2. 在您授权应用程序后，您将被重定向回来
+3. 客户端接收令牌并可以发出经过身份验证的请求
+
+<Info>
+客户端在本地缓存令牌，因此除非令牌过期或您显式清除缓存，否则您无需为后续运行重新进行身份验证。
+</Info>
+
+## 生产环境配置
+
+<VersionBadge version="2.13.0" />
+
+在生产部署中，为了在服务器重启后仍能保留令牌，请同时配置 `jwt_signing_key` 与 `client_storage`：
+
+```python server.py
+import os
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.workos import WorkOSProvider
+from key_value.aio.stores.redis import RedisStore
+from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
+from cryptography.fernet import Fernet
+
+# 使用加密的持久化令牌存储进行生产配置
+auth = WorkOSProvider(
+    client_id="client_YOUR_CLIENT_ID",
+    client_secret="YOUR_CLIENT_SECRET",
+    authkit_domain="https://your-app.authkit.app",
+    base_url="https://your-production-domain.com",
+    required_scopes=["openid", "profile", "email"],
+
+    # 生产环境令牌管理
+    jwt_signing_key=os.environ["JWT_SIGNING_KEY"],
+    client_storage=FernetEncryptionWrapper(
+        key_value=RedisStore(
+            host=os.environ["REDIS_HOST"],
+            port=int(os.environ["REDIS_PORT"])
+        ),
+        fernet=Fernet(os.environ["STORAGE_ENCRYPTION_KEY"])
+    )
+)
+
+mcp = FastMCP(name="Production WorkOS App", auth=auth)
+```
+
+<Note>
+`jwt_signing_key` 与 `client_storage` 需要配合使用，才能在服务器重启后保留令牌与客户端注册信息。**请使用 `FernetEncryptionWrapper` 加密存储中的敏感 OAuth 令牌**，否则将以明文保存。建议通过环境变量传递密钥，并使用 Redis 等持久化后端以支持分布式部署。
+
+更多参数详情请参阅 [OAuth 代理文档](/zh/v2/servers/auth/oauth-proxy#配置参数)。
+</Note>
+
+## 环境变量
+
+<VersionBadge version="2.12.1" />
+
+对于生产部署，请使用环境变量而不是硬编码凭据。
+
+### 提供程序选择
+
+设置此环境变量允许自动使用 WorkOS 提供程序，而无需在代码中显式实例化它。
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH" default="未设置">
+设置为 `fastmcp.server.auth.providers.workos.WorkOSProvider` 以使用 WorkOS 身份验证。
+</ParamField>
+</Card>
+
+### WorkOS 特定配置
+
+这些环境变量为 WorkOS 提供程序提供默认值，无论它是手动实例化的还是通过 `FASTMCP_SERVER_AUTH` 配置的。
+
+<Card>
+<ParamField path="FASTMCP_SERVER_AUTH_WORKOS_CLIENT_ID" required>
+您的 WorkOS OAuth 应用客户端 ID（例如，`client_01K33Y6GGS7T3AWMPJWKW42Y3Q`）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_WORKOS_CLIENT_SECRET" required>
+您的 WorkOS OAuth 应用客户端密钥
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_WORKOS_AUTHKIT_DOMAIN" required>
+您的 WorkOS AuthKit 域（例如，`https://your-app.authkit.app`）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_WORKOS_BASE_URL" default="http://localhost:8000">
+OAuth 端点可访问的公共 URL（包含任何挂载路径）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_WORKOS_ISSUER_URL" default="使用 BASE_URL">
+用于 OAuth 元数据的 Issuer URL（默认等于 `BASE_URL`）。当挂载在路径前缀下时，请设置为根级 URL 以避免 404 日志。详见 [HTTP 部署指南](/zh/v2/deployment/http#挂载已认证服务器)。
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_WORKOS_REDIRECT_PATH" default="/auth/callback">
+在您的 WorkOS OAuth 应用中配置的重定向路径
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_WORKOS_REQUIRED_SCOPES" default="[]">
+必需的 OAuth 作用域的逗号、空格或 JSON 分隔列表（例如，`openid profile email` 或 `["openid","profile","email"]`）
+</ParamField>
+
+<ParamField path="FASTMCP_SERVER_AUTH_WORKOS_TIMEOUT_SECONDS" default="10">
+WorkOS API 调用的 HTTP 请求超时
+</ParamField>
+</Card>
+
+示例 `.env` 文件：
+```bash
+# WorkOS OAuth 凭据（始终用作默认值）
+FASTMCP_SERVER_AUTH_WORKOS_CLIENT_ID=client_01K33Y6GGS7T3AWMPJWKW42Y3Q
+FASTMCP_SERVER_AUTH_WORKOS_CLIENT_SECRET=your_client_secret
+FASTMCP_SERVER_AUTH_WORKOS_AUTHKIT_DOMAIN=https://your-app.authkit.app
+FASTMCP_SERVER_AUTH_WORKOS_BASE_URL=https://your-server.com
+FASTMCP_SERVER_AUTH_WORKOS_REQUIRED_SCOPES=["openid","profile","email"]
+
+# 可选：为所有服务器自动配置 WorkOS 身份验证
+FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.workos.WorkOSProvider
+```
+
+设置环境变量后，您可以选择：
+
+**选项 1：手动实例化（环境变量提供默认值）**
+```python server.py
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.workos import WorkOSProvider
+
+# 环境变量为 WorkOSProvider() 提供默认值
+auth = WorkOSProvider()  # 使用环境变量默认值
+mcp = FastMCP(name="WorkOS 受保护服务器", auth=auth)
+```
+
+**选项 2：自动配置（需要 FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.workos.WorkOSProvider）**
+```python server.py
+from fastmcp import FastMCP
+
+# 身份验证从 FASTMCP_SERVER_AUTH 自动配置
+mcp = FastMCP(name="WorkOS 受保护服务器")
+```
+
+## 配置选项
+
+<Card>
+<ParamField path="client_id" required>
+WorkOS OAuth 应用程序客户端 ID
+</ParamField>
+
+<ParamField path="client_secret" required>
+WorkOS OAuth 应用程序客户端密钥
+</ParamField>
+
+<ParamField path="authkit_domain" required>
+您的 WorkOS AuthKit 域 URL（例如，`https://your-app.authkit.app`）
+</ParamField>
+
+<ParamField path="base_url" required>
+您的 FastMCP 服务器的公共 URL
+</ParamField>
+
+<ParamField path="required_scopes" default="[]">
+要请求的 OAuth 作用域
+</ParamField>
+
+<ParamField path="redirect_path" default="/auth/callback">
+OAuth 回调路径
+</ParamField>
+
+<ParamField path="timeout_seconds" default="10">
+API 请求超时
+</ParamField>
+</Card>

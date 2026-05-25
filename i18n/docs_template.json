@@ -12,7 +12,7 @@
     "decoration": "gradient"
   },
   "banner": {
-    "content": "Join the [FastMCP community](https://discord.gg/uu8dJCgttd)!"
+    "content": "Deploy FastMCP servers for free on [Prefect Horizon](https://www.prefect.io/horizon)"
   },
   "colors": {
     "dark": "#f72585",
@@ -28,21 +28,21 @@
   "description": "The fast, Pythonic way to build MCP servers and clients.",
   "errors": {
     "404": {
-      "description": "You\u2019ve wandered outside the context.",
+      "description": "You’ve wandered outside the context.",
       "redirect": false,
       "title": "Don't panic."
     }
   },
   "favicon": {
-    "dark": "/assets/brand/favicon.svg",
-    "light": "/assets/brand/favicon.svg"
+    "dark": "/assets/brand/favicon-dark.svg",
+    "light": "/assets/brand/favicon-light.svg"
   },
   "footer": {
     "socials": {
       "discord": "https://discord.gg/uu8dJCgttd",
-      "github": "https://github.com/jlowin/fastmcp",
-      "x": "https://x.com/jlowin",
-      "website": "https://prefect.ai"
+      "github": "https://github.com/PrefectHQ/fastmcp",
+      "website": "https://www.prefect.io",
+      "x": "https://x.com/fastmcp"
     }
   },
   "integrations": {
@@ -59,39 +59,111 @@
   },
   "name": "FastMCP",
   "navbar": {
-    "primary": {
-      "href": "https://github.com/jlowin/fastmcp",
-      "type": "github"
-    },
     "links": [
-      {
-        "label": "Docs i18n Repo",
-        "href": "https://github.com/Gu-f/FastmcpDocs",
-        "icon": "github"
-      },
-      {
-        "href": "https://fastmcp.cloud",
-        "label": "FastMCP Cloud",
-        "icon": "cloud"
-      },
       {
         "href": "https://discord.gg/uu8dJCgttd",
         "icon": "discord",
-        "label": "Discord"
+        "label": ""
+      },
+      {
+        "href": "https://prefect.io/horizon",
+        "icon": "cloud",
+        "label": "Prefect Horizon"
+      },
+      {
+        "href": "https://github.com/Gu-f/FastmcpDocs",
+        "icon": "github",
+        "label": "i18n Repo"
       }
-    ]
+    ],
+    "primary": {
+      "href": "https://github.com/PrefectHQ/fastmcp",
+      "type": "github"
+    }
   },
   "navigation": {
     "languages": []
   },
   "redirects": [
     {
-      "destination": "/servers/proxy",
+      "destination": "/apps/fastmcp-app",
+      "source": "/apps/interactive-apps"
+    },
+    {
+      "destination": "/apps/generative",
+      "source": "/apps/providers/generative"
+    },
+    {
+      "destination": "/apps/prefab",
+      "source": "/apps/patterns"
+    },
+    {
+      "destination": "/cli/overview",
+      "source": "/patterns/cli"
+    },
+    {
+      "destination": "/servers/testing",
+      "source": "/patterns/testing"
+    },
+    {
+      "destination": "/cli/client",
+      "source": "/clients/cli"
+    },
+    {
+      "destination": "/cli/generate-cli",
+      "source": "/clients/generate-cli"
+    },
+    {
+      "destination": "/deployment/prefect-horizon",
+      "source": "/deployment/fastmcp-cloud"
+    },
+    {
+      "destination": "/deployment/prefect-horizon",
+      "source": "/v2/deployment/fastmcp-cloud"
+    },
+    {
+      "destination": "/v2/clients/messages",
+      "source": "/clients/messages"
+    },
+    {
+      "destination": "/v2/patterns/decorating-methods",
+      "source": "/patterns/decorating-methods"
+    },
+    {
+      "destination": "/servers/providers/proxy",
       "source": "/patterns/proxy"
     },
     {
       "destination": "/servers/composition",
       "source": "/patterns/composition"
+    },
+    {
+      "destination": "/servers/providers/proxy",
+      "source": "/servers/proxy"
+    },
+    {
+      "destination": "/servers/composition",
+      "source": "/servers/providers/mounting"
+    },
+    {
+      "destination": "/servers/transforms/transforms",
+      "source": "/servers/providers/namespacing"
+    },
+    {
+      "destination": "/servers/transforms/transforms",
+      "source": "/patterns/tool-transformation"
+    },
+    {
+      "destination": "/getting-started/upgrading/from-fastmcp-2",
+      "source": "/development/upgrade-guide"
+    },
+    {
+      "destination": "/getting-started/upgrading/from-mcp-sdk",
+      "source": "/getting-started/upgrading-from-sdk"
+    },
+    {
+      "destination": "/getting-started/upgrading/from-low-level-sdk",
+      "source": "/getting-started/low-level-sdk"
     }
   ],
   "search": {
@@ -108,6 +180,6 @@
   "theme": "almond",
   "thumbnails": {
     "appearance": "light",
-    "background": "/assets/brand/thumbnail-background.png"
+    "background": "/assets/brand/thumbnail-background-4.jpeg"
   }
 }

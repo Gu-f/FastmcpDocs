@@ -1,0 +1,72 @@
+---
+title: 检查服务端
+sidebarTitle: 检查
+description: 查看服务端的组件和元数据
+icon: magnifying-glass
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="2.9.0" />
+
+`fastmcp inspect` 会加载服务端并报告其中包含的内容，包括工具、资源、提示词、版本和元数据。默认输出是人类可读的摘要：
+
+```bash
+fastmcp inspect server.py
+```
+
+```
+Server: MyServer
+Instructions: A helpful MCP server
+Version: 1.0.0
+
+Components:
+  Tools: 5
+  Prompts: 2
+  Resources: 3
+  Templates: 1
+
+Environment:
+  FastMCP: 2.0.0
+  MCP: 1.0.0
+
+Use --format [fastmcp|mcp] for complete JSON output
+```
+
+## JSON 输出
+
+对于程序化使用，有两种 JSON 格式可用：
+
+**FastMCP 格式**（`--format fastmcp`）包含 FastMCP 知道的关于服务端的一切，包括工具标签、启用状态、输出 schema、注解和自定义元数据。字段名使用 `snake_case`。这是调试和内省 FastMCP 服务端时使用的格式。
+
+**MCP 协议格式**（`--format mcp`）会准确显示 MCP 客户端通过协议看到的内容：仅包含标准 MCP 字段、`camelCase` 名称，不包含 FastMCP 特定扩展。这是验证客户端兼容性，以及调试客户端实际收到内容时使用的格式。
+
+```bash
+# 将完整 FastMCP 元数据输出到 stdout
+fastmcp inspect server.py --format fastmcp
+
+# 将 MCP 协议视图保存到文件
+fastmcp inspect server.py --format mcp -o manifest.json
+```
+
+## 选项
+
+| 选项 | 标志 | 描述 |
+| ------ | ---- | ----------- |
+| 格式 | `--format`, `-f` | `fastmcp` 或 `mcp`（使用 `-o` 时必填） |
+| 输出文件 | `--output`, `-o` | 保存到文件而不是 stdout |
+
+## 入口点
+
+`inspect` 命令支持与 [`fastmcp run`](/zh/cli/running) 相同的本地入口点：推断实例、显式入口点、工厂函数和 `fastmcp.json` 配置。
+
+```bash
+fastmcp inspect server.py                  # 推断实例
+fastmcp inspect server.py:my_server        # 显式入口点
+fastmcp inspect server.py:create_server    # 工厂函数
+fastmcp inspect fastmcp.json               # 配置文件
+```
+
+<Warning>
+`inspect` 只适用于本地文件和 `fastmcp.json`，不会连接到远程 URL 或标准 MCP 配置文件。
+</Warning>

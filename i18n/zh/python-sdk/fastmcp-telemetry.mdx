@@ -1,0 +1,89 @@
+---
+title: telemetry
+sidebarTitle: telemetry
+---
+
+# `fastmcp.telemetry`
+
+
+FastMCP 的 OpenTelemetry instrumentation。
+
+此模块为 FastMCP 服务端和客户端提供原生 OpenTelemetry 集成。它只使用 opentelemetry-api 包，因此除非用户安装 OpenTelemetry SDK 并配置 exporters，否则 telemetry 不会执行任何操作。
+
+使用 SDK 的示例：
+    ```python
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
+
+    # 配置 SDK（由用户负责）
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
+    trace.set_tracer_provider(provider)
+
+    # 现在 FastMCP 会发出 traces
+    from fastmcp import FastMCP
+    mcp = FastMCP("my-server")
+    ```
+
+
+## 函数
+
+### `get_tracer` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/telemetry.py#L38" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_tracer(version: str | None = None) -> Tracer
+```
+
+
+获取用于创建 spans 的 FastMCP tracer。
+
+**参数：**
+- `version`: instrumentation 的可选版本字符串
+
+**返回：**
+- tracer 实例。如果未配置 SDK，则返回 no-op tracer。
+
+
+### `inject_trace_context` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/telemetry.py#L50" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+inject_trace_context(meta: dict[str, Any] | None = None) -> dict[str, Any] | None
+```
+
+
+将当前 trace context 注入 meta dict，以便 MCP 请求传播。
+
+**参数：**
+- `meta`: 要与 trace context 合并的可选现有 meta dict
+
+**返回：**
+- 一个新 dict，包含原始 meta（如果有）以及 trace context key；如果没有要注入的 trace context 且 meta 为 None，则返回 None
+
+
+### `record_span_error` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/telemetry.py#L76" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+record_span_error(span: Span, exception: BaseException) -> None
+```
+
+
+在 span 上记录异常并设置错误状态。
+
+
+### `extract_trace_context` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/telemetry.py#L82" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+extract_trace_context(meta: dict[str, Any] | None) -> Context
+```
+
+
+从 MCP 请求 meta dict 中提取 trace context。
+
+如果已经处于有效 trace 中（例如来自 HTTP 传播），则保留现有 trace context，不使用 meta。
+
+**参数：**
+- `meta`: 来自 MCP 请求的 meta dict（ctx.request_context.meta）
+
+**返回：**
+- 包含提取出的 trace context 的 OpenTelemetry Context；如果未找到 trace context 或已处于 trace 中，则返回当前 context

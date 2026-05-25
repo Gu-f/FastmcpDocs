@@ -1,0 +1,53 @@
+---
+title: async_utils
+sidebarTitle: async_utils
+---
+
+# `fastmcp.utilities.async_utils`
+
+
+FastMCP 的异步实用工具。
+
+## 函数
+
+### `is_coroutine_function` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/async_utils.py#L14" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+is_coroutine_function(fn: Any) -> bool
+```
+
+
+检查可调用对象是否为协程函数，并展开 functools.partial。
+
+在 Python < 3.12 中，对于包装异步函数的 ``functools.partial`` 对象，``inspect.iscoroutinefunction`` 会返回 ``False``。此辅助函数会在检查前展开所有 ``partial`` 层。
+
+
+### `call_sync_fn_in_threadpool` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/async_utils.py#L26" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+call_sync_fn_in_threadpool(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any
+```
+
+
+在线程池中调用同步函数，以避免阻塞事件循环。
+
+使用 anyio.to_thread.run_sync，它会正确传播 contextvars，因此对于依赖上下文的函数（例如依赖注入）是安全的。
+
+
+### `gather` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/async_utils.py#L51" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+gather(*awaitables: Awaitable[T]) -> list[T] | list[T | BaseException]
+```
+
+
+并发运行 awaitable，并按顺序返回结果。
+
+使用 anyio TaskGroup 实现结构化并发。
+
+**参数：**
+- `*awaitables`: 要并发运行的 awaitable
+- `return_exceptions`: 如果为 True，异常会作为结果返回。如果为 False，第一个异常会取消所有任务并抛出。
+
+**返回：**
+- 与输入 awaitable 顺序相同的结果列表。

@@ -5,7 +5,7 @@ description: Protect your server by validating bearer tokens issued by external 
 icon: key
 ---
 
-import { VersionBadge } from "/snippets/version-badge.mdx"
+import { VersionBadge } from "/en/snippets/version-badge.mdx"
 
 <VersionBadge version="2.11.0" />
 
@@ -171,7 +171,25 @@ verifier = IntrospectionTokenVerifier(
 mcp = FastMCP(name="Protected API", auth=verifier)
 ```
 
-The verifier authenticates to the introspection endpoint using HTTP Basic Auth with your client credentials. When a request arrives with a bearer token, FastMCP queries the introspection endpoint to determine if the token is active and has sufficient scopes.
+The verifier authenticates to the introspection endpoint using client credentials and queries it whenever a bearer token arrives. FastMCP checks whether the token is active and has sufficient scopes before allowing access.
+
+Two standard client authentication methods are supported, both defined in RFC 6749:
+
+- **`client_secret_basic`** (default): Sends credentials via HTTP Basic Auth header
+- **`client_secret_post`**: Sends credentials in the POST request body
+
+Most OAuth providers support both methods, though some may require one specifically. Configure the authentication method with the `client_auth_method` parameter:
+
+```python
+# Use POST body authentication instead of Basic Auth
+verifier = IntrospectionTokenVerifier(
+    introspection_url="https://auth.yourcompany.com/oauth/introspect",
+    client_id="mcp-resource-server",
+    client_secret="your-client-secret",
+    client_auth_method="client_secret_post",
+    required_scopes=["api:read", "api:write"]
+)
+```
 
 ## Development and Testing
 
@@ -210,6 +228,69 @@ Static token verification stores tokens as plain text and should never be used i
 </Warning>
 
 
+### Debug/Custom Token Verification
+
+<VersionBadge version="2.13.1" />
+
+The `DebugTokenVerifier` provides maximum flexibility for testing and special cases where standard token verification isn't applicable. It delegates validation to a user-provided callable, making it useful for prototyping, testing scenarios, or handling opaque tokens without introspection endpoints.
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.debug import DebugTokenVerifier
+
+# Accept all tokens (useful for rapid development)
+verifier = DebugTokenVerifier()
+
+mcp = FastMCP(name="Development Server", auth=verifier)
+```
+
+By default, `DebugTokenVerifier` accepts any non-empty token as valid. This eliminates authentication barriers during early development, allowing you to focus on core functionality before adding security.
+
+For more controlled testing, provide custom validation logic:
+
+```python
+from fastmcp.server.auth.providers.debug import DebugTokenVerifier
+
+# Synchronous validation - check token prefix
+verifier = DebugTokenVerifier(
+    validate=lambda token: token.startswith("dev-"),
+    client_id="development-client",
+    scopes=["read", "write"]
+)
+
+mcp = FastMCP(name="Development Server", auth=verifier)
+```
+
+The validation callable can also be async, enabling database lookups or external service calls:
+
+```python
+from fastmcp.server.auth.providers.debug import DebugTokenVerifier
+
+# Asynchronous validation - check against cache
+async def validate_token(token: str) -> bool:
+    # Check if token exists in Redis, database, etc.
+    return await redis.exists(f"valid_tokens:{token}")
+
+verifier = DebugTokenVerifier(
+    validate=validate_token,
+    client_id="api-client",
+    scopes=["api:access"]
+)
+
+mcp = FastMCP(name="Custom API", auth=verifier)
+```
+
+**Use Cases:**
+
+- **Testing**: Accept any token during integration tests without setting up token infrastructure
+- **Prototyping**: Quickly validate concepts without authentication complexity
+- **Opaque tokens without introspection**: When you have tokens from an IDP that provides no introspection endpoint, and you're willing to accept tokens without validation (validation happens later at the upstream service)
+- **Custom token formats**: Implement validation for non-standard token formats or legacy systems
+
+<Warning>
+`DebugTokenVerifier` bypasses standard security checks. Only use in controlled environments (development, testing) or when you fully understand the security implications. For production, use proper JWT or introspection-based verification.
+</Warning>
+
 ### Test Token Generation
 
 Test token generation helps when you need to test JWT verification without setting up complete identity infrastructure. FastMCP includes utilities for generating test key pairs and signed tokens.
@@ -240,39 +321,106 @@ print(f"Test token: {test_token}")
 
 This pattern enables comprehensive testing of JWT validation logic without depending on external token issuers. The generated tokens are cryptographically valid and will pass all standard JWT validation checks.
 
-## Environment Configuration
+## HTTP Client Customization
 
-<VersionBadge version="2.12.1" />
+<VersionBadge version="2.18.0" />
 
-FastMCP supports both programmatic and environment-based configuration for token verification, enabling flexible deployment across different environments.
+All token verifiers that make HTTP calls accept an optional `http_client` parameter. This lets you provide your own `httpx.AsyncClient` for connection pooling, custom TLS configuration, or proxy settings.
 
-Environment-based configuration separates authentication settings from application code, following twelve-factor app principles and simplifying deployment pipelines.
+### Connection Pooling
 
-```bash
-# Enable JWT verification
-export FASTMCP_SERVER_AUTH=fastmcp.server.auth.providers.jwt.JWTVerifier
-
-# For asymmetric verification with JWKS endpoint:
-export FASTMCP_SERVER_AUTH_JWT_JWKS_URI="https://auth.company.com/.well-known/jwks.json"
-export FASTMCP_SERVER_AUTH_JWT_ISSUER="https://auth.company.com"
-export FASTMCP_SERVER_AUTH_JWT_AUDIENCE="mcp-production-api"
-export FASTMCP_SERVER_AUTH_JWT_REQUIRED_SCOPES="read:data,write:data"
-
-# OR for symmetric key verification (HMAC):
-export FASTMCP_SERVER_AUTH_JWT_PUBLIC_KEY="your-shared-secret-key-minimum-32-chars"
-export FASTMCP_SERVER_AUTH_JWT_ALGORITHM="HS256"  # or HS384, HS512
-export FASTMCP_SERVER_AUTH_JWT_ISSUER="internal-auth-service"
-export FASTMCP_SERVER_AUTH_JWT_AUDIENCE="mcp-internal-api"
-```
-
-With these environment variables configured, your FastMCP server automatically enables JWT verification:
+By default, each token verification call creates a fresh HTTP client. Under high load, this means repeated TCP connections and TLS handshakes. Providing a shared client enables connection pooling across calls:
 
 ```python
+import httpx
 from fastmcp import FastMCP
+from fastmcp.server.auth.providers.introspection import IntrospectionTokenVerifier
 
-# Authentication automatically configured from environment
-mcp = FastMCP(name="Production API")
+# Create a shared client with connection pooling
+http_client = httpx.AsyncClient(
+    timeout=10,
+    limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+)
+
+verifier = IntrospectionTokenVerifier(
+    introspection_url="https://auth.yourcompany.com/oauth/introspect",
+    client_id="mcp-resource-server",
+    client_secret="your-client-secret",
+    http_client=http_client,
+)
+
+mcp = FastMCP(name="Protected API", auth=verifier)
 ```
+
+The same pattern works for `JWTVerifier` when using JWKS endpoints:
+
+```python
+from fastmcp.server.auth.providers.jwt import JWTVerifier
+
+verifier = JWTVerifier(
+    jwks_uri="https://auth.yourcompany.com/.well-known/jwks.json",
+    issuer="https://auth.yourcompany.com",
+    http_client=http_client,
+)
+```
+
+<Warning>
+`JWTVerifier` does not support `http_client` when `ssrf_safe=True`. SSRF-safe mode requires a hardened transport that validates DNS resolution and connection targets, which cannot be guaranteed with a user-provided client. Attempting to use both will raise a `ValueError`.
+</Warning>
+
+<Note>
+When you provide an `http_client`, you are responsible for its lifecycle. The verifier will not close it. Use the server's `lifespan` to manage client cleanup:
+
+```python
+from contextlib import asynccontextmanager
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.introspection import IntrospectionTokenVerifier
+
+http_client = httpx.AsyncClient(timeout=10)
+
+verifier = IntrospectionTokenVerifier(
+    introspection_url="https://auth.example.com/introspect",
+    client_id="my-service",
+    client_secret="secret",
+    http_client=http_client,
+)
+
+@asynccontextmanager
+async def lifespan(app):
+    yield
+    await http_client.aclose()
+
+mcp = FastMCP(name="My API", auth=verifier, lifespan=lifespan)
+```
+</Note>
+
+The convenience providers (`GitHubProvider`, `GoogleProvider`, `DiscordProvider`, `WorkOSProvider`, `AzureProvider`) also accept `http_client` and pass it through to their internal token verifier.
+
+## Production Configuration
+
+For production deployments, load sensitive configuration from environment variables:
+
+```python
+import os
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.jwt import JWTVerifier
+
+# Load configuration from environment variables
+# Parse comma-separated scopes if provided
+scopes_env = os.environ.get("JWT_REQUIRED_SCOPES")
+required_scopes = scopes_env.split(",") if scopes_env else None
+
+verifier = JWTVerifier(
+    jwks_uri=os.environ.get("JWT_JWKS_URI"),
+    issuer=os.environ.get("JWT_ISSUER"),
+    audience=os.environ.get("JWT_AUDIENCE"),
+    required_scopes=required_scopes,
+)
+
+mcp = FastMCP(name="Production API", auth=verifier)
+```
+
+This keeps configuration out of your codebase while maintaining explicit setup.
 
 This approach enables the same codebase to run across development, staging, and production environments with different authentication requirements. Development might use static tokens while production uses JWT verification, all controlled through environment configuration.
 

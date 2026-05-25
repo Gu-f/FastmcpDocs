@@ -1,0 +1,22 @@
+---
+title: types
+sidebarTitle: types
+---
+
+# `fastmcp.types`
+
+
+FastMCP 工具参数的可复用类型注解。
+
+这些类型可用于工具函数签名，以影响参数在 UI（例如 ``fastmcp dev apps``）中的呈现方式，以及在 JSON Schema 中的序列化方式。
+
+示例::
+
+    from fastmcp import FastMCP
+    from fastmcp.types import Textarea
+
+    mcp = FastMCP("demo")
+
+    @mcp.tool()
+    def run_query(sql: Textarea) -> str:
+        ...

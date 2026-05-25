@@ -1,0 +1,142 @@
+---
+title: fastmcp-remote
+description: 使用 uvx fastmcp-remote 将远程 MCP 服务端桥接到仅支持 stdio 的 MCP host。
+icon: bridge
+---
+
+`fastmcp-remote` 是 FastMCP 面向远程 MCP 服务端的独立 stdio 桥接器。当 MCP host 期望启动本地命令，而你想使用的服务端托管在 Streamable HTTP 或 SSE 上时，可以使用它。
+
+```json
+{
+  "mcpServers": {
+    "linear": {
+      "command": "uvx",
+      "args": ["fastmcp-remote", "https://mcp.linear.app/mcp"]
+    }
+  }
+}
+```
+
+该包由 FastMCP 驱动。它会为远程 URL 构建一个 FastMCP 客户端，将该客户端暴露为本地 stdio 代理，并让可执行文件专注于这层桥接。若要运行 Python 服务端文件、本地项目环境、FastMCP 配置文件和开发重载循环，请使用 [`fastmcp run`](/zh/cli/running)。
+
+命令形式沿用了最初的 [`mcp-remote`](https://github.com/geelen/mcp-remote) npm 项目，该项目为 MCP host 建立了这种 stdio 到远程服务端的桥接模式。
+
+## 安装
+
+大多数 MCP host 可以直接通过 `uvx` 运行 `fastmcp-remote`，因此通常不需要自行安装：
+
+```bash
+uvx fastmcp-remote https://example.com/mcp
+```
+
+如果你的 host 要求命令已预先安装，请使用 Python 包管理器安装该包：
+
+```bash
+uv tool install fastmcp-remote
+```
+
+## Host 配置
+
+对于使用 `mcpServers` JSON 配置的 host，将 command 设为 `uvx`，并把 `fastmcp-remote` 加远程服务端 URL 作为参数传入：
+
+```json
+{
+  "mcpServers": {
+    "remote-api": {
+      "command": "uvx",
+      "args": ["fastmcp-remote", "https://example.com/mcp"]
+    }
+  }
+}
+```
+
+HTTPS 服务端会自动启用 OAuth。首次连接时，如果服务端要求认证，会打开基于浏览器的 OAuth 流程，然后将令牌保存在本地供后续运行使用。
+
+若要直接传入 bearer token 或其他自定义请求头，请以 `Name: Value` 形式提供 `--header`。请求头名称在第一个冒号处结束，因此值中可以包含额外的冒号。与其他 shell 参数一样，当值包含空格时需要给请求头加引号。默认情况下，`Authorization` 请求头会禁用 OAuth：
+
+```json
+{
+  "mcpServers": {
+    "private-api": {
+      "command": "uvx",
+      "args": [
+        "fastmcp-remote",
+        "https://example.com/mcp",
+        "--header",
+        "Authorization: Bearer <token>"
+      ]
+    }
+  }
+}
+```
+
+重复使用 `--header` 可以发送多个请求头：
+
+```bash
+uvx fastmcp-remote https://example.com/mcp \
+  --header "Authorization: Bearer <token>" \
+  --header "X-Workspace: production" \
+  --header "X-Client-Name: My MCP Host" \
+  --header "X-Callback-Url: https://example.com/oauth/callback"
+```
+
+Windows 上的一些 MCP host 难以保留命令参数中的空格。可以将带空格的值放入环境变量，并在请求头值中引用它：
+
+```json
+{
+  "mcpServers": {
+    "remote-api": {
+      "command": "uvx",
+      "args": [
+        "fastmcp-remote",
+        "https://example.com/mcp",
+        "--header",
+        "Authorization:${AUTH_HEADER}"
+      ],
+      "env": {
+        "AUTH_HEADER": "Bearer <token>"
+      }
+    }
+  }
+}
+```
+
+对于使用普通 HTTP 的本地开发服务端，如果服务端未启用认证，请禁用 OAuth：
+
+```bash
+uvx fastmcp-remote http://localhost:8000/mcp --auth none
+```
+
+## OAuth 存储
+
+OAuth token 默认存储在 `~/.fastmcp/remote` 下。设置 `FASTMCP_REMOTE_CONFIG_DIR` 可使用其他目录：
+
+```bash
+FASTMCP_REMOTE_CONFIG_DIR=~/.config/fastmcp-remote uvx fastmcp-remote https://example.com/mcp
+```
+
+使用 `--resource` 可以为特定远程服务端身份隔离令牌：
+
+```bash
+uvx fastmcp-remote https://example.com/mcp --resource example-prod
+```
+
+如果远程授权服务端要求固定的回调端口或主机名，请在 URL 后传入：
+
+```bash
+uvx fastmcp-remote https://example.com/mcp 3334 --host 127.0.0.1
+```
+
+## 选项
+
+| 选项 | 描述 |
+| ------ | ----------- |
+| `--transport` | 选择 `http` 或 `sse`。默认为 `http`。 |
+| `--header` | 为上游请求添加请求头，例如 `--header "Authorization: Bearer <token>"`。值可以包含冒号。值包含空格时请给请求头加引号。使用 `${VAR}` 可在值中展开环境变量。可重复使用以添加多个请求头。 |
+| `--auth` | 选择 `oauth` 或 `none`。默认使用 OAuth，除非提供了 `Authorization` 请求头。 |
+| `--resource` | 为具名远程资源隔离 OAuth token 存储。 |
+| `--host` | 设置 OAuth 回调主机名。默认为 `localhost`。 |
+| `--auth-timeout` | 设置等待 OAuth 回调的时长。默认为 300 秒。 |
+| `--ignore-tool` | 隐藏名称匹配 glob 模式的工具。可重复使用以指定多个模式。 |
+| `--debug` | 启用调试日志。 |
+| `--silent` | 抑制非关键日志。 |

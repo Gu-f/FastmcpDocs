@@ -1,61 +1,61 @@
 ---
 title: Gemini SDK 🤝 FastMCP
 sidebarTitle: Gemini SDK
-description: 将 FastMCP 服务器连接到 Google Gemini SDK 中
+description: 将 FastMCP 服务端连接到 Google Gemini SDK
 icon: message-code
 ---
 
-import { VersionBadge } from "/snippets/version-badge.mdx"
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
 
-Google 的 Gemini API 在其 Python 和 JavaScript SDK 中包含对 MCP 服务器的内置支持，允许您直接连接到 MCP 服务器，并与 Gemini 模型无缝使用它们的工具。
+Google 的 Gemini API 在其 Python 和 JavaScript SDK 中内置了对 MCP 服务端的支持，让你可以直接连接到 MCP 服务端，并与 Gemini 模型无缝使用其工具。
 
 ## Gemini Python SDK
 
 Google 的 [Gemini Python SDK](https://ai.google.dev/gemini-api/docs) 可以直接使用 FastMCP 客户端。
 
 <Note>
-Google 的 MCP 集成目前是实验性的，在 Python 和 JavaScript SDK 中可用。API 会在需要时自动调用 MCP 工具，并可以连接到本地和远程 MCP 服务器。
+Google 的 MCP 集成目前处于实验阶段，可在 Python 和 JavaScript SDK 中使用。该 API 会在需要时自动调用 MCP 工具，并且可以连接本地和远程 MCP 服务端。
 </Note>
 
 <Tip>
-目前，Gemini 的 MCP 支持仅访问 MCP 服务器的**工具**——它查询 `list_tools` 端点并将这些功能暴露给 AI。目前不支持其他 MCP 功能，如资源和提示。
+目前，Gemini 的 MCP 支持只能访问 MCP 服务端中的**工具**：它会查询 `list_tools` 端点，并将这些函数暴露给 AI。资源和提示词等其他 MCP 功能目前尚不支持。
 </Tip>
 
-### 创建服务器
+### 创建服务端
 
-首先，创建一个包含您要暴露的工具的 FastMCP 服务器。在此示例中，我们将创建一个带有掷骰子单一工具的服务器。
+首先，创建一个包含你想暴露工具的 FastMCP 服务端。在本示例中，我们会创建一个只有单个掷骰子工具的服务端。
 
 ```python server.py
 import random
 from fastmcp import FastMCP
 
-mcp = FastMCP(name="骰子投掷器")
+mcp = FastMCP(name="Dice Roller")
 
 @mcp.tool
 def roll_dice(n_dice: int) -> list[int]:
-    """掷 `n_dice` 个六面骰子并返回结果。"""
+    """掷 `n_dice` 个 6 面骰子并返回结果。"""
     return [random.randint(1, 6) for _ in range(n_dice)]
 
 if __name__ == "__main__":
     mcp.run()
 ```
 
-### 调用服务器
+### 调用服务端
 
 
-要将 Gemini API 与 MCP 一起使用，您需要安装 Google Generative AI SDK：
+要将 Gemini API 与 MCP 一起使用，你需要安装 Google Generative AI SDK：
 
 ```bash
 pip install google-genai
 ```
 
-您还需要通过 Google 进行身份验证。您可以通过设置 `GEMINI_API_KEY` 环境变量来完成此操作。有关更多信息，请查阅 Gemini SDK 文档。
+你还需要向 Google 进行身份认证。可以通过设置 `GEMINI_API_KEY` 环境变量来完成。更多信息请参阅 Gemini SDK 文档。
 
 ```bash
 export GEMINI_API_KEY="your-api-key"
 ```
 
-Gemini 的 SDK 直接与 MCP 客户端会话交互。要调用服务器，您需要实例化一个 FastMCP 客户端，进入其连接上下文，并将客户端会话传递给 Gemini SDK。
+Gemini SDK 会直接与 MCP 客户端会话交互。要调用服务端，你需要实例化 FastMCP 客户端，进入其连接上下文，并将客户端会话传给 Gemini SDK。
 
 ```python {5, 9, 15}
 from fastmcp import Client
@@ -69,10 +69,10 @@ async def main():
     async with mcp_client:
         response = await gemini_client.aio.models.generate_content(
             model="gemini-2.0-flash",
-            contents="投掷 3 个骰子！",
+            contents="Roll 3 dice!",
             config=genai.types.GenerateContentConfig(
                 temperature=0,
-                tools=[mcp_client.session],  # 传递 FastMCP 客户端会话
+                tools=[mcp_client.session],  # 传入 FastMCP 客户端会话
             ),
         )
         print(response.text)
@@ -81,17 +81,17 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-如果您运行此代码，您将看到类似以下的输出：
+运行这段代码后，你会看到类似输出：
 
 ```text
-好的，我投掷了 3 个骰子，得到了 5、4 和 1。
+好的，我掷了 3 个骰子，得到了 5、4 和 1。
 ```
 
-### 远程和身份验证服务器
+### 远程和已认证服务端
 
-在上面的示例中，我们使用 `stdio` 传输连接到本地服务器。由于我们使用的是 FastMCP 客户端，您还可以连接到任何本地或远程 MCP 服务器，使用 FastMCP 支持的任何[传输](/zh/clients/transports)或[身份验证](/zh/clients/auth)方法，只需更改客户端配置即可。
+在上面的示例中，我们使用 `stdio` 传输连接到了本地服务端。因为使用的是 FastMCP 客户端，所以只需更改客户端配置，你也可以使用 FastMCP 支持的任何[传输](/zh/clients/transports)或[认证](/zh/clients/auth)方法，连接到任意本地或远程 MCP 服务端。
 
-例如，要连接到远程的经过身份验证的服务器，您可以使用以下客户端：
+例如，要连接到远程且需要认证的服务端，可以使用以下客户端：
 
 ```python
 from fastmcp import Client
@@ -104,5 +104,4 @@ mcp_client = Client(
 ```
 
 其余代码保持不变。
-
 

@@ -1,0 +1,256 @@
+---
+title: 文件系统提供方
+sidebarTitle: 文件系统
+description: 从 Python 文件自动发现组件
+icon: folder-tree
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+`FileSystemProvider` 会扫描目录中的 Python 文件，并自动注册使用 `@tool`、`@resource` 或 `@prompt` 装饰的函数。这支持一种类似 Next.js 路由的基于文件的组织模式：你的项目结构就是组件注册表。
+
+## 为什么使用文件系统发现
+
+传统 FastMCP 服务端需要在文件之间进行协调。要么工具文件导入服务端来调用 `@server.tool()`，要么服务端文件导入所有工具模块。这两种方式都会产生一些开发者希望避免的耦合。
+
+`FileSystemProvider` 消除了这种协调。每个文件都是自包含的：它使用独立装饰器（`@tool`、`@resource`、`@prompt`），不需要访问服务端实例。提供方会在启动时发现这些文件，因此你可以添加新工具，而无需修改服务端文件。
+
+这是一种有些团队偏好的约定，并不一定适合所有项目。权衡如下：
+
+- **无需协调**：文件不导入服务端，服务端也不导入文件
+- **命名可预测**：函数名成为组件名（除非显式覆盖）
+- **开发模式**：可选地在每个请求上重新扫描文件，便于快速迭代
+
+## 快速开始
+
+创建一个指向组件目录的提供方，然后把它传给服务端。使用 `Path(__file__).parent` 可以让路径相对于服务端文件。
+
+```python
+from pathlib import Path
+
+from fastmcp import FastMCP
+from fastmcp.server.providers import FileSystemProvider
+
+mcp = FastMCP("MyServer", providers=[FileSystemProvider(Path(__file__).parent / "components")])
+```
+
+在 `components/` 目录中，创建包含装饰函数的 Python 文件。
+
+```python
+# components/tools/greet.py
+from fastmcp.tools import tool
+
+@tool
+def greet(name: str) -> str:
+    """按名称问候某人。"""
+    return f"Hello, {name}!"
+```
+
+服务端启动时，`FileSystemProvider` 会扫描该目录，导入所有 Python 文件，并注册其中发现的所有装饰函数。
+
+## 装饰器
+
+FastMCP 提供用于标记函数以便发现的独立装饰器：来自 `fastmcp.tools` 的 `@tool`、来自 `fastmcp.resources` 的 `@resource`，以及来自 `fastmcp.prompts` 的 `@prompt`。它们支持服务端绑定装饰器的完整语法，所有相同参数都以相同方式工作。
+
+### @tool
+
+将函数标记为工具。默认情况下，函数名会成为工具名。
+
+```python
+from fastmcp.tools import tool
+
+@tool
+def calculate_sum(a: float, b: float) -> float:
+    """将两个数字相加。"""
+    return a + b
+```
+
+使用可选参数自定义工具。
+
+```python
+from fastmcp.tools import tool
+
+@tool(
+    name="add-numbers",
+    description="Add two numbers together.",
+    tags={"math", "arithmetic"},
+)
+def add(a: float, b: float) -> float:
+    return a + b
+```
+
+该装饰器支持所有标准工具选项：`name`、`title`、`description`、`icons`、`tags`、`output_schema`、`annotations` 和 `meta`。
+
+### @resource
+
+将函数标记为资源。与 `@tool` 不同，`@resource` 装饰器需要一个 URI 参数。
+
+```python
+from fastmcp.resources import resource
+
+@resource("config://app")
+def get_app_config() -> str:
+    """获取应用配置。"""
+    return '{"version": "1.0"}'
+```
+
+带模板参数的 URI 会创建资源模板。提供方会根据 URI 是否包含 `{parameters}` 或函数是否有参数，自动判断应该注册静态资源还是模板。
+
+```python
+from fastmcp.resources import resource
+
+@resource("users://{user_id}/profile")
+def get_user_profile(user_id: str) -> str:
+    """按 ID 获取用户资料。"""
+    return f'{{"id": "{user_id}", "name": "User"}}'
+```
+
+该装饰器支持：`uri`（必需）、`name`、`title`、`description`、`icons`、`mime_type`、`tags`、`annotations` 和 `meta`。
+
+### @prompt
+
+将函数标记为提示词模板。
+
+```python test="skip"
+from fastmcp.prompts import prompt
+
+@prompt
+def code_review(code: str, language: str = "python") -> str:
+    """生成代码审查提示词。"""
+    return f"Please review this {language} code:\n\n```{language}\n{code}\n```"
+```
+
+```python
+from fastmcp.prompts import prompt
+
+@prompt(name="explain-concept", tags={"education"})
+def explain(topic: str) -> str:
+    """生成解释提示词。"""
+    return f"Explain {topic} using clear examples and analogies."
+```
+
+该装饰器支持：`name`、`title`、`description`、`icons`、`tags` 和 `meta`。
+
+## 目录结构
+
+目录结构只用于组织。提供方会递归扫描所有 `.py` 文件，无论它们位于哪个子目录。`tools/`、`resources/` 和 `prompts/` 等子目录只是可选约定，用来帮助组织代码。
+
+```
+components/
+├── tools/
+│   ├── greeting.py      # @tool 函数
+│   └── calculator.py    # @tool 函数
+├── resources/
+│   └── config.py        # @resource 函数
+└── prompts/
+    └── assistant.py     # @prompt 函数
+```
+
+你也可以把所有组件放在单个文件中，或按功能而不是按类型组织。
+
+```
+components/
+├── user_management.py   # 用户相关的 @tool、@resource、@prompt
+├── billing.py           # 账单相关的 @tool、@resource
+└── analytics.py         # 分析相关的 @tool
+```
+
+## 发现规则
+
+提供方扫描时遵循以下规则：
+
+| 规则 | 行为 |
+|------|----------|
+| 文件扩展名 | 只扫描 `.py` 文件 |
+| `__init__.py` | 跳过（用于包结构，不作为组件） |
+| `__pycache__` | 跳过 |
+| 私有函数 | 即使被装饰，以下划线 `_` 开头的函数也会被忽略 |
+| 无装饰器 | 不含 `@tool`、`@resource` 或 `@prompt` 的文件会静默跳过 |
+| 多个组件 | 单个文件可以包含任意数量的装饰函数 |
+
+### 包导入
+
+如果目录中包含 `__init__.py` 文件，提供方会按真正的 Python 包成员导入文件。这意味着相对导入可以在组件目录内正常工作。
+
+```python
+# components/__init__.py exists
+
+# components/tools/greeting.py
+from ..helpers import format_name  # 相对导入可用
+
+@tool
+def greet(name: str) -> str:
+    return f"Hello, {format_name(name)}!"
+```
+
+如果没有 `__init__.py`，文件会通过 `importlib.util.spec_from_file_location` 直接导入。
+
+## 重载模式
+
+开发期间，你可能希望组件文件的修改无需重启服务端即可生效。启用重载模式后，提供方会在每个请求上重新扫描目录。
+
+```python
+from pathlib import Path
+
+from fastmcp.server.providers import FileSystemProvider
+
+provider = FileSystemProvider(Path(__file__).parent / "components", reload=True)
+```
+
+设置 `reload=True` 后，提供方会：
+
+1. 在每个请求上重新发现所有 Python 文件
+2. 重新导入已经变化的模块
+3. 使用任何新增、修改或删除的组件更新组件注册表
+
+<Warning>
+重载模式会给每个请求增加开销。只应在开发期间使用，不要在生产中使用。
+</Warning>
+
+## 错误处理
+
+当某个文件导入失败（语法错误、缺少依赖等）时，提供方会记录警告并继续扫描其他文件。导入失败不会阻止服务端启动。
+
+```
+WARNING - Failed to import /path/to/broken.py: No module named 'missing_dep'
+```
+
+提供方会跟踪哪些文件失败过，并且只在文件修改时间变化时重新记录警告。这可以避免在重载模式下反复扫描坏文件时产生大量重复日志。
+
+## 示例项目
+
+仓库中的 `examples/filesystem-provider/` 提供了完整示例。该结构演示了推荐的组织方式。
+
+```
+examples/filesystem-provider/
+├── server.py                    # 服务端入口点
+└── components/
+    ├── tools/
+    │   ├── greeting.py          # greet、farewell 工具
+    │   └── calculator.py        # add、multiply 工具
+    ├── resources/
+    │   └── config.py            # 静态和模板化资源
+    └── prompts/
+        └── assistant.py         # code_review、explain 提示词
+```
+
+服务端入口点非常简洁。
+
+```python
+from pathlib import Path
+
+from fastmcp import FastMCP
+from fastmcp.server.providers import FileSystemProvider
+
+provider = FileSystemProvider(
+    root=Path(__file__).parent / "components",
+    reload=True,
+)
+
+mcp = FastMCP("FilesystemDemo", providers=[provider])
+```
+
+使用 `fastmcp run examples/filesystem-provider/server.py` 运行，或使用 `fastmcp inspect examples/filesystem-provider/server.py` 检查。

@@ -6,7 +6,7 @@ icon: database
 tag: 新功能
 ---
 
-import { VersionBadge } from "/snippets/version-badge.mdx"
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
 
 <VersionBadge version="2.13.0" />
 
@@ -192,11 +192,11 @@ auth = GitHubProvider(
 )
 ```
 
-两个参数都是生产所必需的。**将您的存储包装在 `FernetEncryptionWrapper` 中以加密静态的敏感 OAuth 令牌** - 没有它，令牌将以明文存储。有关完整的设置详情，请参阅 [OAuth 令牌安全](/zh/deployment/http#oauth-token-security) 和 [密钥和存储管理](/zh/servers/auth/oauth-proxy#key-and-storage-management)。
+两个参数都是生产所必需的。**将您的存储包装在 `FernetEncryptionWrapper` 中以加密静态的敏感 OAuth 令牌** - 没有它，令牌将以明文存储。有关完整的设置详情，请参阅 [OAuth 令牌安全](/zh/deployment/http#oauth-令牌安全性) 和 [密钥和存储管理](/zh/servers/auth/oauth-proxy#密钥和存储管理)。
 
 ### 响应缓存中间件
 
-[响应缓存中间件](/zh/servers/middleware#caching-middleware) 缓存工具调用、资源读取和提示请求。存储配置通过 `cache_storage` 参数传递：
+[响应缓存中间件](/zh/servers/middleware#缓存中间件) 缓存工具调用、资源读取和提示请求。存储配置通过 `cache_storage` 参数传递：
 
 ```python
 from fastmcp import FastMCP
@@ -266,6 +266,6 @@ oauth_provider = OAuthClientProvider(
 ## 更多资源
 
 - [py-key-value-aio GitHub](https://github.com/strawgate/py-key-value) - 完整库文档
-- [响应缓存中间件](/zh/servers/middleware#caching-middleware) - 使用存储进行缓存
-- [OAuth 令牌安全](/zh/deployment/http#oauth-token-security) - 生产 OAuth 配置
+- [响应缓存中间件](/zh/servers/middleware#缓存中间件) - 使用存储进行缓存
+- [OAuth 令牌安全](/zh/deployment/http#oauth-令牌安全性) - 生产 OAuth 配置
 - [HTTP 部署](/zh/deployment/http) - 完整部署指南

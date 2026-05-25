@@ -1,0 +1,165 @@
+---
+title: 从 MCP SDK 升级
+sidebarTitle: "从 MCP SDK"
+description: 从 MCP Python SDK 中的 FastMCP 升级到独立的 FastMCP 框架
+icon: up
+---
+
+如果你的服务端以 `from mcp.server.fastmcp import FastMCP` 开头，那么你使用的是 FastMCP 1.0，也就是 `mcp` 包 v1 随附的版本。升级到独立 FastMCP 框架很简单。**对大多数服务端来说，只需要改一行导入。**
+
+```python
+# 之前
+from mcp.server.fastmcp import FastMCP
+
+# 之后
+from fastmcp import FastMCP
+```
+
+就是这样。你的 `@mcp.tool`、`@mcp.resource` 和 `@mcp.prompt` 装饰器、`mcp.run()` 调用，以及其余服务端代码都可以原样工作。
+
+<Tip>
+**为什么要升级？** FastMCP 1.0 开创了 Pythonic 的 MCP 服务端体验，我们也很自豪它曾被打包进 `mcp` 包。独立的 FastMCP 项目如今已经成长为一个完整框架，可将 MCP 服务端从原型推进到生产，包含组合、中间件、代理服务端、认证等更多能力。升级后，你可以获得这些能力，以及持续更新和修复。
+</Tip>
+
+## 安装
+
+```bash
+pip install --upgrade fastmcp
+# 或
+uv add fastmcp
+```
+
+FastMCP 将 `mcp` 包作为依赖包含在内，因此你不会失去任何能力。更新导入，运行服务端；如果工具正常工作，就完成了。
+
+<Prompt description="将此提示词连同你的服务端代码复制到任意 LLM 中，以获得自动升级指导。">
+你正在将一个 MCP 服务端从 FastMCP 1.0（`mcp` 包 v1 随附）升级到独立 FastMCP 3.0。请分析给出的代码，找出所有需要修改的地方。完整升级指南位于 https://gofastmcp.com/getting-started/upgrading/from-mcp-sdk，完整 FastMCP 文档位于 https://gofastmcp.com，请获取这些内容作为完整上下文。
+
+步骤 1 — 导入（所有服务端都需要）：
+将 "from mcp.server.fastmcp import FastMCP" 改为 "from fastmcp import FastMCP"。
+
+步骤 2 — 构造函数关键字参数（仅当 FastMCP() 接收传输设置时）：
+FastMCP() 不再接受：host、port、log_level、debug、sse_path、streamable_http_path、json_response、stateless_http。
+修复方式：改为传给 run()。
+之前：`mcp = FastMCP("server", host="0.0.0.0", port=8080); mcp.run()`
+之后：`mcp = FastMCP("server"); mcp.run(transport="http", host="0.0.0.0", port=8080)`
+
+步骤 3 — 提示词（仅当直接使用 PromptMessage 或返回 dict 时）：
+mcp.types.PromptMessage 已由 fastmcp.prompts.Message 替代。
+之前：`PromptMessage(role="user", content=TextContent(type="text", text="Hello"))`
+之后：`Message("Hello")`，role 默认为 "user"，并接受普通字符串。
+另外：如果提示词返回 `{"role": "user", "content": "..."}` 这样的原始 dict，必须改为 Message 对象或普通字符串。MCP SDK 的 FastMCP 1.0 会静默地把 dict 强制转换成消息；独立 FastMCP 要求返回有类型的对象。
+
+步骤 4 — 其他 MCP 导入（仅当直接从 mcp.* 导入时）：
+直接从 `mcp` 包导入（例如 `import mcp.types`、`from mcp.server.stdio import stdio_server`）仍然可用，因为 FastMCP 将 `mcp` 作为依赖包含在内。不过，如果 FastMCP 提供了等价 API，优先使用 FastMCP 自己的 API：
+- 工具返回中的 mcp.types.TextContent → 直接返回普通 Python 值（str、int、dict 等）
+- mcp.types.ImageContent → fastmcp.utilities.types.Image
+- from mcp.server.stdio import stdio_server → 不需要，mcp.run() 会处理传输
+
+步骤 5 — 装饰器（仅当把被装饰函数当对象使用时）：
+@mcp.tool、@mcp.resource、@mcp.prompt 现在返回原始函数，而不是组件对象。访问被装饰结果上的 .name 或 .description 的代码需要更新。可以临时设置 FASTMCP_DECORATOR_MODE=object 来恢复 v1 行为（这个兼容设置本身也已弃用）。
+
+对发现的每个问题，请展示原始行，解释发生了什么变化，并给出修正后的代码。
+</Prompt>
+
+## 可能需要更新的地方
+
+大多数服务端只需要修改导入。快速浏览下面几节，看看是否有与你相关的情况。
+
+### 构造函数设置
+
+如果你曾把 `host` 或 `port` 等传输设置直接传给 `FastMCP()`，现在它们应放到 `run()` 上。这能让服务端定义与部署方式保持独立：
+
+```python
+# 之前
+mcp = FastMCP("my-server", host="0.0.0.0", port=8080)
+mcp.run()
+
+# 之后
+mcp = FastMCP("my-server")
+mcp.run(transport="http", host="0.0.0.0", port=8080)
+```
+
+如果传入旧的关键字参数，你会看到清晰的 `TypeError`，并附带迁移提示。
+
+### 提示词
+
+如果你的提示词函数返回 `mcp.types.PromptMessage` 对象，或返回带 `role`/`content` 键的原始 dict，需要升级到 FastMCP 的 `Message` 类。也可以直接返回普通字符串，它会自动包装为用户消息。MCP SDK 随附的 FastMCP 1.0 会静默地把 dict 强制转换为消息；独立 FastMCP 要求返回有类型的 `Message` 对象或字符串。
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP("prompts")
+
+@mcp.prompt
+def review(code: str) -> str:
+    """审查代码中的问题"""
+    return f"Please review this code:\n\n{code}"
+```
+
+对于多轮提示词：
+
+```python
+from fastmcp.prompts import Message
+
+@mcp.prompt
+def debug(error: str) -> list[Message]:
+    """启动一次调试会话"""
+    return [
+        Message(f"I'm seeing this error:\n\n{error}"),
+        Message("I'll help debug that. Can you share the relevant code?", role="assistant"),
+    ]
+```
+
+### 其他 `mcp.*` 导入
+
+如果你的服务端直接从 `mcp` 包导入，例如 `import mcp.types` 或 `from mcp.server.stdio import stdio_server`，这些仍然可用。FastMCP 将 `mcp` 作为依赖包含在内，所以不会破坏代码。
+
+当 FastMCP 为同一能力提供自己的 API 时，值得迁移过去：
+
+| mcp 包 | FastMCP 等价方式 |
+|---|---|
+| `mcp.types.TextContent(type="text", text=str(x))` | 直接从工具返回 `x` |
+| `mcp.types.ImageContent(...)` | `from fastmcp.utilities.types import Image` |
+| `mcp.types.PromptMessage(...)` | `from fastmcp.prompts import Message` |
+| `from mcp.server.stdio import stdio_server` | 不需要，`mcp.run()` 会处理传输 |
+
+对于没有 FastMCP 等价 API 的内容（例如你直接使用的特定协议类型），可以继续保留 `mcp.*` 导入。
+
+### 被装饰函数
+
+在 FastMCP 1.0 中，`@mcp.tool` 返回 `FunctionTool` 对象。现在装饰器会原样返回你的原始函数，因此被装饰函数仍然是普通函数，可用于测试、复用和组合：
+
+```python
+@mcp.tool
+def greet(name: str) -> str:
+    """问候某人"""
+    return f"Hello, {name}!"
+
+# 现在这可以正常工作：函数仍然是普通函数
+assert greet("World") == "Hello, World!"
+```
+
+如果你的代码会访问被装饰结果上的 `.name`、`.description` 或其他属性，就需要更新。这种情况并不常见，大多数服务端不会直接操作工具对象。如果你需要临时恢复旧行为，可以设置 `FASTMCP_DECORATOR_MODE=object`（该兼容设置本身已弃用，并会在未来版本中移除）。
+
+## 验证升级
+
+```bash
+# 安装
+pip install --upgrade fastmcp
+
+# 检查版本
+fastmcp version
+
+# 运行服务端
+python my_server.py
+```
+
+你也可以使用 FastMCP CLI 检查服务端已注册的组件：
+
+```bash
+fastmcp inspect my_server.py
+```
+
+## 展望
+
+MCP 生态正在快速演进。FastMCP 的职责之一，就是替你吸收这种复杂性；随着协议和工具链成长，我们会承担相应工作，让你的服务端代码不必频繁改动。

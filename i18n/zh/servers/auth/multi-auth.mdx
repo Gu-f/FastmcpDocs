@@ -1,0 +1,95 @@
+---
+title: 多个认证来源
+sidebarTitle: 多个认证来源
+description: 使用单个服务端接受来自多个认证来源的 token。
+icon: layer-group
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="3.1.0" />
+
+生产服务端通常需要接受来自多个认证来源的 token。交互式应用可能通过 OAuth 代理进行认证，而后端服务则直接发送机器到机器的 JWT token。`MultiAuth` 会将这些来源组合成单个 `auth` provider，因此无论有效 token 由哪里签发，都能被接受。
+
+## 理解 MultiAuth
+
+`MultiAuth` 会包装一个可选的 auth server（如 `OAuthProxy`），以及一个或多个 token verifier（如 `JWTVerifier`）。当带 bearer token 的请求到达时，`MultiAuth` 会按顺序尝试每个来源，并接受第一个成功验证的结果。
+
+如果提供了 auth server，它会首先被尝试。它拥有所有 OAuth 路由和元数据；verifiers 只贡献 token 验证逻辑。这让 MCP discovery 表面保持清晰：一套路由、一套元数据、多条验证路径。
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.auth import MultiAuth, OAuthProxy
+from fastmcp.server.auth.providers.jwt import JWTVerifier
+
+auth = MultiAuth(
+    server=OAuthProxy(
+        issuer_url="https://login.example.com/...",
+        client_id="my-app",
+        client_secret="secret",
+        base_url="https://my-server.com",
+    ),
+    verifiers=[
+        JWTVerifier(
+            jwks_uri="https://internal-issuer.example.com/.well-known/jwks.json",
+            issuer="https://internal-issuer.example.com",
+            audience="my-mcp-server",
+        ),
+    ],
+)
+
+mcp = FastMCP("My Server", auth=auth)
+```
+
+交互式 MCP 客户端照常通过 OAuth 代理认证。后端服务则完全跳过 OAuth，并发送由内部 issuer 签名的 JWT。两条路径都会被验证，最先匹配者获胜。
+
+## 验证顺序
+
+`MultiAuth` 会按确定性顺序检查来源：
+
+1. **Server**（如果提供）— 完整 auth provider 的 `verify_token` 会首先运行
+2. **Verifiers** — 每个 `TokenVerifier` 会按列表顺序尝试
+
+第一个返回有效 `AccessToken` 的来源获胜。如果每个来源都返回 `None`，请求会收到 401 响应。
+
+这个顺序意味着 server 充当“主要”认证路径，而 verifiers 则作为 server 不识别 token 时的后备路径。
+
+## 仅使用 Verifiers
+
+你并不总是需要完整的 OAuth server。如果服务端只需要接受来自多个 issuers 的 token，可以只传入 verifiers，不传入 server：
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.auth import MultiAuth
+from fastmcp.server.auth.providers.jwt import JWTVerifier, StaticTokenVerifier
+
+auth = MultiAuth(
+    verifiers=[
+        JWTVerifier(
+            jwks_uri="https://issuer-a.example.com/.well-known/jwks.json",
+            issuer="https://issuer-a.example.com",
+            audience="my-server",
+        ),
+        JWTVerifier(
+            jwks_uri="https://issuer-b.example.com/.well-known/jwks.json",
+            issuer="https://issuer-b.example.com",
+            audience="my-server",
+        ),
+    ],
+)
+
+mcp = FastMCP("Multi-Issuer Server", auth=auth)
+```
+
+没有 server 时，不会提供 OAuth 路由或元数据。这适合内部系统，因为客户端已经知道如何获取 token。
+
+## API 参考
+
+### MultiAuth
+
+| 参数 | 类型 | 描述 |
+| --- | --- | --- |
+| `server` | `AuthProvider \| None` | 可选 auth provider，拥有路由和 OAuth 元数据。也会首先用于 token 验证。 |
+| `verifiers` | `list[TokenVerifier] \| TokenVerifier` | 一个或多个 token verifier，会在 server 之后尝试。 |
+| `base_url` | `str \| None` | 覆盖 base URL。默认为 server 的 `base_url`。 |
+| `required_scopes` | `list[str] \| None` | 覆盖 required scopes。默认为 server 的 scopes。 |

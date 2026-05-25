@@ -1,0 +1,64 @@
+---
+title: pagination
+sidebarTitle: pagination
+---
+
+# `fastmcp.utilities.pagination`
+
+
+MCP 列表操作的分页实用工具。
+
+## 函数
+
+### `paginate_sequence` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/pagination.py#L50" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+paginate_sequence(items: Sequence[T], cursor: str | None, page_size: int) -> tuple[list[T], str | None]
+```
+
+
+对条目序列进行分页。
+
+**参数：**
+- `items`: 要分页的完整序列。
+- `cursor`: 来自上一次请求的可选游标。第一页使用 None。
+- `page_size`: 每页最大条目数。
+
+**返回：**
+- (page_items, next_cursor) 元组。如果没有更多页面，next_cursor 为 None。
+
+**抛出：**
+- `ValueError`: 如果游标无效。
+
+
+## 类
+
+### `CursorState` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/pagination.py#L16" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+分页游标状态的内部表示。
+
+游标会编码结果集中的偏移量。按照 MCP 规范，这对客户端是不透明的；客户端不应解析或修改游标。
+
+
+**方法：**
+
+#### `encode` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/pagination.py#L25" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+encode(self) -> str
+```
+
+将游标状态编码为不透明字符串。
+
+
+#### `decode` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/pagination.py#L31" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+decode(cls, cursor: str) -> CursorState
+```
+
+从不透明字符串解码游标。
+
+**抛出：**
+- `ValueError`: 如果游标无效或格式错误。

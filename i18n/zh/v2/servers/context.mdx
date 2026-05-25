@@ -1,0 +1,458 @@
+---
+title: MCP 上下文
+sidebarTitle: 上下文
+description: 在您的 MCP 对象中访问 MCP 功能，如日志记录、进度和资源。
+icon: rectangle-code
+---
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+在定义 FastMCP [工具](/zh/v2/servers/tools)、[资源](/zh/v2/servers/resources)、资源模板或[提示](/zh/v2/servers/prompts)时，您的函数可能需要与底层 MCP 会话交互或访问高级服务器功能。FastMCP 为此目的提供了 `Context` 对象。
+
+## 什么是 Context？
+
+`Context` 对象提供了一个干净的接口，用于在您的函数中访问 MCP 功能，包括：
+
+- **日志记录**：向客户端发送调试、信息、警告和错误消息
+- **进度报告**：向客户端更新长时间运行操作的进度
+- **资源访问**：列出并从服务器注册的资源中读取数据
+- **提示访问**：列出并检索服务器注册的提示
+- **LLM 采样**：请求客户端的 LLM 基于提供的消息生成文本
+- **用户征询**：在工具执行期间从用户请求结构化输入
+- **状态管理**：在单个请求中的中间件和处理程序之间存储和共享数据
+- **请求信息**：访问当前请求的元数据
+- **服务器访问**：需要时，访问底层 FastMCP 服务器实例
+
+## 访问上下文
+
+### 通过依赖注入
+
+要在任何函数中使用上下文对象，只需在函数签名中添加一个参数并将其类型提示为 `Context`。FastMCP 将在调用函数时自动注入上下文实例。
+
+**要点：**
+
+- 参数名称（例如，`ctx`、`context`）不重要，只有类型提示 `Context` 很重要。
+- 上下文参数可以放在函数签名的任何位置；它不会作为有效参数暴露给 MCP 客户端。
+- 上下文是可选的 - 不需要它的函数可以完全省略该参数。
+- 上下文方法是异步的，因此您的函数通常也需要是异步的。
+- 类型提示可以是联合类型（`Context | None`）或使用 `Annotated[]`，它仍然可以正常工作。
+- **每个 MCP 请求都会收到一个新的上下文对象。** 上下文范围限定为单个请求；在一个请求中设置的状态或数据在后续请求中将不可用。
+- 上下文仅在请求期间可用；在请求之外尝试使用上下文方法将引发错误。如果您需要在请求之外调试或调用上下文方法，可以将变量类型设置为 `Context | None=None` 以避免缺少参数的错误。
+
+#### 工具
+
+```python {1, 6}
+from fastmcp import FastMCP, Context
+
+mcp = FastMCP(name="Context Demo")
+
+@mcp.tool
+async def process_file(file_uri: str, ctx: Context) -> str:
+    """处理文件，使用上下文进行日志记录和资源访问。"""
+    # 上下文可作为 ctx 参数使用
+    return "Processed file"
+```
+
+#### 资源和模板
+
+<VersionBadge version="2.2.5" />
+
+```python {1, 6, 12}
+from fastmcp import FastMCP, Context
+
+mcp = FastMCP(name="Context Demo")
+
+@mcp.resource("resource://user-data")
+async def get_user_data(ctx: Context) -> dict:
+    """基于请求上下文获取个性化用户数据。"""
+    # 上下文可作为 ctx 参数使用
+    return {"user_id": "example"}
+
+@mcp.resource("resource://users/{user_id}/profile")
+async def get_user_profile(user_id: str, ctx: Context) -> dict:
+    """使用上下文感知日志记录获取用户配置文件。"""
+    # 上下文可作为 ctx 参数使用
+    return {"id": user_id}
+```
+
+#### 提示
+
+<VersionBadge version="2.2.5" />
+
+```python {1, 6}
+from fastmcp import FastMCP, Context
+
+mcp = FastMCP(name="Context Demo")
+
+@mcp.prompt
+async def data_analysis_request(dataset: str, ctx: Context) -> str:
+    """生成带有上下文信息的数据分析请求。"""
+    # 上下文可作为 ctx 参数使用
+    return f"Please analyze the following dataset: {dataset}"
+```
+
+
+### 通过运行时依赖函数
+
+<VersionBadge version="2.2.11" />
+
+虽然访问上下文的最简单方法是通过如上所示的函数参数注入，但在某些情况下，您需要在可能不容易通过修改来实现接受上下文参数的代码中访问上下文，或者在函数调用的更深层嵌套中访问上下文。
+
+FastMCP 提供了依赖函数，允许您从服务器请求执行流程中的任何位置检索活动上下文：
+
+```python {2,9}
+from fastmcp import FastMCP
+from fastmcp.server.dependencies import get_context
+
+mcp = FastMCP(name="Dependency Demo")
+
+# 需要上下文但不作为参数接收的实用函数
+async def process_data(data: list[float]) -> dict:
+    # 获取活动上下文 - 仅在请求内调用时有效
+    ctx = get_context()    
+    await ctx.info(f"Processing {len(data)} data points")
+    
+@mcp.tool
+async def analyze_dataset(dataset_name: str) -> dict:
+    # 调用内部使用上下文的实用函数
+    data = load_data(dataset_name)
+    await process_data(data)
+```
+
+**重要说明：**
+
+- `get_context` 函数应该仅在服务器请求的上下文中使用。在请求之外调用它将引发 `RuntimeError`。
+- `get_context` 函数仅用于服务器，不应在客户端代码中使用。
+
+## 上下文功能
+
+FastMCP 通过上下文对象提供了几种高级功能。每种功能都有专门的文档，包含详细的示例和最佳实践：
+
+### 日志记录
+
+将调试、信息、警告和错误消息发送回 MCP 客户端，以便了解函数执行情况。
+
+```python
+await ctx.debug("开始分析")
+await ctx.info(f"处理 {len(data)} 项内容")
+await ctx.warning("使用了弃用的参数")
+await ctx.error("处理失败")
+```
+
+有关完整文档和示例，请参阅[服务器日志记录](/zh/v2/servers/logging)。
+### 客户端征询
+
+<VersionBadge version="2.10.0" />
+
+在工具执行期间从客户端请求结构化输入，实现交互式工作流程和渐进式公开。这是 2025 年 6 月 18 日 MCP 规范中的新功能。
+
+```python
+result = await ctx.elicit("Enter your name:", response_type=str)
+if result.action == "accept":
+    name = result.data
+```
+
+有关详细示例和支持的响应类型，请参阅[用户征询](/zh/v2/servers/elicitation)。
+
+### LLM 采样
+
+<VersionBadge version="2.0.0" />
+
+请求客户端的 LLM 基于提供的消息生成文本，用于在工具中利用 AI 功能。
+
+```python
+response = await ctx.sample("Analyze this data", temperature=0.7)
+```
+
+有关全面的用法和高级技术，请参阅[LLM 采样](/zh/v2/servers/sampling)。
+
+
+### 进度报告
+
+向客户端更新长时间运行操作的进度，启用进度指示器并提供更好的用户体验。
+
+```python
+await ctx.report_progress(progress=50, total=100)  # 50% 完成
+```
+
+有关详细模式和示例，请参阅[进度报告](/zh/v2/servers/progress)。
+
+### 资源访问
+
+列出并从在 FastMCP 服务器中注册的资源读取数据，允许访问文件、配置或动态内容。
+
+```python
+# 列出可用资源
+resources = await ctx.list_resources()
+
+# 读取特定资源
+content_list = await ctx.read_resource("resource://config")
+content = content_list[0].content
+```
+
+**方法签名：**
+- **`ctx.list_resources() -> list[MCPResource]`**：<VersionBadge version="2.13.0" /> 返回所有可用资源的列表
+- **`ctx.read_resource(uri: str | AnyUrl) -> list[ReadResourceContents]`**：返回资源内容部分的列表
+
+### 提示访问
+
+<VersionBadge version="2.13.0" />
+
+列出并检索在 FastMCP 服务器中注册的提示，允许工具和中间件以编程方式发现和使用可用的提示。
+
+```python
+# 列出可用提示
+prompts = await ctx.list_prompts()
+
+# 使用参数获取特定提示
+result = await ctx.get_prompt("analyze_data", {"dataset": "users"})
+messages = result.messages
+```
+
+**方法签名：**
+- **`ctx.list_prompts() -> list[MCPPrompt]`**：返回所有可用提示的列表
+- **`ctx.get_prompt(name: str, arguments: dict[str, Any] | None = None) -> GetPromptResult`**：使用可选参数获取特定提示
+
+### 状态管理
+
+<VersionBadge version="2.11.0" />
+
+在请求中的中间件和工具调用之间存储和共享数据。上下文对象维护一个状态字典，特别适用于从[中间件](/zh/v2/servers/middleware)向工具传递信息。
+
+要在上下文状态中存储值，请使用 `ctx.set_state(key, value)`。要检索值，请使用 `ctx.get_state(key)`。
+
+<Warning>
+上下文状态的作用域限定在单个 MCP 请求内。每个操作（工具调用、资源读取、列表操作等）都会收到一个新的上下文对象。在一个请求中设置的状态在后续请求中将不可用。对于跨请求的持久数据存储，请使用外部存储机制，如数据库、文件或内存缓存。
+</Warning>
+
+这个简化示例展示了如何使用 MCP 中间件在上下文状态中存储用户信息，以及如何在工具中访问该状态：
+
+```python {7-8, 16-17}
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+
+class UserAuthMiddleware(Middleware):
+    async def on_call_tool(self, context: MiddlewareContext, call_next):
+
+        # 中间件在上下文状态中存储用户信息
+        context.fastmcp_context.set_state("user_id", "user_123")
+        context.fastmcp_context.set_state("permissions", ["read", "write"])
+
+        return await call_next(context)
+
+@mcp.tool
+async def secure_operation(data: str, ctx: Context) -> str:
+    """工具可以访问中间件设置的状态。"""
+
+    user_id = ctx.get_state("user_id")  # "user_123"
+    permissions = ctx.get_state("permissions")  # ["read", "write"]
+    
+    if "write" not in permissions:
+        return "Access denied"
+    
+    return f"Processing {data} for user {user_id}"
+```
+
+**方法签名：**
+- **`ctx.set_state(key: str, value: Any) -> None`**：在上下文状态中存储值
+- **`ctx.get_state(key: str) -> Any`**：从上下文状态中检索值（如果未找到则返回 None）
+
+**状态继承：**
+当创建新上下文（嵌套上下文）时，它会继承其父级状态的副本。这确保了：
+- 在子上下文上设置的状态永远不会影响父上下文
+- 在子上下文初始化后在父上下文上设置的状态不会传播到子上下文
+
+这使状态管理变得可预测，并防止嵌套操作之间的意外副作用。
+
+### 变更通知
+
+<VersionBadge version="2.9.1" />
+
+FastMCP 在添加、删除、启用或禁用组件（如工具、资源或提示）时会自动发送列表变更通知。在需要手动触发这些通知的罕见情况下，您可以使用上下文方法：
+
+```python
+@mcp.tool
+async def custom_tool_management(ctx: Context) -> str:
+    """自定义工具更改后手动通知的示例。"""
+    # 对工具进行自定义更改后
+    await ctx.send_tool_list_changed()
+    await ctx.send_resource_list_changed()
+    await ctx.send_prompt_list_changed()
+    return "Notifications sent"
+```
+
+这些方法主要由 FastMCP 的自动通知系统内部使用，大多数用户不需要直接调用它们。
+
+### FastMCP 服务器
+
+要访问底层 FastMCP 服务器实例，您可以使用 `ctx.fastmcp` 属性：
+
+```python
+@mcp.tool
+async def my_tool(ctx: Context) -> None:
+    # 访问 FastMCP 服务器实例
+    server_name = ctx.fastmcp.name
+    ...
+```
+
+### MCP 请求
+
+访问当前请求和客户端的元数据。
+
+```python
+@mcp.tool
+async def request_info(ctx: Context) -> dict:
+    """返回当前请求的信息。"""
+    return {
+        "request_id": ctx.request_id,
+        "client_id": ctx.client_id or "Unknown client"
+    }
+```
+
+**可用属性：**
+
+- **`ctx.request_id -> str`**：获取当前 MCP 请求的唯一 ID
+- **`ctx.client_id -> str | None`**：获取发起请求的客户端 ID（如果在初始化期间提供）
+- **`ctx.session_id -> str | None`**：获取用于基于会话的数据共享的 MCP 会话 ID（仅限 HTTP 传输）
+
+<Warning>
+MCP 请求是低级 MCP SDK 的一部分，用于高级用例。大多数用户不需要直接使用它。
+</Warning>
+
+## 运行时依赖
+
+### HTTP 请求
+
+<VersionBadge version="2.2.11" />
+
+访问当前 HTTP 请求的推荐方式是通过 `get_http_request()` 依赖函数：
+
+```python {2, 3, 11}
+from fastmcp import FastMCP
+from fastmcp.server.dependencies import get_http_request
+from starlette.requests import Request
+
+mcp = FastMCP(name="HTTP Request Demo")
+
+@mcp.tool
+async def user_agent_info() -> dict:
+    """返回用户代理信息。"""
+    # 获取 HTTP 请求
+    request: Request = get_http_request()
+    
+    # 访问请求数据
+    user_agent = request.headers.get("user-agent", "Unknown")
+    client_ip = request.client.host if request.client else "Unknown"
+    
+    return {
+        "user_agent": user_agent,
+        "client_ip": client_ip,
+        "path": request.url.path,
+    }
+```
+
+这种方法在请求执行流程中的任何位置都有效，不仅仅是在您的 MCP 函数中。在以下情况下很有用：
+
+1. 您需要在辅助函数中访问 HTTP 信息
+2. 您正在调用需要 HTTP 请求数据的嵌套函数
+3. 您正在使用中间件或其他请求处理代码
+
+### HTTP 头
+<VersionBadge version="2.2.11" />
+
+如果您只需要请求头并希望避免潜在错误，可以使用 `get_http_headers()` 辅助函数：
+
+```python {2, 10}
+from fastmcp import FastMCP
+from fastmcp.server.dependencies import get_http_headers
+
+mcp = FastMCP(name="Headers Demo")
+
+@mcp.tool
+async def safe_header_info() -> dict:
+    """安全地获取标头信息而不引发错误。"""
+    # 获取标头（如果没有请求上下文则返回空字典）
+    headers = get_http_headers()
+    
+    # 获取授权标头
+    auth_header = headers.get("authorization", "")
+    is_bearer = auth_header.startswith("Bearer ")
+    
+    return {
+        "user_agent": headers.get("user-agent", "Unknown"),
+        "content_type": headers.get("content-type", "Unknown"),
+        "has_auth": bool(auth_header),
+        "auth_type": "Bearer" if is_bearer else "Other" if auth_header else "None",
+        "headers_count": len(headers)
+    }
+```
+
+默认情况下，`get_http_headers()` 排除诸如 `host` 和 `content-length` 等有问题的标头。要包含所有标头，请使用 `get_http_headers(include_all=True)`。
+
+### 访问令牌
+
+<VersionBadge version="2.11.0" />
+
+在 FastMCP 服务器中使用身份验证时，您可以使用 `get_access_token()` 依赖函数访问已认证用户的访问令牌信息：
+
+```python {2, 10}
+from fastmcp import FastMCP
+from fastmcp.server.dependencies import get_access_token, AccessToken
+
+mcp = FastMCP(name="Auth Token Demo")
+
+@mcp.tool
+async def get_user_info() -> dict:
+    """获取已认证用户的信息。"""
+    # 获取访问令牌（如果未认证则为 None）
+    token: AccessToken | None = get_access_token()
+    
+    if token is None:
+        return {"authenticated": False}
+    
+    return {
+        "authenticated": True,
+        "client_id": token.client_id,
+        "scopes": token.scopes,
+        "expires_at": token.expires_at,
+        "token_claims": token.claims,  # JWT 声明或自定义令牌数据
+    }
+```
+
+这在以下情况下特别有用：
+
+1. **访问用户标识** - 从令牌声明中获取 `client_id` 或请求主体信息
+2. **检查权限** - 在执行操作之前验证范围或自定义声明
+3. **多租户应用程序** - 从令牌声明中提取租户信息
+4. **审计日志** - 跟踪哪个用户执行了哪些操作
+
+#### 使用令牌声明
+
+`claims` 字段包含来自原始令牌的所有数据（JWT 令牌的 JWT 声明，或其他令牌类型的自定义数据）：
+
+```python {2, 3, 9, 12, 15}
+from fastmcp import FastMCP
+from fastmcp.server.dependencies import get_access_token
+
+mcp = FastMCP(name="Multi-tenant Demo")
+
+@mcp.tool
+async def get_tenant_data(resource_id: str) -> dict:
+    """使用令牌声明获取特定租户的数据。"""
+    token: AccessToken | None = get_access_token()
+    
+    # 从令牌声明中提取租户 ID
+    tenant_id = token.claims.get("tenant_id") if token else None
+    
+    # 从标准 JWT 主题声明中提取用户 ID
+    user_id = token.claims.get("sub") if token else None
+    
+    # 使用租户和用户信息授权并过滤数据
+    if not tenant_id:
+        raise ValueError("No tenant information in token")
+    
+    return {
+        "resource_id": resource_id,
+        "tenant_id": tenant_id,
+        "user_id": user_id,
+        "data": f"Tenant-specific data for {tenant_id}",
+    }
+```

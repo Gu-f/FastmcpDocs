@@ -1,0 +1,134 @@
+---
+title: 生成式 UI
+sidebarTitle: 生成式 UI
+description: 让 LLM 即时构建自定义 Prefab UI。
+icon: wand-magic-sparkles
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.2.0" />
+
+<video src="/apps/images/generative-ui.mp4" autoPlay loop muted playsInline style={{width:"100%", borderRadius:"8px", marginBottom:"1rem"}} />
+
+使用生成式 UI 时，LLM 会在运行时编写 UI 代码。模型不再调用形状固定的预构建工具，而是根据当前数据和请求编写定制的 Prefab Python。用户可以看到 UI 随着模型生成过程逐步流式出现。
+
+```python
+from fastmcp import FastMCP
+from fastmcp.apps.generative import GenerativeUI
+
+mcp = FastMCP("Prefab Studio")
+mcp.add_provider(GenerativeUI())
+```
+
+一个 provider 会注册三样东西：
+
+- **`generate_prefab_ui`**：一个接收 Python 代码、在 Pyodide 沙盒中执行并将结果渲染为 Prefab 应用的工具
+- **`search_prefab_components`**：LLM 用来发现可用组件的工具
+- **流式渲染器**：一个带有浏览器端 Pyodide 的 `ui://` 资源，会随着 LLM 生成代码逐步渲染部分代码
+
+## 工作原理
+
+当 LLM 调用 `generate_prefab_ui` 时，它会把 Prefab Python 代码写入 `code` 参数。MCP Apps 协议会在工具调用的同时创建渲染器 iframe，因此当部分参数开始流入时，应用已经在运行。
+
+随着 LLM 生成每个 token：
+
+1. 宿主通过 `ontoolinputpartial` 将部分参数转发给应用
+2. 渲染器提取不断增长的 `code` 字符串
+3. 浏览器端 Pyodide 执行任何能够成功编译的内容
+4. 用户看到组件随着代码编写逐步出现
+
+当 LLM 完成后，服务端会在服务端侧 Pyodide 沙盒中运行完整代码进行校验，然后渲染器会用最终经过服务端校验的结果替换流式预览。
+
+## LLM 会写什么
+
+工具描述包含示例，用来教模型掌握 Prefab 模式。一次典型生成如下：
+
+```python
+from prefab_ui.components import Column, Row, Heading, Text, Badge, Card, CardContent
+from prefab_ui.components.charts import BarChart, ChartSeries
+from prefab_ui.app import PrefabApp
+
+with PrefabApp() as app:
+    with Column(gap=6, css_class="p-6"):
+        Heading("Q3 Revenue Report")
+
+        BarChart(
+            data=[
+                {"month": "Jul", "revenue": 42000},
+                {"month": "Aug", "revenue": 51000},
+                {"month": "Sep", "revenue": 63000},
+            ],
+            series=[ChartSeries(data_key="revenue", label="Revenue")],
+            x_axis="month",
+        )
+
+        with Row(gap=4):
+            with Card():
+                with CardContent():
+                    Text("Total", css_class="text-sm text-muted-foreground")
+                    Heading("$156,000")
+            with Card():
+                with CardContent():
+                    Text("Growth", css_class="text-sm text-muted-foreground")
+                    Badge("+18%", variant="success")
+```
+
+模型会编写真正的 Python，包括循环、f-string、计算和辅助函数。Prefab 为它提供图表、表格、表单、卡片、徽章和布局原语，用于组合界面。
+
+## 组件搜索工具
+
+在编写代码之前，LLM 可以调用 `search_prefab_components` 来发现可用内容：
+
+```
+search_prefab_components("Chart")
+→ 7 components matching 'Chart':
+  AreaChart — from prefab_ui.components.charts import AreaChart
+  BarChart — from prefab_ui.components.charts import BarChart
+  ...
+```
+
+传入 `detail=True` 会返回完整字段描述和文档字符串。搜索工具会在运行时内省 Prefab 类，因此始终与已安装版本保持同步。
+
+## 传递数据
+
+`generate_prefab_ui` 工具接受 `data` 参数。参数值会变成沙盒中的全局变量：
+
+```python
+# LLM 可以在代码中直接引用 'sales_data'
+result = await generate_prefab_ui(
+    code="...",
+    data={"sales_data": [{"month": "Jan", "revenue": 42000}, ...]}
+)
+```
+
+这让模型可以使用对话前文中的数据来构建可视化。
+
+## 配置
+
+`GenerativeUI` 接受用于自定义工具名称的选项：
+
+```python
+GenerativeUI(
+    tool_name="generate_prefab_ui",           # default
+    components_tool_name="search_prefab_components",  # default
+    include_components_tool=True,              # default
+)
+```
+
+## 要求
+
+生成式 UI 需要 `fastmcp[apps]`，它会引入 `prefab-ui`。服务端侧 Pyodide 沙盒（用于最终校验）需要 Deno，它会在首次使用时自动安装。
+
+流式渲染器会在浏览器中从 CDN 加载 Pyodide。CSP 会由 provider 自动配置，无需手动设置。
+
+## 沙盒限制
+
+Pyodide 沙盒包含 Python 标准库和 Prefab。外部包（NumPy、pandas、requests 等）**不可用**，因此 LLM 的代码必须只依赖内置 Python 和 Prefab。如果 LLM 导入不可用内容，沙盒会抛出 `ImportError`。
+
+## 接下来
+
+- **[交互式工具](/zh/apps/prefab)**：LLM 将使用的组件构建块
+- **[Prefab 组件参考](https://prefab.prefect.io/docs/components)**：完整组件库
+- **[开发](/zh/apps/development)**：使用 `fastmcp dev apps` 在本地预览生成式工具

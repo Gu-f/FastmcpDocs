@@ -1,0 +1,178 @@
+---
+title: Goose 🤝 FastMCP
+sidebarTitle: Goose
+description: 在 Goose 中安装并使用 FastMCP 服务端
+icon: message-smile
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+import { LocalFocusTip } from "/zh/snippets/local-focus.mdx"
+
+<LocalFocusTip />
+
+[Goose](https://block.github.io/goose/) 是 Block 推出的开源 AI agent，支持将 MCP 服务端作为扩展使用。FastMCP 可以通过 Goose 的 deeplink 协议将你的服务端直接安装到 Goose 中，一个命令就能打开 Goose 并显示可继续操作的安装对话框。
+
+## 要求
+
+此集成使用 Goose 的 deeplink 协议，将你的服务端注册为通过 `uvx` 运行的 STDIO 扩展。要让 deeplink 自动打开，系统中必须已安装 Goose。
+
+对于远程部署，请为 FastMCP 服务端配置 HTTP 传输，并使用 `goose configure` 或配置文件将其直接添加到 Goose。
+
+## 创建服务端
+
+本指南中的示例会使用下面这个简单的掷骰子服务端，并将其保存为 `server.py`。
+
+```python server.py
+import random
+from fastmcp import FastMCP
+
+mcp = FastMCP(name="Dice Roller")
+
+@mcp.tool
+def roll_dice(n_dice: int) -> list[int]:
+    """掷 `n_dice` 个六面骰子并返回结果。"""
+    return [random.randint(1, 6) for _ in range(n_dice)]
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+## 安装服务端
+
+### FastMCP CLI
+<VersionBadge version="3.0.0" />
+
+在 Goose 中安装 FastMCP 服务端最简单的方式是使用 `fastmcp install goose` 命令。它会生成一个 `goose://` deeplink 并打开它，提示 Goose 安装该服务端。
+
+```bash
+fastmcp install goose server.py
+```
+
+安装命令支持与 `run` 命令相同的 `file.py:object` 表示法。如果未指定对象，它会在文件中自动查找名为 `mcp`、`server` 或 `app` 的 FastMCP 服务端对象：
+
+```bash
+# 如果你的服务端对象名为 'mcp'，这两条命令等价
+fastmcp install goose server.py
+fastmcp install goose server.py:mcp
+
+# 如果服务端对象名称不同，请显式指定对象名
+fastmcp install goose server.py:my_custom_server
+```
+
+在底层，生成的命令会使用 `uvx` 在隔离环境中运行你的服务端。Goose 要求使用 `uvx` 而不是 `uv run`，因此安装会生成类似这样的命令：
+
+```bash
+uvx --with pandas fastmcp run /path/to/server.py
+```
+
+#### 依赖
+
+使用 `--with` 标志指定服务端需要的额外包：
+
+```bash
+fastmcp install goose server.py --with pandas --with requests
+```
+
+或者，你可以使用 `fastmcp.json` 配置文件（推荐）：
+
+```json fastmcp.json
+{
+  "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
+  "source": {
+    "path": "server.py",
+    "entrypoint": "mcp"
+  },
+  "environment": {
+    "dependencies": ["pandas", "requests"]
+  }
+}
+```
+
+#### Python 版本
+
+使用 `--python` 指定服务端应使用的 Python 版本：
+
+```bash
+fastmcp install goose server.py --python 3.11
+```
+
+<Note>
+Goose 安装使用 `uvx`，它不支持 `--project`、`--with-requirements` 或 `--with-editable`。如果你需要这些选项，请使用 `fastmcp install mcp-json` 生成完整配置，然后手动添加到 Goose。
+</Note>
+
+#### 环境变量
+
+Goose 的 deeplink 协议不支持环境变量。如果你的服务端需要环境变量（例如 API key），你有两个选择：
+
+1. **安装后配置**：运行 `goose configure`，并将环境变量添加到扩展中。
+2. **手动配置**：使用 `fastmcp install mcp-json` 生成完整配置，然后通过 `envs` 字段将其添加到 `~/.config/goose/config.yaml`。
+
+### 手动配置
+
+如需更多控制，可以手动编辑 Goose 位于 `~/.config/goose/config.yaml` 的配置文件：
+
+```yaml
+extensions:
+  dice-roller:
+    name: Dice Roller
+    cmd: uvx
+    args: [fastmcp, run, /path/to/server.py]
+    enabled: true
+    type: stdio
+    timeout: 300
+```
+
+#### 依赖
+
+手动配置时，请在 args 中使用 `--with` 标志添加包：
+
+```yaml
+extensions:
+  dice-roller:
+    name: Dice Roller
+    cmd: uvx
+    args: [--with, pandas, --with, requests, fastmcp, run, /path/to/server.py]
+    enabled: true
+    type: stdio
+    timeout: 300
+```
+
+#### 环境变量
+
+可以在 `envs` 字段中指定环境变量：
+
+```yaml
+extensions:
+  weather-server:
+    name: Weather Server
+    cmd: uvx
+    args: [fastmcp, run, /path/to/weather_server.py]
+    enabled: true
+    envs:
+      API_KEY: your-api-key
+      DEBUG: "true"
+    type: stdio
+    timeout: 300
+```
+
+你也可以使用 `goose configure` 以交互方式添加扩展，它会提示输入环境变量。
+
+<Warning>
+**必须安装 `uvx`（来自 `uv`），并确保它在系统 PATH 中可用**。Goose 使用 `uvx` 在隔离环境中运行基于 Python 的扩展。
+</Warning>
+
+## 使用服务端
+
+服务端安装完成后，你就可以在 Goose 中开始使用 FastMCP 服务端。
+
+试着向 Goose 提出类似下面的问题：
+
+> "Roll some dice for me"
+
+Goose 会自动检测你的 `roll_dice` 工具，并使用它完成请求，返回类似下面的结果：
+
+> 🎲 Here are your dice rolls: 4, 6, 4
+>
+> You rolled 3 dice with a total of 14!
+
+Goose 现在可以访问你在 FastMCP 服务端中定义的所有工具、资源和提示词。

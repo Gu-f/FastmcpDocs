@@ -1,0 +1,142 @@
+---
+title: code_mode
+sidebarTitle: code_mode
+---
+
+# `fastmcp.experimental.transforms.code_mode`
+
+## Classes
+
+### `SandboxProvider` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L77" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Interface for executing LLM-generated Python code in a sandbox.
+
+WARNING: The ``code`` parameter passed to ``run`` contains untrusted,
+LLM-generated Python.  Implementations MUST execute it in an isolated
+sandbox — never with plain ``exec()``.  Use ``MontySandboxProvider``
+(backed by ``pydantic-monty``) for production workloads.
+
+
+**Methods:**
+
+#### `run` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L86" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+run(self, code: str) -> Any
+```
+
+### `MontySandboxProvider` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L114" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Sandbox provider backed by `pydantic-monty`.
+
+**Args:**
+- `limits`: Resource limits for sandbox execution. Supported keys\:
+``max_duration_secs`` (float), ``max_allocations`` (int),
+``max_memory`` (int), ``max_recursion_depth`` (int),
+``gc_interval`` (int).  All are optional; omit a key to
+leave that limit uncapped.
+
+When the argument is omitted entirely, a conservative baseline
+is applied (``max_duration_secs=30``, ``max_memory=100 MB``) so
+the out-of-box configuration is not unbounded. Pass
+``limits=None`` to explicitly run without any limits, or a dict
+to set your own.
+
+
+**Methods:**
+
+#### `run` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L143" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+run(self, code: str) -> Any
+```
+
+### `Search` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L238" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Discovery tool factory that searches the catalog by query.
+
+**Args:**
+- `search_fn`: Async callable ``(tools, query) -> matching_tools``.
+Defaults to BM25 ranking.
+- `name`: Name of the synthetic tool exposed to the LLM.
+- `default_detail`: Default detail level for search results.
+``"brief"`` returns tool names and descriptions only.
+``"detailed"`` returns compact markdown with parameter schemas.
+``"full"`` returns complete JSON tool definitions.
+- `default_limit`: Maximum number of results to return.
+The LLM can override this per call.  ``None`` means no limit.
+
+
+### `GetSchemas` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L320" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Discovery tool factory that returns schemas for tools by name.
+
+**Args:**
+- `name`: Name of the synthetic tool exposed to the LLM.
+- `default_detail`: Default detail level for schema results.
+``"brief"`` returns tool names and descriptions only.
+``"detailed"`` renders compact markdown with parameter names,
+types, and required markers.
+``"full"`` returns the complete JSON schema.
+
+
+### `GetTags` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L381" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Discovery tool factory that lists tool tags from the catalog.
+
+Reads ``tool.tags`` from the catalog and groups tools by tag. Tools
+without tags appear under ``"untagged"``.
+
+**Args:**
+- `name`: Name of the synthetic tool exposed to the LLM.
+- `default_detail`: Default detail level.
+``"brief"`` returns tag names with tool counts.
+``"full"`` lists all tools under each tag.
+
+
+### `ListTools` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L448" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Discovery tool factory that lists all tools in the catalog.
+
+**Args:**
+- `name`: Name of the synthetic tool exposed to the LLM.
+- `default_detail`: Default detail level.
+``"brief"`` returns tool names and one-line descriptions.
+``"detailed"`` returns compact markdown with parameter schemas.
+``"full"`` returns the complete JSON schema.
+
+
+### `CodeMode` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L497" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+Transform that collapses all tools into discovery + execute meta-tools.
+
+Discovery tools are composable via the ``discovery_tools`` parameter.
+Each is a callable that receives catalog access and returns a ``Tool``.
+By default, ``Search`` and ``GetSchemas`` are included for
+progressive disclosure: search finds candidates, get_schema retrieves
+parameter details, and execute runs code.
+
+The ``execute`` tool is always present and provides a sandboxed Python
+environment with ``call_tool(name, params)`` in scope.
+
+
+**Methods:**
+
+#### `transform_tools` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L549" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+transform_tools(self, tools: Sequence[Tool]) -> Sequence[Tool]
+```
+
+#### `get_tool` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/experimental/transforms/code_mode.py#L552" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_tool(self, name: str, call_next: GetToolNext) -> Tool | None
+```

@@ -1,0 +1,33 @@
+---
+title: docstring_parsing
+sidebarTitle: docstring_parsing
+---
+
+# `fastmcp.utilities.docstring_parsing`
+
+
+从函数 docstring 中提取描述。
+
+使用 griffelib 解析 Google、NumPy 和 Sphinx 风格的 docstring。接口有意保持很窄：一个返回 `ParsedDocstring` 的函数，这样替换实现时无需改动调用方。
+
+
+## 函数
+
+### `parse_docstring` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/docstring_parsing.py#L35" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+parse_docstring(fn: Callable[..., Any]) -> ParsedDocstring
+```
+
+
+将函数的 docstring 解析为摘要和参数描述。
+
+按顺序尝试 Google、NumPy 和 Sphinx 解析器，并使用第一个成功提取参数描述的解析器。如果都无法提取，则把完整 docstring 作为描述返回，且不包含参数描述。
+
+
+## 类
+
+### `ParsedDocstring` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/docstring_parsing.py#L28" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+从 docstring 中提取出的描述和逐参数描述。

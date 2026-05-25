@@ -1,0 +1,129 @@
+---
+title: 文件上传
+sidebarTitle: 文件上传
+description: 为任意 MCP 服务端提供拖放文件上传
+icon: upload
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.2.0" />
+
+`FileUpload` 可以为任意服务端添加拖放文件上传。用户通过交互式 UI 上传文件，完全绕过 LLM 上下文窗口。随后，LLM 可以通过模型可见工具列出并读取已上传的文件。
+
+<Frame>
+  <img src="/apps/images/app-file-upload.png" alt="Goose 中显示的 FileUpload provider，包含用于上传文件的拖放区域" />
+</Frame>
+
+```python
+from fastmcp import FastMCP
+from fastmcp.apps.file_upload import FileUpload
+
+mcp = FastMCP("My Server")
+mcp.add_provider(FileUpload())
+```
+
+这会注册四个工具：
+
+| 工具 | 可见性 | 用途 |
+|------|-----------|---------|
+| `file_manager` | 模型 | 打开拖放上传 UI |
+| `store_files` | 仅应用 | 用户点击 Upload 时由 UI 调用 |
+| `list_files` | 模型 | 返回所有已上传文件的元数据 |
+| `read_file` | 模型 | 按名称返回文件内容 |
+
+LLM 可以看到 `file_manager`、`list_files` 和 `read_file`。它会调用 `file_manager` 显示上传界面，然后使用 `list_files` 和 `read_file` 处理用户上传的内容。`store_files` 仅供应用使用：UI 会直接调用它，LLM 永远不需要知道它的存在。
+
+## 配置
+
+```python
+FileUpload(
+    name="Files",                    # 应用名称（用于工具路由）
+    max_file_size=10 * 1024 * 1024,  # 默认 10 MB，在服务端强制执行
+    title="File Upload",             # UI 中显示的标题
+    description="Drop files to...",  # 标题下方的描述文本
+    drop_label="Drop files here",    # 拖放区域内的标签
+)
+```
+
+`max_file_size` 限制会同时在 UI 中执行（DropZone 拒绝过大的文件）和服务端执行（`store_files` 工具会在调用 `on_store` 前校验）。
+
+## 存储作用域
+
+默认情况下，文件存储在内存中，并按 MCP 会话 ID 划分作用域。每个会话都有自己的隔离文件存储；在一个对话中上传的文件不会在另一个对话中可见。
+
+这适用于 **stdio**、**SSE** 和 **有状态 HTTP** 传输，因为这些传输中的会话会跨请求保持。
+
+<Warning>
+在 **无状态 HTTP** 模式下，每个请求都会创建带有新 ID 的新会话对象。一次请求中存储的文件（例如 UI 上传）对下一次请求（例如 LLM 调用 `list_files`）不可见。你**必须**覆写 `_get_scope_key`，使用稳定标识符，例如来自认证 token 的用户 ID。
+</Warning>
+
+对于无状态部署，请覆写 `_get_scope_key` 以返回稳定标识符。例如，要按已认证用户划分文件作用域：
+
+```python
+from fastmcp.apps.file_upload import FileUpload
+
+class UserScopedUpload(FileUpload):
+    def _get_scope_key(self, ctx):
+        return ctx.access_token["sub"]
+```
+
+对于进程级共享存储（所有用户都能看到所有文件）：
+
+```python
+class SharedUpload(FileUpload):
+    def _get_scope_key(self, ctx):
+        return "__shared__"
+```
+
+## 自定义存储
+
+默认实现会在服务端进程生命周期内把文件存储在内存中。对于持久化存储，请继承 `FileUpload` 并覆写三个方法。每个方法都会接收当前 `Context`，让你可以访问会话 ID、认证 token 和请求元数据，用于分区和授权。
+
+```python
+import base64
+
+from fastmcp.apps.file_upload import FileUpload
+
+class S3Upload(FileUpload):
+    def on_store(self, files, ctx):
+        user_id = ctx.access_token["sub"]
+        for f in files:
+            s3.put_object(
+                Bucket="uploads",
+                Key=f"{user_id}/{f['name']}",
+                Body=base64.b64decode(f["data"]),
+            )
+        return self.on_list(ctx)
+
+    def on_list(self, ctx):
+        user_id = ctx.access_token["sub"]
+        objects = s3.list_objects(Bucket="uploads", Prefix=f"{user_id}/")
+        return [
+            {
+                "name": obj["Key"].split("/", 1)[1],
+                "type": "application/octet-stream",
+                "size": obj["Size"],
+                "size_display": f"{obj['Size']} B",
+                "uploaded_at": obj["LastModified"].isoformat(),
+            }
+            for obj in objects.get("Contents", [])
+        ]
+
+    def on_read(self, name, ctx):
+        user_id = ctx.access_token["sub"]
+        obj = s3.get_object(Bucket="uploads", Key=f"{user_id}/{name}")
+        content = obj["Body"].read()
+        return {
+            "name": name,
+            "size": obj["ContentLength"],
+            "type": obj["ContentType"],
+            "uploaded_at": obj["LastModified"].isoformat(),
+            "content": content.decode("utf-8"),
+        }
+```
+
+传给 `on_store` 的每个文件 dict 都包含 `name`、`size`、`type` 和 `data`（base64 编码内容）。`on_store` 和 `on_list` 的返回值应为摘要 dict 列表，其中包含 `name`、`type`、`size`、`size_display` 和 `uploaded_at` 字段；这些字段会填充 UI 中的文件列表。
+
+`on_read` 返回一个包含文件元数据的 dict，并包含 `content`（解码后的文本）或 `content_base64`（二进制文件的 base64 预览）之一。

@@ -1,0 +1,93 @@
+---
+title: 分页
+sidebarTitle: 分页
+description: 控制服务端如何向客户端返回大型组件列表。
+icon: page
+tag: NEW
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+当服务端暴露许多工具、资源或提示词时，在单个响应中返回全部内容可能并不现实。MCP 支持列表操作分页，允许服务端以可管理的块返回结果，客户端可以逐步获取。
+
+## 服务端配置
+
+默认情况下，为了向后兼容，FastMCP 服务端会在单个响应中返回所有组件。要启用分页，请在创建服务端时设置 `list_page_size` 参数。此值决定所有列表操作中每页返回的最大条目数。
+
+```python
+from fastmcp import FastMCP
+
+# 启用分页，每页 50 个条目
+server = FastMCP("ComponentRegistry", list_page_size=50)
+
+# 注册工具（实际使用中，它们可能来自数据库或配置）
+@server.tool
+def search(query: str) -> str:
+    return f"Results for: {query}"
+
+@server.tool
+def analyze(data: str) -> dict:
+    return {"status": "analyzed", "data": data}
+
+# ... 更多工具、资源、提示词
+```
+
+配置 `list_page_size` 后，`tools/list`、`resources/list`、`resources/templates/list` 和 `prompts/list` 端点都会对响应分页。当存在更多结果时，每个响应都会包含 `nextCursor` 字段，客户端可用它获取后续页面。
+
+### 游标格式
+
+根据 MCP 规范，游标是不透明的 base64 编码字符串。客户端应将其视为黑盒，并在请求之间原样传递。游标会编码结果集中的偏移量，但这是可能变化的实现细节。
+
+## 客户端行为
+
+FastMCP Client 会透明处理分页。`list_tools()`、`list_resources()`、`list_resource_templates()` 和 `list_prompts()` 等便捷方法会自动获取所有页面并返回完整列表。现有代码无需修改即可继续工作。
+
+```python
+from fastmcp import Client
+
+async with Client(server) as client:
+    # 返回全部 200 个工具，自动获取页面
+    tools = await client.list_tools()
+    print(f"Total tools: {len(tools)}")  # 200
+```
+
+### 手动分页
+
+如果你希望逐步处理结果（内存受限环境、进度报告或提前终止），请使用 `_mcp` 变体并显式处理游标。
+
+```python
+from fastmcp import Client
+
+async with Client(server) as client:
+    # 获取第一页
+    result = await client.list_tools_mcp()
+    print(f"Page 1: {len(result.tools)} tools")
+
+    # 当存在更多页面时继续获取
+    while result.nextCursor:
+        result = await client.list_tools_mcp(cursor=result.nextCursor)
+        print(f"Next page: {len(result.tools)} tools")
+```
+
+`_mcp` 方法返回原始 MCP 协议对象，其中同时包含条目和下一页的 `nextCursor`。当 `nextCursor` 为 `None` 时，表示已经到达结果集末尾。
+
+四种列表操作都支持手动分页：
+
+| 操作 | 便捷方法 | 手动方法 |
+|-----------|-------------------|---------------|
+| 工具 | `list_tools()` | `list_tools_mcp(cursor=...)` |
+| 资源 | `list_resources()` | `list_resources_mcp(cursor=...)` |
+| 资源模板 | `list_resource_templates()` | `list_resource_templates_mcp(cursor=...)` |
+| 提示词 | `list_prompts()` | `list_prompts_mcp(cursor=...)` |
+
+## 何时使用分页
+
+当服务端暴露大量组件时，分页就会很有价值。以下情况可以考虑启用分页：
+
+- 服务端动态生成许多组件（例如来自数据库或文件系统）
+- 客户端需要关注内存使用
+- 你希望降低初始响应延迟
+
+对于组件数量固定且适中的服务端（少于 100 个），分页会增加复杂度，却没有明显收益。对于典型用例，在一个响应中返回所有内容的默认行为更简单也更高效。

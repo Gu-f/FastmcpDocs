@@ -9,7 +9,10 @@ languages = template_docs_json['navigation']['languages']
 
 config_path = 'json_config'
 
-json_config = files = [f for f in os.listdir(config_path) if os.path.isfile(os.path.join(config_path, f))]
+json_config = sorted(
+    (f for f in os.listdir(config_path) if os.path.isfile(os.path.join(config_path, f))),
+    key=lambda f: (f != 'zh.json', f),
+)
 
 for config in json_config:
     with open(os.path.join(config_path, config), 'r', encoding='utf-8') as c:

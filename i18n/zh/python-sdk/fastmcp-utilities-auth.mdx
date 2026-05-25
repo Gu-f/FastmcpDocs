@@ -6,19 +6,59 @@ sidebarTitle: auth
 # `fastmcp.utilities.auth`
 
 
-身份验证实用工具助手。
+身份认证实用辅助函数。
 
 ## 函数
 
-### `parse_scopes` <sup><a href="https://github.com/jlowin/fastmcp/blob/main/src/fastmcp/utilities/auth.py#L9" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+### `decode_jwt_header` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/auth.py#L32" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+decode_jwt_header(token: str) -> dict[str, Any]
+```
+
+
+在不验证签名的情况下解码 JWT header。
+
+这对于提取用于 JWKS 查找的 key ID（kid）很有用。
+
+**参数：**
+- `token`: JWT token 字符串（header.payload.signature）
+
+**返回：**
+- 解码后的 header 字典
+
+**抛出：**
+- `ValueError`: 如果 token 不是有效的 JWT 格式
+
+
+### `decode_jwt_payload` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/auth.py#L49" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+decode_jwt_payload(token: str) -> dict[str, Any]
+```
+
+
+在不验证签名的情况下解码 JWT payload。
+
+仅用于直接从可信来源（例如 IdP token 端点）收到的 token。
+
+**参数：**
+- `token`: JWT token 字符串（header.payload.signature）
+
+**返回：**
+- 解码后的 payload 字典
+
+**抛出：**
+- `ValueError`: 如果 token 不是有效的 JWT 格式
+
+
+### `parse_scopes` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/auth.py#L66" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
 
 ```python
 parse_scopes(value: Any) -> list[str] | None
 ```
 
 
-从环境变量或设置值解析作用域。
+从环境变量或设置值中解析 scopes。
 
-接受 JSON 数组字符串、逗号或空格分隔的字符串、
-字符串列表或 ``None``。如果未提供值，则返回作用域列表或 ``None``。
-
+接受 JSON 数组字符串、逗号或空格分隔的字符串、字符串列表或 ``None``。返回 scopes 列表；如果未提供值，则返回 ``None``。

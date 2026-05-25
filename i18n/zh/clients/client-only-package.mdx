@@ -1,0 +1,89 @@
+---
+title: 仅客户端包
+description: 在不安装完整服务端框架的情况下使用 FastMCP 客户端。
+icon: box
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.3.0" />
+
+FastMCP 完整的 `fastmcp` 包包含构建和运行 MCP 服务端、应用、代理和客户端所需的一切。如果你只是把 MCP 客户端嵌入另一个框架、构建自己的 LLM host，或测试 MCP 服务端，可以改用更小的仅客户端包。
+
+```bash
+pip install "fastmcp-slim[client]"
+```
+
+仅客户端包使用 `fastmcp` 导入命名空间：
+
+```python
+from fastmcp import Client
+
+client = Client("https://example.com/mcp")
+```
+
+当你的代码会连接到 MCP 服务端，但本身不定义或运行 FastMCP 服务端时，请使用 `fastmcp-slim[client]`。例如，框架作者可以依赖 `fastmcp-slim[client]` 来提供 MCP 连接能力，而无需要求用户安装完整的 FastMCP 服务端栈。
+
+## 支持的用法
+
+仅客户端安装支持远程和子进程传输：
+
+```python
+from fastmcp import Client
+
+# 远程 MCP 服务端
+http_client = Client("https://example.com/mcp")
+
+# 通过 stdio 连接本地 MCP 服务端
+stdio_client = Client("my_server.py")
+```
+
+单服务端 MCP 配置也可以使用：
+
+```python
+from fastmcp import Client
+
+config = {
+    "mcpServers": {
+        "weather": {
+            "url": "https://weather.example.com/mcp"
+        }
+    }
+}
+
+client = Client(config)
+```
+
+可选的采样处理器可通过与完整包相同的 extras 使用：
+
+```bash
+pip install "fastmcp-slim[client,openai]"
+pip install "fastmcp-slim[client,anthropic]"
+pip install "fastmcp-slim[client,gemini]"
+```
+
+## 何时使用完整包
+
+当你需要 FastMCP 服务端功能时，请安装 `fastmcp`：
+
+```bash
+pip install fastmcp
+```
+
+完整包仍然是大多数用户的默认选择，并继续支持现有的导入风格：
+
+```python
+from fastmcp import Client, FastMCP
+
+server = FastMCP("Example")
+client = Client(server)
+```
+
+以下场景请使用完整包：
+
+- 定义或运行 FastMCP 服务端
+- 直接连接到 `FastMCP` 服务端对象的内存内客户端
+- 多服务端 MCP 配置
+- FastMCP 应用、代理、服务端认证、中间件，以及其他服务端功能
+
+`fastmcp-slim` 包的范围有意更窄：它面向只需要客户端的使用者，让他们无需依赖完整框架即可获得 FastMCP 的 MCP 客户端行为。

@@ -1,0 +1,111 @@
+---
+title: skills
+sidebarTitle: skills
+---
+
+# `fastmcp.utilities.skills`
+
+
+用于从 MCP 服务端发现和下载 skills 的客户端实用工具。
+
+## 函数
+
+### `list_skills` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/skills.py#L43" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+list_skills(client: Client) -> list[SkillSummary]
+```
+
+
+列出 MCP 服务端中的所有可用 skills。
+
+通过查找 URI 匹配 `skill://{name}/SKILL.md` 模式的资源来发现 skills。
+
+**参数：**
+- `client`: 已连接的 FastMCP 客户端
+
+**返回：**
+- 包含名称、描述和 URI 的 SkillSummary 对象列表
+
+
+### `get_skill_manifest` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/skills.py#L87" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+get_skill_manifest(client: Client, skill_name: str) -> SkillManifest
+```
+
+
+获取特定 skill 的 manifest。
+
+**参数：**
+- `client`: 已连接的 FastMCP 客户端
+- `skill_name`: skill 名称
+
+**返回：**
+- 包含文件列表的 SkillManifest
+
+**抛出：**
+- `ValueError`: 如果无法读取或解析 manifest
+
+
+### `download_skill` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/skills.py#L127" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+download_skill(client: Client, skill_name: str, target_dir: str | Path) -> Path
+```
+
+
+将一个 skill 及其所有文件下载到本地目录。
+
+创建一个以 skill 命名的子目录，其中包含所有文件。
+
+**参数：**
+- `client`: 已连接的 FastMCP 客户端
+- `skill_name`: 要下载的 skill 名称
+- `target_dir`: 创建 skill 文件夹的目录
+- `overwrite`: 如果为 True，则覆盖现有 skill 目录。如果为 False（默认），且目录已存在，则抛出 FileExistsError。
+
+**返回：**
+- 已下载 skill 目录的路径
+
+**抛出：**
+- `ValueError`: 如果无法找到或下载 skill
+- `FileExistsError`: 如果 skill 目录已存在且 overwrite=False
+
+
+### `sync_skills` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/skills.py#L218" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+```python
+sync_skills(client: Client, target_dir: str | Path) -> list[Path]
+```
+
+
+从服务端下载所有可用 skills。
+
+**参数：**
+- `client`: 已连接的 FastMCP 客户端
+- `target_dir`: 创建 skill 文件夹的目录
+- `overwrite`: 如果为 True，则覆盖现有文件
+
+**返回：**
+- 已下载 skill 目录的路径列表
+
+
+## 类
+
+### `SkillSummary` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/skills.py#L18" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+服务端上可用 skill 的摘要信息。
+
+
+### `SkillFile` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/skills.py#L27" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+skill 中某个文件的信息。
+
+
+### `SkillManifest` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/utilities/skills.py#L36" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+包含所有文件的 skill 完整 manifest。

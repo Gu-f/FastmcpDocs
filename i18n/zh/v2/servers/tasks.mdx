@@ -1,0 +1,263 @@
+---
+title: 后台任务
+sidebarTitle: 后台任务
+description: 以异步方式运行长耗时操作，并跟踪进度
+icon: clock
+tag: "NEW"
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.14.0" />
+
+<Tip>
+后台任务需要 `tasks` 可选 extra。请参见下方的[安装说明](#启用后台任务)。
+</Tip>
+
+FastMCP 实现了 MCP 后台任务协议（[SEP-1686](https://modelcontextprotocol.io/specification/2025-11-25/basic/utilities/tasks)），只需修改一个装饰器，就能为你的服务端提供生产就绪的分布式任务调度器。
+
+<Tip>
+**Docket 是什么？** FastMCP 的任务系统由 [Docket](https://github.com/chrisguidry/docket) 提供支持。Docket 最初由 [Prefect](https://prefect.io) 构建，用来支撑 [Prefect Cloud](https://www.prefect.io/prefect/cloud) 的托管任务调度和执行服务；该服务每天处理数百万个并发任务。Docket 现在已开源给社区。
+</Tip>
+
+
+## 什么是 MCP 后台任务？
+
+在 MCP 中，默认情况下所有组件交互都是阻塞的。当客户端调用工具、读取资源或获取提示词时，它会发送请求并等待响应。对于需要数秒甚至数分钟的操作，这会带来糟糕的用户体验。
+
+MCP 后台任务协议通过让客户端做到以下几点来解决这个问题：
+1. **启动**操作并立即接收任务 ID
+2. 在操作运行时**跟踪**进度
+3. 结果就绪后**获取**结果
+
+FastMCP 会为你处理全部流程。只需在装饰器中添加 `task=True`，你的函数就会获得完整的后台执行能力，包括进度报告、分布式处理和水平扩展。
+
+### MCP 后台任务与 Python 并发
+
+你始终可以在 FastMCP 服务端中使用 Python 的并发原语（asyncio、线程、多进程）或外部任务队列。FastMCP 只是 Python，代码想怎么运行都可以。
+
+MCP 后台任务不同之处在于它们是**协议原生**的。这意味着支持任务协议的 MCP 客户端可以通过标准 MCP 接口启动操作、接收进度更新并获取结果。协调发生在协议层，而不是你的应用代码内部。
+
+## 启用后台任务
+
+<VersionBadge version="3.0.0" /> 后台任务需要 `tasks` extra：
+
+```bash
+pip install "fastmcp[tasks]"
+```
+
+向任意工具、资源、资源模板或提示词装饰器添加 `task=True`。这会把该组件标记为支持后台执行。
+
+```python {6}
+import asyncio
+from fastmcp import FastMCP
+
+mcp = FastMCP("MyServer")
+
+@mcp.tool(task=True)
+async def slow_computation(duration: int) -> str:
+    """一个长耗时操作。"""
+    for i in range(duration):
+        await asyncio.sleep(1)
+    return f"Completed in {duration} seconds"
+```
+
+当客户端请求后台执行时，调用会立即返回任务 ID。工作会在后台 worker 中执行，客户端可以轮询状态或等待结果。
+
+<Warning>
+后台任务需要 async 函数。尝试在同步函数上使用 `task=True` 会在注册时抛出 `ValueError`。
+</Warning>
+
+## 执行模式
+
+如需细粒度控制任务执行行为，请使用 `TaskConfig` 而不是布尔简写。MCP 任务协议定义了三种执行模式：
+
+| 模式 | 客户端未请求任务时调用 | 客户端请求任务时调用 |
+|------|--------------------------|------------------------|
+| `"forbidden"` | 同步执行 | 错误：不支持任务 |
+| `"optional"` | 同步执行 | 作为后台任务执行 |
+| `"required"` | 错误：必须使用任务 | 作为后台任务执行 |
+
+```python
+from fastmcp import FastMCP
+from fastmcp.server.tasks import TaskConfig
+
+mcp = FastMCP("MyServer")
+
+# 同时支持同步执行和后台执行（task=True 时的默认值）
+@mcp.tool(task=TaskConfig(mode="optional"))
+async def flexible_task() -> str:
+    return "Works either way"
+
+# 要求后台执行；如果客户端未请求任务则报错
+@mcp.tool(task=TaskConfig(mode="required"))
+async def must_be_background() -> str:
+    return "Only runs as a background task"
+
+# 不支持任务（task=False 或省略时的默认值）
+@mcp.tool(task=TaskConfig(mode="forbidden"))
+async def sync_only() -> str:
+    return "Never runs as background task"
+```
+
+布尔简写会映射到这些模式：
+- `task=True` → `TaskConfig(mode="optional")`
+- `task=False` → `TaskConfig(mode="forbidden")`
+
+### 轮询间隔
+
+<VersionBadge version="2.15.0" />
+
+当客户端轮询任务状态时，服务端会告诉客户端多久后再检查。默认情况下，FastMCP 建议 5 秒间隔，但你可以按组件自定义：
+
+```python
+from datetime import timedelta
+from fastmcp import FastMCP
+from fastmcp.server.tasks import TaskConfig
+
+mcp = FastMCP("MyServer")
+
+# 对快速完成的任务每 2 秒轮询一次
+@mcp.tool(task=TaskConfig(mode="optional", poll_interval=timedelta(seconds=2)))
+async def quick_task() -> str:
+    return "Done quickly"
+
+# 对长耗时任务每 30 秒轮询一次
+@mcp.tool(task=TaskConfig(mode="optional", poll_interval=timedelta(seconds=30)))
+async def slow_task() -> str:
+    return "Eventually done"
+```
+
+较短间隔能让客户端更快获得反馈，但会增加服务端负载。较长间隔可以降低负载，但会延迟状态更新。
+
+### 服务端级默认值
+
+要默认为所有组件启用后台任务支持，请向构造函数传入 `tasks=True`。单个装饰器仍然可以用 `task=False` 覆盖。
+
+```python
+mcp = FastMCP("MyServer", tasks=True)
+```
+
+<Warning>
+如果你的服务端定义了任何同步工具、资源或提示词，需要在它们的装饰器上显式设置 `task=False`，否则会报错。
+</Warning>
+
+### 优雅降级
+
+当客户端请求后台执行，但组件的 `mode="forbidden"` 时，FastMCP 会同步执行并内联返回结果。这遵循 SEP-1686 对优雅降级的规定：客户端可以总是请求后台执行，而不必担心服务端能力。
+
+相反，当组件的 `mode="required"` 但客户端未请求后台执行时，FastMCP 会返回错误，说明必须使用任务执行。
+
+### 配置
+
+| 环境变量 | 默认值 | 描述 |
+|---------------------|---------|-------------|
+| `FASTMCP_DOCKET_URL` | `memory://` | 后端 URL（`memory://` 或 `redis://host:port/db`） |
+
+## 后端
+
+FastMCP 支持两种任务执行后端，它们有不同权衡。
+
+### 内存后端（默认）
+
+内存后端（`memory://`）无需配置，开箱即用。
+
+**优点：**
+- 无外部依赖
+- 简单的单进程部署
+
+**缺点：**
+- **临时性**：如果服务端重启，所有待处理任务都会丢失
+- **延迟更高**：任务拾取时间约 250ms，而 Redis 可达个位数毫秒
+- **不能水平扩展**：仅限单进程，无法添加额外 worker
+
+### Redis 后端
+
+生产部署中，请通过设置 `FASTMCP_DOCKET_URL=redis://localhost:6379` 使用 Redis（或 Valkey）作为后端。
+
+**优点：**
+- **持久化**：任务可在服务端重启后保留
+- **快速**：任务拾取延迟为个位数毫秒
+- **可扩展**：可添加 worker，把负载分布到多个进程或机器
+
+## Worker
+
+每个带有任务组件的 FastMCP 服务端都会自动启动一个**嵌入式 worker**。你不需要启动单独的 worker 进程，任务也能执行。
+
+如需水平扩展，可以使用 CLI 添加更多 worker：
+
+```bash
+fastmcp tasks worker server.py
+```
+
+每个额外 worker 都会从同一个队列拉取任务，把负载分布到多个进程。通过环境变量配置 worker 并发数：
+
+```bash
+export FASTMCP_DOCKET_CONCURRENCY=20
+fastmcp tasks worker server.py
+```
+
+<Note>
+额外 worker 只适用于 Redis/Valkey 后端。内存后端仅限单进程。
+</Note>
+
+<Warning>
+启用任务的组件必须在服务端启动时定义，才能注册到所有 worker。服务端启动后动态添加的组件不能用于后台执行。
+</Warning>
+
+## 进度报告
+
+`Progress` 依赖允许你向客户端报告进度。把它作为带默认值的参数注入，FastMCP 会提供当前活动的进度报告器。
+
+```python
+from fastmcp import FastMCP
+from fastmcp.dependencies import Progress
+
+mcp = FastMCP("MyServer")
+
+@mcp.tool(task=True)
+async def process_files(files: list[str], progress: Progress = Progress()) -> str:
+    await progress.set_total(len(files))
+
+    for file in files:
+        await progress.set_message(f"Processing {file}")
+        # ... do work ...
+        await progress.increment()
+
+    return f"Processed {len(files)} files"
+```
+
+进度 API：
+- `await progress.set_total(n)`：设置总步骤数
+- `await progress.increment(amount=1)`：增加进度
+- `await progress.set_message(text)`：更新状态消息
+
+进度在即时执行和后台执行模式下都可用；无论客户端如何调用函数，都可以使用同一份代码。
+
+## Docket 依赖
+
+FastMCP 会在启用任务的函数中暴露 Docket 的完整依赖注入系统。除了 `Progress`，你还可以访问 Docket 实例、worker 信息，并使用重试和超时等高级能力。
+
+```python
+from docket import Docket, Worker
+from fastmcp import FastMCP
+from fastmcp.dependencies import Progress, CurrentDocket, CurrentWorker
+
+mcp = FastMCP("MyServer")
+
+@mcp.tool(task=True)
+async def my_task(
+    progress: Progress = Progress(),
+    docket: Docket = CurrentDocket(),
+    worker: Worker = CurrentWorker(),
+) -> str:
+    # 调度额外的后台工作
+    await docket.add(another_task, arg1, arg2)
+
+    # 访问 worker 元数据
+    worker_name = worker.name
+
+    return "Done"
+```
+
+通过 `CurrentDocket()`，你可以调度额外后台任务、串联工作，并协调复杂工作流。完整 API 请参见 [Docket 文档](https://chrisguidry.github.io/docket/)，包括重试策略、超时和自定义依赖。

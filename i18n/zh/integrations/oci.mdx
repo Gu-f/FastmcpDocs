@@ -1,0 +1,248 @@
+---
+title: OCI IAM OAuth 🤝 FastMCP
+sidebarTitle: Oracle
+description: 使用 OCI IAM OAuth 保护你的 FastMCP 服务端
+icon: shield-check
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.13.0" />
+
+本指南展示如何使用 **OCI IAM OAuth** 保护你的 FastMCP 服务端。由于 OCI IAM 不支持动态客户端注册，此集成使用 [**OIDC 代理**](/zh/servers/auth/oidc-proxy) 模式，将 OCI 的传统 OAuth 与 MCP 的认证要求连接起来。
+
+## 配置
+
+### 前置条件
+
+1. 一个 OCI 云账号，并且有权限在 Identity Domain 中创建 Integrated Application。
+2. 你的 FastMCP 服务端 URL（开发环境中通常是 `http://localhost:8000`；生产环境中可能是 `https://mcp.yourdomain.com`）。
+
+### 第 1 步：确保已为 JWK URL 启用客户端访问
+
+<Steps>
+<Step title="进入 OCI IAM Domain Settings">
+
+    登录 OCI 控制台（OCI 商业云为 https://cloud.oracle.com）。
+    从 "Identity & Security" 菜单打开 Domains 页面。
+    在 Domains 列表页中，选择用于 MCP 认证的 domain。
+    打开 Settings 标签页。
+    点击 "Edit Domain Settings" 按钮。
+
+    <Frame>
+        <img src="/integrations/images/oci/ocieditdomainsettingsbutton.png" alt="OCI console showing the Edit Domain Settings button in the IAM Domain settings page" />
+    </Frame>
+</Step>
+
+<Step title="更新 Domain 设置">
+
+    如截图所示，启用 "Configure client access" 复选框。
+
+    <Frame>
+        <img src="/integrations/images/oci/ocieditdomainsettings.png" alt="OCI IAM Domain Settings" />
+    </Frame>
+</Step>
+</Steps>
+
+### 第 2 步：为 MCP 服务端认证创建 OAuth 客户端
+
+按照以下步骤创建 OAuth 客户端。
+
+<Steps>
+<Step title="进入 OCI IAM Integrated Applications">
+
+    登录 OCI 控制台（OCI 商业云为 https://cloud.oracle.com）。
+    从 "Identity & Security" 菜单打开 Domains 页面。
+    在 Domains 列表页中，选择要在其中创建 MCP 服务端 OAuth 客户端的 domain。如果需要帮助查找 domain 列表页，请参见 [Listing Identity Domains](https://docs.oracle.com/en-us/iaas/Content/Identity/domains/to-view-identity-domains.htm#view-identity-domains)。
+    在详情页中，选择 Integrated applications。页面会显示该 domain 中的应用列表。
+</Step>
+
+<Step title="添加 Integrated Application">
+
+    选择 Add application。
+    在 Add application 窗口中，选择 Confidential Application。
+    选择 Launch workflow。
+    在 Add application details 页面中，按下图输入名称和描述。
+
+    <Frame>
+        <img src="/integrations/images/oci/ociaddapplication.png" alt="Adding a Confidential Integrated Application in OCI IAM Domain" />
+    </Frame>
+</Step>
+
+<Step title="更新 Integrated Application 的 OAuth 配置">
+
+    Integrated Application 创建完成后，点击 "OAuth configuration" 标签页。
+    点击 "Edit OAuth configuration" 按钮。
+    通过选择 "Configure this application as a client now" 单选按钮，将该应用配置为 OAuth 客户端。
+    选择 "Authorization code" grant type。如果计划使用同一个 OAuth 客户端应用进行令牌交换，也请选择 "Client credentials" grant type。在示例中，我们会使用同一个客户端。
+    对于 Authorization grant type，选择重定向 URL。大多数情况下，它会是 MCP 服务端 URL 后接 "/oauth/callback"。
+
+    <Frame>
+        <img src="/integrations/images/oci/ocioauthconfiguration.png" alt="OAuth Configuration for an Integrated Application in OCI IAM Domain" />
+    </Frame>
+</Step>
+
+<Step title="激活 Integrated Application">
+
+    点击 "Submit" 按钮，更新客户端应用的 OAuth 配置。
+    **注意：你不需要做任何特殊配置来让 OAuth 客户端支持 PKCE。**
+    确保激活客户端应用。
+    记下该应用的 client ID 和 client secret。配置代码中的 OCIProvider 时会用到这些值。
+</Step>
+</Steps>
+
+以上就是针对 OCI IAM 实现 MCP 服务端认证所需的全部内容。不过，你可能希望使用已认证用户令牌来调用 OCI 控制平面 API，并把身份传播到 OCI 控制平面，而不是使用服务用户账号。此时需要实现令牌交换。
+
+### 第 3 步：令牌交换设置（仅当 MCP 服务端需要访问 OCI 控制平面时）
+
+令牌交换可帮助你把已登录用户的 OCI IAM 令牌交换为 OCI 控制平面会话令牌，也称为 UPST（User Principal Session Token）。如需了解令牌交换，请参阅我的 [Workload Identity Federation 博客](https://www.ateam-oracle.com/post/workload-identity-federation)。
+
+对于令牌交换，我们需要配置信任的身份传播。上面的博客介绍了如何使用 REST API 建立信任。不过，你也可以使用 OCI CLI。使用下面的 CLI 命令前，请确保已经创建了令牌交换 OAuth 客户端。大多数情况下，可以使用上面创建的同一个 OAuth 客户端。请将下面 CLI 命令中的 `<IAM_GUID>` 和 `<CLIENT_ID>` 替换为你的实际值。
+
+```bash
+oci identity-domains identity-propagation-trust create \
+--schemas '["urn:ietf:params:scim:schemas:oracle:idcs:IdentityPropagationTrust"]' \
+--public-key-endpoint "https://<IAM_GUID>.identity.oraclecloud.com/admin/v1/SigningCert/jwk" \
+--name "For Token Exchange" --type "JWT" \
+--issuer "https://identity.oraclecloud.com/" --active true \
+--endpoint "https://<IAM_GUID>.identity.oraclecloud.com" \
+--subject-claim-name "sub" --allow-impersonation false \
+--subject-mapping-attribute "username" \
+--subject-type "User" --client-claim-name "iss" \
+--client-claim-values '["https://identity.oraclecloud.com/"]' \
+--oauth-clients '["<CLIENT_ID>"]'
+```
+
+要将访问令牌交换为 OCI 令牌并创建 signer 对象，需要在 MCP 服务端中添加以下代码。随后可以使用该 signer 对象创建任意 OCI 控制平面客户端。
+
+```python
+
+from fastmcp.server.dependencies import get_access_token
+from fastmcp.utilities.logging import get_logger
+from oci.auth.signers import TokenExchangeSigner
+import os
+
+logger = get_logger(__name__)
+
+# 从环境加载配置
+OCI_IAM_GUID = os.environ.get("OCI_IAM_GUID")
+OCI_CLIENT_ID = os.environ.get("OCI_CLIENT_ID")
+OCI_CLIENT_SECRET = os.environ.get("OCI_CLIENT_SECRET")
+
+_global_token_cache = {} # OCI 会话令牌 signer 的内存缓存
+    
+def get_oci_signer() -> TokenExchangeSigner:
+
+    authntoken = get_access_token()
+    tokenID = authntoken.claims.get("jti")
+    token = authntoken.token
+    
+    # 检查内存缓存中是否已存在该 token ID 对应的 signer
+    cached_signer = _global_token_cache.get(tokenID)
+    logger.debug(f"Global cached signer: {cached_signer}")
+    if cached_signer:
+        logger.debug(f"Using globally cached signer for token ID: {tokenID}")
+        return cached_signer
+
+    # 如果尚未为该 token 创建 signer，则创建新的 OCI signer 对象
+    logger.debug(f"Creating new signer for token ID: {tokenID}")
+    signer = TokenExchangeSigner(
+        jwt_or_func=token,
+        oci_domain_id=OCI_IAM_GUID.split(".")[0] if OCI_IAM_GUID else "",
+        client_id=OCI_CLIENT_ID,
+        client_secret=OCI_CLIENT_SECRET,
+    )
+    logger.debug(f"Signer {signer} created for token ID: {tokenID}")
+        
+    # 将 signer 对象缓存到内存缓存中
+    _global_token_cache[tokenID] = signer
+    logger.debug(f"Signer cached for token ID: {tokenID}")
+
+    return signer
+```
+
+## 运行 MCP 服务端
+
+设置完成后，运行以下命令启动 MCP 服务端。
+```bash
+fastmcp run server.py:mcp --transport http --port 8000
+```
+
+运行 MCP 客户端：
+```bash
+python3 client.py
+```
+
+MCP 客户端示例如下。
+```python client.py
+from fastmcp import Client
+import asyncio
+
+async def main():
+    # 客户端会自动处理 OCI OAuth 流程
+    async with Client("http://localhost:8000/mcp/", auth="oauth") as client:
+        # 首次连接会在浏览器中打开 OCI 登录
+        print("✓ Authenticated with OCI IAM")
+
+        tools = await client.list_tools()
+        print(f"🔧 Available tools ({len(tools)}):")
+        for tool in tools:
+            print(f"   - {tool.name}: {tool.description}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+首次运行客户端时：
+1. 浏览器会打开 OCI IAM 的登录页面
+2. 使用你的 OCI 账号登录，并授予请求的同意
+3. 授权后，你会被重定向回重定向路径
+4. 客户端接收令牌，并可以发起已认证请求
+
+## 生产配置
+
+<VersionBadge version="2.13.0" />
+
+对于需要在服务端重启后保持令牌管理状态的生产部署，请配置 `jwt_signing_key` 和 `client_storage`：
+
+```python server.py
+
+import os
+from fastmcp import FastMCP
+from fastmcp.server.auth.providers.oci import OCIProvider
+
+from key_value.aio.stores.redis import RedisStore
+from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
+from cryptography.fernet import Fernet
+
+# 从环境加载配置
+# 使用加密持久化令牌存储的生产设置
+auth_provider = OCIProvider(
+    config_url=os.environ.get("OCI_CONFIG_URL"),
+    client_id=os.environ.get("OCI_CLIENT_ID"),
+    client_secret=os.environ.get("OCI_CLIENT_SECRET"),
+    base_url=os.environ.get("BASE_URL", "https://your-production-domain.com"),
+
+    # 生产令牌管理
+    jwt_signing_key=os.environ["JWT_SIGNING_KEY"],
+    client_storage=FernetEncryptionWrapper(
+        key_value=RedisStore(
+            host=os.environ["REDIS_HOST"],
+            port=int(os.environ["REDIS_PORT"])
+        ),
+        fernet=Fernet(os.environ["STORAGE_ENCRYPTION_KEY"])
+    )
+)
+
+mcp = FastMCP(name="Production OCI App", auth=auth_provider)
+```
+
+<Note>
+参数（`jwt_signing_key` 和 `client_storage`）共同确保令牌和客户端注册在服务端重启后仍然保留。**请用 `FernetEncryptionWrapper` 包装你的存储，以加密静态敏感 OAuth 令牌**；否则，令牌会以明文存储。请把 secret 存储在环境变量中，并在分布式部署中使用 Redis 这类持久化存储后端。
+
+这些参数的完整说明请参见 [OAuth 代理文档](/zh/servers/auth/oauth-proxy#配置参数)。
+</Note>
+
+<Info>
+客户端会在本地缓存令牌，因此后续运行时通常不需要重新认证，除非令牌过期或你显式清除了缓存。
+</Info>

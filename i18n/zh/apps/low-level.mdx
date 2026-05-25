@@ -1,0 +1,304 @@
+---
+title: 自定义 HTML 应用
+sidebarTitle: 自定义 HTML
+description: 直接使用 MCP Apps 扩展，通过你自己的 HTML、CSS 和 JavaScript 构建应用。
+icon: code
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<VersionBadge version="3.0.0" />
+
+本页内容适用于你想要完全控制的场景：自己的 HTML、自己的 JavaScript 框架、地图库、3D 查看器、自定义视频播放。[交互式工具](/zh/apps/prefab)封装了 MCP Apps 扩展，让你通常不必关心它；而当你确实需要关心它时，就该参考这一页。
+
+你会使用两样东西：用于宿主通信的 [`@modelcontextprotocol/ext-apps`](https://github.com/modelcontextprotocol/ext-apps) JavaScript SDK，以及 FastMCP 的 `AppConfig`，用于资源和 CSP。
+
+## 工作原理
+
+一个 MCP App 有两部分：
+
+1. 一个执行工作并返回数据的**工具**
+2. 一个包含 HTML、用于渲染该数据的 **`ui://` 资源**
+
+工具通过 `AppConfig` 声明要使用哪个资源。当宿主调用工具时，它也会获取关联资源，在沙盒 iframe 中渲染它，并通过 `postMessage` 将工具结果推送到应用中。应用也可以反向调用工具，从而启用交互式工作流。
+
+```python
+import json
+
+from fastmcp import FastMCP
+from fastmcp.apps import AppConfig, ResourceCSP
+
+mcp = FastMCP("My App Server")
+
+# 工具执行工作
+@mcp.tool(app=AppConfig(resource_uri="ui://my-app/view.html"))
+def generate_chart(data: list[float]) -> str:
+    return json.dumps({"values": data})
+
+# 资源提供 UI
+@mcp.resource("ui://my-app/view.html")
+def chart_view() -> str:
+    return "<html>...</html>"
+```
+
+## AppConfig
+
+`AppConfig` 控制工具或资源如何参与 Apps 扩展。请从 `fastmcp.server.apps` 导入它：
+
+```python
+from fastmcp.apps import AppConfig
+```
+
+在**工具**上，你通常会设置 `resource_uri` 指向 UI 资源：
+
+```python
+@mcp.tool(app=AppConfig(resource_uri="ui://my-app/view.html"))
+def my_tool() -> str:
+    return "result"
+```
+
+你也可以传入带 camelCase 键的原始 dict，以匹配线路格式：
+
+```python
+@mcp.tool(app={"resourceUri": "ui://my-app/view.html"})
+def my_tool() -> str:
+    return "result"
+```
+
+### 工具可见性
+
+`visibility` 字段控制工具出现在哪里：
+
+- `["model"]`：对 LLM 可见（默认行为）
+- `["app"]`：只能从应用 UI 内调用，对 LLM 隐藏
+- `["model", "app"]`：两者都可见
+
+当某些工具只适合作为应用交互流程的一部分，而不是独立的 LLM 动作时，这很有用。
+
+```python
+@mcp.tool(
+    app=AppConfig(
+        resource_uri="ui://my-app/view.html",
+        visibility=["app"],
+    )
+)
+def refresh_data() -> str:
+    """只能从应用 UI 调用，不能由 LLM 调用。"""
+    return fetch_latest()
+```
+
+### AppConfig 字段
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `resource_uri` | `str` | UI 资源的 URI。仅用于工具。 |
+| `visibility` | `list[str]` | 工具出现的位置：`"model"`、`"app"` 或两者。仅用于工具。 |
+| `csp` | `ResourceCSP` | iframe 的 Content Security Policy。 |
+| `permissions` | `ResourcePermissions` | iframe 沙盒权限。 |
+| `domain` | `str` | iframe 的稳定沙盒源。 |
+| `prefers_border` | `bool` | UI 是否偏好显示边框。 |
+
+<Note>
+在**资源**上，不能设置 `resource_uri` 和 `visibility`，因为资源本身就是 UI。资源上的 `AppConfig` 只应用于 `csp`、`permissions` 和其他显示设置。
+</Note>
+
+## UI 资源
+
+使用 `ui://` scheme 的资源会自动以 MIME 类型 `text/html;profile=mcp-app` 提供服务。无需手动设置。
+
+```python
+@mcp.resource("ui://my-app/view.html")
+def my_view() -> str:
+    return "<html>...</html>"
+```
+
+HTML 可以是任何内容：完整单页应用、简单展示页，或复杂的交互式工具。宿主会在沙盒 iframe 中渲染它，并建立用于通信的 `postMessage` 通道。
+
+### 编写应用 HTML
+
+你的 HTML 应用会使用 [`@modelcontextprotocol/ext-apps`](https://github.com/modelcontextprotocol/ext-apps) JavaScript SDK 与宿主通信。最简单的方法是从 CDN 加载它：
+
+```html
+<script type="module">
+  import { App } from "https://unpkg.com/@modelcontextprotocol/ext-apps@0.4.0/app-with-deps";
+
+  const app = new App({ name: "My App", version: "1.0.0" });
+
+  // 接收宿主推送的工具结果
+  app.ontoolresult = ({ content }) => {
+    const text = content?.find(c => c.type === 'text');
+    if (text) {
+      document.getElementById('output').textContent = text.text;
+    }
+  };
+
+  // 连接到宿主
+  await app.connect();
+</script>
+```
+
+`App` 对象提供：
+
+- **`app.ontoolresult`**：接收宿主推送的工具结果的回调
+- **`app.callServerTool({name, arguments})`**：从应用内调用服务端上的工具
+- **`app.onhostcontextchanged`**：宿主上下文变更的回调（例如安全区域边距）
+- **`app.getHostContext()`**：获取当前宿主上下文
+
+完整 API 参考请参阅完整的 [ext-apps SDK 文档](https://github.com/modelcontextprotocol/ext-apps)。
+
+<Note>
+如果你的 HTML 加载外部脚本、样式，或发起 API 调用，需要在 CSP 配置中声明这些域名。请参阅下面的[安全](#安全)。
+</Note>
+
+## 安全
+
+应用运行在沙盒 iframe 中，并使用默认拒绝的 Content Security Policy。默认情况下，只允许内联脚本和样式，不允许外部网络访问。
+
+### Content Security Policy
+
+如果你的应用需要加载外部资源（CDN 脚本、API 调用、嵌入式 iframe），请使用 `ResourceCSP` 声明允许的域名：
+
+```python
+from fastmcp.apps import AppConfig, ResourceCSP
+
+@mcp.resource(
+    "ui://my-app/view.html",
+    app=AppConfig(
+        csp=ResourceCSP(
+            resource_domains=["https://unpkg.com", "https://cdn.example.com"],
+            connect_domains=["https://api.example.com"],
+        )
+    ),
+)
+def my_view() -> str:
+    return "<html>...</html>"
+```
+
+| CSP 字段 | 控制内容 |
+|-----------|----------|
+| `connect_domains` | `fetch`, XHR, WebSocket (`connect-src`) |
+| `resource_domains` | 脚本、图片、样式、字体（`script-src` 等） |
+| `frame_domains` | 嵌套 iframe（`frame-src`） |
+| `base_uri_domains` | 文档 base URI（`base-uri`） |
+
+### 权限
+
+如果你的应用需要相机或剪贴板访问等浏览器能力，请通过 `ResourcePermissions` 请求：
+
+```python
+from fastmcp.apps import AppConfig, ResourcePermissions
+
+@mcp.resource(
+    "ui://my-app/view.html",
+    app=AppConfig(
+        permissions=ResourcePermissions(
+            camera={},
+            clipboard_write={},
+        )
+    ),
+)
+def my_view() -> str:
+    return "<html>...</html>"
+```
+
+宿主可能会授予这些权限，也可能不会。你的应用应使用 JavaScript 特性检测作为回退。
+
+## 示例：QR 码服务端
+
+这个示例会创建一个生成 QR 码的工具，以及一个将 QR 码渲染为图片的应用。它基于 [MCP Apps 官方示例](https://github.com/modelcontextprotocol/ext-apps/tree/main/examples/qr-server)。需要 `qrcode[pil]` 包。
+
+```python expandable
+import base64
+import io
+
+import qrcode
+from mcp import types
+
+from fastmcp import FastMCP
+from fastmcp.apps import AppConfig, ResourceCSP
+from fastmcp.tools import ToolResult
+
+mcp = FastMCP("QR Code Server")
+
+VIEW_URI = "ui://qr-server/view.html"
+
+
+@mcp.tool(app=AppConfig(resource_uri=VIEW_URI))
+def generate_qr(text: str = "https://gofastmcp.com") -> ToolResult:
+    """根据文本生成 QR 码。"""
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(text)
+    qr.make(fit=True)
+
+    img = qr.make_image()
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    b64 = base64.b64encode(buffer.getvalue()).decode()
+
+    return ToolResult(
+        content=[types.ImageContent(type="image", data=b64, mimeType="image/png")]
+    )
+
+
+@mcp.resource(
+    VIEW_URI,
+    app=AppConfig(csp=ResourceCSP(resource_domains=["https://unpkg.com"])),
+)
+def view() -> str:
+    """交互式 QR 码查看器。"""
+    return """\
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="color-scheme" content="light dark">
+  <style>
+    body { display: flex; justify-content: center;
+           align-items: center; height: 340px; width: 340px;
+           margin: 0; background: transparent; }
+    img  { width: 300px; height: 300px; border-radius: 8px;
+           box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <div id="qr"></div>
+  <script type="module">
+    import { App } from
+      "https://unpkg.com/@modelcontextprotocol/ext-apps@0.4.0/app-with-deps";
+
+    const app = new App({ name: "QR View", version: "1.0.0" });
+
+    app.ontoolresult = ({ content }) => {
+      const img = content?.find(c => c.type === 'image');
+      if (img) {
+        const el = document.createElement('img');
+        el.src = `data:${img.mimeType};base64,${img.data}`;
+        el.alt = "QR Code";
+        document.getElementById('qr').replaceChildren(el);
+      }
+    };
+
+    await app.connect();
+  </script>
+</body>
+</html>"""
+```
+
+该工具会生成 base64 PNG 格式的 QR 码。资源会从 unpkg 加载 MCP Apps JS SDK（已在 CSP 中声明）、监听工具结果并渲染图片。宿主会把它们连接起来：当 LLM 调用 `generate_qr` 时，QR 码就会出现在对话内的交互式框架中。
+
+## 检查客户端支持
+
+并非所有宿主都支持 Apps 扩展。你可以使用工具的[上下文](/zh/servers/context)在运行时检查：
+
+```python
+from fastmcp import Context
+from fastmcp.apps import AppConfig, UI_EXTENSION_ID
+
+@mcp.tool(app=AppConfig(resource_uri="ui://my-app/view.html"))
+async def my_tool(ctx: Context) -> str:
+    if ctx.client_supports_extension(UI_EXTENSION_ID):
+        # 返回为 UI 渲染优化的数据
+        return rich_response()
+    else:
+        # 回退到纯文本
+        return plain_text_response()
+```

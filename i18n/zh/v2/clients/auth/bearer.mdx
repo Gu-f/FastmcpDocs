@@ -1,0 +1,88 @@
+---
+title: Bearer Token 认证
+sidebarTitle: Bearer Auth
+description: 使用 Bearer token 对 FastMCP 客户端进行认证。
+icon: key
+---
+
+import { VersionBadge } from "/zh/snippets/version-badge.mdx"
+
+<VersionBadge version="2.6.0" />
+
+<Tip>
+Bearer Token 认证只与基于 HTTP 的传输相关。
+</Tip>
+
+你可以通过提供有效的 access token，将 FastMCP 客户端配置为使用 **bearer 认证**。这最适合服务账号、长期 API key、CI/CD、认证单独管理的应用，或其他非交互式认证方式。
+
+Bearer token 是用于认证请求的 JSON Web Token（JWT）。它最常见的用法是在 HTTP 请求的 `Authorization` header 中使用 `Bearer` scheme：
+
+```http
+Authorization: Bearer <token>
+```
+
+
+## 客户端用法
+
+使用已有 Bearer token 最直接的方式，是将它作为字符串提供给 `fastmcp.Client` 或传输实例的 `auth` 参数。FastMCP 会自动将其格式化为适用于 `Authorization` header 和 bearer scheme 的形式。
+
+<Tip>
+如果使用字符串 token，请不要包含 `Bearer` 前缀。FastMCP 会为你添加。
+</Tip>
+
+```python {5}
+from fastmcp import Client
+
+async with Client(
+    "https://your-server.fastmcp.app/mcp", 
+    auth="<your-token>",
+) as client:
+    await client.ping()
+```
+
+你也可以将 Bearer token 提供给传输实例，例如 `StreamableHttpTransport` 或 `SSETransport`：
+
+```python {6}
+from fastmcp import Client
+from fastmcp.client.transports import StreamableHttpTransport
+
+transport = StreamableHttpTransport(
+    "http://your-server.fastmcp.app/mcp", 
+    auth="<your-token>",
+)
+
+async with Client(transport) as client:
+    await client.ping()
+```
+
+## `BearerAuth` 辅助类
+
+如果你希望更显式一些，不依赖 FastMCP 转换字符串 token，可以自行使用实现了 `httpx.Auth` 接口的 `BearerAuth` 类。
+
+```python {6}
+from fastmcp import Client
+from fastmcp.client.auth import BearerAuth
+
+async with Client(
+    "https://your-server.fastmcp.app/mcp", 
+    auth=BearerAuth(token="<your-token>"),
+) as client:
+    await client.ping()
+```
+
+## 自定义 Headers
+
+如果 MCP 服务端需要自定义 header 或 token scheme，你可以在传输上手动设置客户端的 `headers`，而不是使用 `auth` 参数：
+
+```python {5}
+from fastmcp import Client
+from fastmcp.client.transports import StreamableHttpTransport
+
+async with Client(
+    transport=StreamableHttpTransport(
+        "https://your-server.fastmcp.app/mcp", 
+        headers={"X-API-Key": "<your-token>"},
+    ),
+) as client:
+    await client.ping()
+```

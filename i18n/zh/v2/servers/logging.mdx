@@ -1,0 +1,87 @@
+---
+title: 客户端日志
+sidebarTitle: 日志
+description: 通过上下文将日志消息发送回 MCP 客户端。
+icon: receipt
+---
+
+import { VersionBadge } from '/zh/snippets/version-badge.mdx'
+
+<Tip>
+本文档介绍 **MCP 客户端日志**：从你的服务端向 MCP 客户端发送消息。对于标准服务端侧日志（例如写入文件、控制台），请使用 `fastmcp.utilities.logging.get_logger()` 或 Python 内置的 `logging` 模块。
+</Tip>
+
+服务端日志允许 MCP 工具将 debug、info、warning 和 error 消息发送回客户端。不同于标准 Python 日志，MCP 服务端日志会直接把消息发送到客户端，使其在客户端界面或日志中可见。
+
+## 基本用法
+
+在任何工具函数中使用上下文日志方法：
+
+```python
+from fastmcp import FastMCP, Context
+
+mcp = FastMCP("LoggingDemo")
+
+@mcp.tool
+async def analyze_data(data: list[float], ctx: Context) -> dict:
+    """通过完整日志分析数值数据。"""
+    await ctx.debug("开始分析数值数据")
+    await ctx.info(f"正在分析 {len(data)} 个数据点")
+
+    try:
+        if not data:
+            await ctx.warning("提供了空数据列表")
+            return {"error": "空数据列表"}
+
+        result = sum(data) / len(data)
+        await ctx.info(f"分析完成，平均值：{result}")
+        return {"average": result, "count": len(data)}
+
+    except Exception as e:
+        await ctx.error(f"分析失败：{str(e)}")
+        raise
+```
+
+## 日志级别
+
+| 级别 | 用例 |
+|-------|----------|
+| `ctx.debug()` | 用于诊断问题的详细执行信息 |
+| `ctx.info()` | 关于程序正常执行的一般信息 |
+| `ctx.warning()` | 不会阻止执行但可能有害的情况 |
+| `ctx.error()` | 可能仍允许应用继续运行的错误事件 |
+
+## 结构化日志
+
+所有日志方法都接受 `extra` 参数，用于向客户端发送结构化数据。这对于创建丰富且可查询的日志很有用。
+
+```python
+@mcp.tool
+async def process_transaction(transaction_id: str, amount: float, ctx: Context):
+    await ctx.info(
+        f"正在处理交易 {transaction_id}",
+        extra={
+            "transaction_id": transaction_id,
+            "amount": amount,
+            "currency": "USD"
+        }
+    )
+```
+
+## 服务端侧日志
+
+通过 `ctx.log()` 及其便捷方法发送给客户端的消息，也会以 `DEBUG` 级别记录到服务端日志中。要查看这些消息，请在 `fastmcp.server.context.to_client` logger 上启用 debug 日志：
+
+```python
+import logging
+from fastmcp.utilities.logging import get_logger
+
+to_client_logger = get_logger(name="fastmcp.server.context.to_client")
+to_client_logger.setLevel(level=logging.DEBUG)
+```
+
+## 客户端处理
+
+日志消息会通过 MCP 协议发送到客户端。客户端如何处理这些消息取决于其实现：开发客户端可能实时显示日志，生产客户端可能存储日志以供分析，集成客户端可能将其转发到外部日志系统。
+
+关于客户端如何处理服务端日志消息的详情，请参阅[客户端日志](/zh/v2/clients/logging)。

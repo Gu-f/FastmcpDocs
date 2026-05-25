@@ -1,0 +1,73 @@
+---
+title: Auth Provider 环境变量
+---
+
+## 决策：从 auth provider 中移除自动环境变量加载
+
+你仍然可以使用环境变量进行配置，只是需要自己通过 `os.environ` 读取，而不是依赖 FastMCP 的自动加载。
+
+**状态：** 已在 v3.0.0 中实现
+
+### 背景
+
+v2.x 中的 auth providers 使用 `pydantic-settings` 从带有 `FASTMCP_SERVER_AUTH_<PROVIDER>_` 前缀的环境变量中自动加载配置。例如，`GitHubProvider` 会读取：
+
+- `FASTMCP_SERVER_AUTH_GITHUB_CLIENT_ID`
+- `FASTMCP_SERVER_AUTH_GITHUB_CLIENT_SECRET`
+- `FASTMCP_SERVER_AUTH_GITHUB_BASE_URL`
+- 等。
+
+这是通过每个 provider 中的 `*ProviderSettings(BaseSettings)` 类实现的，并结合 `NotSet` 哨兵模式来区分“未提供”和 `None`。
+
+### 为什么移除
+
+1. **维护负担**：每个新 provider 都需要实现 settings 类、验证器以及 `NotSet` 合并逻辑。每个 provider 约有 50-100 行样板代码。
+
+2. **文档复杂度**：每个 provider 都需要文档同时解释参数和对应环境变量。这让需要编写和维护的文档面积翻倍。
+
+3. **贡献者阻力**：新增 provider 的贡献者必须理解并复制这种模式，而这正是不一致和 bug 的来源之一。
+
+4. **用户价值有限**：Python 开发者通常熟悉 `os.environ["VAR"]` 或 `os.environ.get("VAR", default)`。自动加载每个参数只节省一行代码，却引入了显著复杂度。
+
+5. **隐式行为**：魔法式环境变量加载会让值的来源更难理解。显式的 `os.environ` 调用更容易追踪。
+
+### 迁移路径
+
+迁移很简单：用户添加显式环境变量读取即可：
+
+```python
+# 之前（v2.x）
+auth = GitHubProvider()  # 依赖环境变量
+
+# 之后（v3.0）
+import os
+
+auth = GitHubProvider(
+    client_id=os.environ["GITHUB_CLIENT_ID"],
+    client_secret=os.environ["GITHUB_CLIENT_SECRET"],
+    base_url=os.environ["MY_BASE_URL"],
+)
+```
+
+用户也可以使用带默认值的 `os.environ.get()`，或他们偏好的任何其他配置库（dotenv、dynaconf 等）。
+
+### 向后兼容性
+
+我们选择不提供向后兼容，因为：
+
+1. 这是一次主版本升级（v3.0），正是引入破坏性变更的合适时机
+2. 迁移很直接（添加 `os.environ` 调用）
+3. 保持兼容需要保留我们正试图移除的所有样板代码
+4. 这种模式可能并未被大量使用，大多数生产部署会显式传递 secret，而不是依赖魔法前缀
+
+### 移除了什么
+
+- 所有 auth providers 中的 `*ProviderSettings(BaseSettings)` 类
+- provider 构造函数中的 `NotSet` 哨兵用法
+- auth providers 对 `pydantic-settings` 的依赖
+- provider 文档中的环境变量说明
+- 与环境变量加载相关的测试用例
+
+### 结果
+
+Provider 构造函数现在简单且显式。必需参数现在确实是必需的（缺失时 Python 会抛出 `TypeError`），可选参数也有清晰的默认值。代码更易读，也更容易维护。

@@ -1,0 +1,61 @@
+---
+title: form
+sidebarTitle: form
+---
+
+# `fastmcp.apps.form`
+
+
+FormInput：一个从用户收集结构化输入的 Provider。
+
+为所需数据定义一个 Pydantic 模型，``FormInput`` 会生成表单 UI。用户填写表单后，提交内容会被验证，并可由可选回调处理结果。
+
+需要 ``fastmcp[apps]``（prefab-ui）。
+
+用法::
+
+    from pydantic import BaseModel
+    from fastmcp import FastMCP
+    from fastmcp.apps.form import FormInput
+
+    class ShippingAddress(BaseModel):
+        street: str
+        city: str
+        state: str
+        zip_code: str
+
+    mcp = FastMCP("My Server")
+    mcp.add_provider(FormInput(model=ShippingAddress))
+
+
+## 类
+
+### `FormInput` <sup><a href="https://github.com/PrefectHQ/fastmcp/blob/main/fastmcp_slim/fastmcp/apps/form.py#L88" target="_blank"><Icon icon="github" style="width: 14px; height: 14px;" /></a></sup>
+
+
+一个通过 Pydantic 模型收集结构化输入的 Provider。
+
+为所需数据定义一个模型，``FormInput`` 会使用 ``Form.from_model()`` 从中生成表单。字段类型、标签、描述和验证规则都会从模型派生。
+
+可以选择提供 ``on_submit`` 回调来处理验证后的数据。回调会接收一个模型实例，并返回一个发送回 LLM 的字符串。如果没有回调，则直接发送验证后的 JSON。
+
+示例::
+
+    from pydantic import BaseModel
+    from fastmcp import FastMCP
+    from fastmcp.apps.form import FormInput
+
+    class Contact(BaseModel):
+        name: str
+        email: str
+
+    mcp = FastMCP("My Server")
+    mcp.add_provider(FormInput(model=Contact))
+
+带回调::
+
+    def save_contact(contact: Contact) -> str:
+        db.insert(contact.model_dump())
+        return f"Saved {contact.name}"
+
+    mcp.add_provider(FormInput(model=Contact, on_submit=save_contact))

@@ -103,7 +103,7 @@ from fastmcp import Client
 
 async def main():
     # Connect to the MCP server we just created
-    async with Client("http://127.0.0.1:8000/mcp/") as client:
+    async with Client("http://127.0.0.1:8000/mcp") as client:
         
         # List the tools that were automatically generated
         tools = await client.list_tools()
@@ -152,7 +152,7 @@ Here’s how you can add custom route maps to turn `GET` requests into `Resource
 ```python api_server_with_resources.py {3, 37-42}
 import httpx
 from fastmcp import FastMCP
-from fastmcp.server.openapi import RouteMap, MCPType
+from fastmcp.server.providers.openapi import RouteMap, MCPType
 
 
 # Create an HTTP client for the target API

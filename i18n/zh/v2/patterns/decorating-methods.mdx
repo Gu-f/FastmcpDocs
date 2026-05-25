@@ -1,0 +1,220 @@
+---
+title: 装饰方法
+sidebarTitle: 装饰方法
+description: 正确地将 FastMCP 装饰器用于实例方法、类方法和静态方法。
+icon: at
+---
+
+FastMCP 的装饰器系统是为函数设计的，但如果你尝试装饰实例方法或类方法，可能会遇到意料之外的行为。本指南说明如何在所有 FastMCP 装饰器（`@tool`、`@resource` 和 `@prompt`）中正确使用方法。
+
+## 为什么方法比较棘手？
+
+当你把 `@tool`、`@resource` 或 `@prompt` 这类 FastMCP 装饰器应用到方法上时，装饰器会在装饰时捕获该函数。对于实例方法和类方法，这会带来挑战，因为：
+
+1. 对实例方法来说：装饰器会在任何实例存在之前拿到未绑定方法
+2. 对类方法来说：装饰器会在函数绑定到类之前拿到它
+
+这意味着直接装饰这些方法不会按预期工作。实际运行时，LLM 会看到 `self` 或 `cls` 这样的参数，但它无法为这些参数提供值。
+
+此外，**FastMCP 装饰器返回的是对象（Tool、Resource 或 Prompt 实例），而不是原始函数**。这意味着当你直接装饰一个方法时，该方法会变成返回的对象，你自己的代码将无法再调用它：
+
+<Warning>
+**不要这样做！**
+
+这个方法将无法再从 Python 中调用，该工具也无法被 LLM 调用。
+
+```python
+
+from fastmcp import FastMCP
+mcp = FastMCP()
+
+class MyClass:
+    @mcp.tool
+    def my_method(self, x: int) -> int:
+        return x * 2
+
+obj = MyClass()
+obj.my_method(5)  # 失败 - my_method 是 Tool，不是函数
+```
+</Warning>
+
+这也是为什么应在定义类之后以函数式方式注册方法的另一个重要原因。
+
+## 推荐模式
+
+### 实例方法
+
+<Warning>
+**不要这样做！**
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP()
+
+class MyClass:
+    @mcp.tool  # 这无法正确工作
+    def add(self, x, y):
+        return x + y
+```
+</Warning>
+以这种方式应用装饰器时，它会捕获未绑定方法。稍后当 LLM 尝试使用这个组件时，它会看到 `self` 是必需参数，但不知道应提供什么值，从而导致错误或意外行为。
+
+<Check>
+**请改用这种方式**：
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP()
+
+class MyClass:
+    def add(self, x, y):
+        return x + y
+
+# 先创建实例，然后注册已绑定的方法
+obj = MyClass()
+mcp.tool(obj.add)
+
+# 现在调用时不会把 'self' 暴露为参数
+await mcp._mcp_call_tool('add', {'x': 1, 'y': 2})  # 返回 3
+```
+</Check>
+
+这种方式之所以可行，是因为：
+1. 你先创建类的一个实例（`obj`）
+2. 当你通过实例访问方法（`obj.add`）时，Python 会创建一个已绑定方法，其中 `self` 已经设置为该实例
+3. 当你注册这个已绑定方法时，系统看到的是一个只需要合适业务参数、而不需要 `self` 的可调用对象
+
+### 类方法
+
+装饰类方法时的行为取决于装饰器顺序：
+
+<Warning>
+**不要这样做**（装饰器顺序很重要）：
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP()
+
+class MyClass:
+    @classmethod
+    @mcp.tool  # 这不会正常工作，但也不会抛出错误
+    def from_string_v1(cls, s):
+        return cls(s)
+    
+    @mcp.tool
+    @classmethod  # 这会抛出带有指导信息的 ValueError
+    def from_string_v2(cls, s):
+        return cls(s)
+```
+</Warning>
+
+- 如果 `@classmethod` 在前、`@mcp.tool` 在后：不会抛出错误，但无法正确工作
+- 如果 `@mcp.tool` 在前、`@classmethod` 在后：FastMCP 会检测到这一点，并抛出带有指导信息的 `ValueError`
+
+<Check>
+**请改用这种方式**：
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP()
+
+class MyClass:
+    @classmethod
+    def from_string(cls, s):
+        return cls(s)
+
+# 在类定义完成后注册类方法
+mcp.tool(MyClass.from_string)
+```
+</Check>
+
+这种方式之所以可行，是因为：
+1. `@classmethod` 装饰器会在类定义期间正确应用
+2. 当你访问 `MyClass.from_string` 时，Python 会提供一个特殊的方法对象，它会自动把类绑定到 `cls` 参数
+3. 注册后，只有合适的参数会暴露给 LLM，而 `cls` 参数这个实现细节会被隐藏
+
+### 静态方法
+
+静态方法可以和 FastMCP 装饰器“配合工作”，但不推荐这样做，因为 FastMCP 装饰器不会返回可调用的方法。因此，你应该像注册其他方法一样注册静态方法。
+
+<Warning>
+**这并不推荐，虽然它可以工作。**
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP()
+
+class MyClass:
+    @mcp.tool
+    @staticmethod
+    def utility(x, y):
+        return x + y
+```
+</Warning>
+
+这能工作，是因为 `@staticmethod` 会把方法转换为普通函数，随后 FastMCP 装饰器就能正确处理它。不过，这并不推荐，因为 FastMCP 装饰器不会返回一个可调用的 staticmethod。因此，你应该像注册其他方法一样注册静态方法。
+
+<Check>
+**优先使用这种模式：**
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP()
+
+class MyClass:
+    @staticmethod
+    def utility(x, y):
+        return x + y
+
+# 这同样可以工作
+mcp.tool(MyClass.utility)
+```
+</Check>
+
+## 其他模式
+
+### 在类初始化时创建组件
+
+你可以在创建对象时自动注册实例方法：
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP()
+
+class ComponentProvider:
+    def __init__(self, mcp_instance):
+        # 注册方法
+        mcp_instance.tool(self.tool_method)
+        mcp_instance.resource("resource://data")(self.resource_method)
+    
+    def tool_method(self, x):
+        return x * 2
+    
+    def resource_method(self):
+        return "Resource data"
+
+# 创建实例时会自动注册这些方法
+provider = ComponentProvider(mcp)
+```
+
+这种模式适用于以下场景：
+- 你希望把注册逻辑封装在类本身内部
+- 你有多个相关组件需要一起注册
+- 你希望确保创建实例时方法总是被正确注册
+
+这个类会在初始化期间自动注册它的方法，确保它们在注册前已经正确绑定到实例。
+
+## 总结
+
+FastMCP 装饰器当前与方法配合时的行为如下：
+
+- **静态方法**：可以直接装饰，并且能与所有 FastMCP 装饰器正常工作
+- **类方法**：不能直接装饰；直接装饰会抛出带有指导信息的 `ValueError`
+- **实例方法**：应在创建实例后通过装饰器调用进行注册
